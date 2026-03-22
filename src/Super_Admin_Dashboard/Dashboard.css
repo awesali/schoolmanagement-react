@@ -1,6 +1,20 @@
 .dashboard-wrapper {
   min-height: 100vh;
   background: var(--background);
+  display: flex;
+}
+
+.dashboard-main {
+  margin-left: 240px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  transition: margin-left 0.25s ease;
+}
+
+.dashboard-main.sidebar-collapsed {
+  margin-left: 0;
 }
 
 .dashboard-header {
@@ -12,6 +26,26 @@
   box-shadow: 0 2px 4px var(--shadow);
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.menu-toggle-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--text-primary);
+  padding: 4px 8px;
+  border-radius: var(--radius);
+}
+
+.menu-toggle-btn:hover {
+  background: var(--background);
+}
+
 .dashboard-header h1 {
   font-size: 24px;
   font-weight: 600;
@@ -21,6 +55,11 @@
   display: flex;
   align-items: center;
   gap: 16px;
+}
+
+.welcome-text {
+  font-size: 14px;
+  color: var(--text-secondary);
 }
 
 .header-right .btn {

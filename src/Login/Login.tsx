@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { API_ENDPOINTS } from './config';
+import { API_ENDPOINTS } from '../config';
 import './Login.css';
 
 const Login: React.FC = () => {

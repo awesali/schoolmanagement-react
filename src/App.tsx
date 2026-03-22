@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './Login';
-import Dashboard from './Dashboard';
+import Login from './Login/Login';
+import Dashboard from './Super_Admin_Dashboard/Dashboard';
 import './theme.css';
 
 function App() {

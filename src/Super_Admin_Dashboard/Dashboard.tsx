@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CreateSchool from './CreateSchool';
-import { API_BASE_URL } from './config';
+import Sidebar from './Sidebar';
+import { API_BASE_URL } from '../config';
 import './Dashboard.css';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [isCreateSchoolOpen, setIsCreateSchoolOpen] = useState(false);
+  const [activePage, setActivePage] = useState('Dashboard');
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [dashboardData, setDashboardData] = useState({
     teachersPresentToday: '0/0',
     studentsPresentToday: '0/0',
@@ -43,9 +46,15 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="dashboard-wrapper">
+      <Sidebar activePage={activePage} onNavigate={setActivePage} isCollapsed={isCollapsed} />
+      <div className={`dashboard-main ${isCollapsed ? 'sidebar-collapsed' : ''}`}>
       <header className="dashboard-header">
-        <h1>Admin Dashboard</h1>
+        <div className="header-left">
+          <button className="menu-toggle-btn" onClick={() => setIsCollapsed(p => !p)}>☰</button>
+          <h1>{activePage}</h1>
+        </div>
         <div className="header-right">
+          <span className="welcome-text">Welcome, <strong>Awes</strong> 👋</span>
           <button className="btn btn-primary" onClick={() => setIsCreateSchoolOpen(true)}>
             + Create School
           </button>
@@ -200,6 +209,7 @@ const Dashboard: React.FC = () => {
 
       <button onClick={handleLogout} className="logout-btn">Logout</button>
       <CreateSchool isOpen={isCreateSchoolOpen} onClose={() => setIsCreateSchoolOpen(false)} />
+      </div>
     </div>
   );
 };
