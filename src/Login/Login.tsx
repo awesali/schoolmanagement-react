@@ -28,6 +28,9 @@ const Login: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         localStorage.setItem('token', data.token);
+        if (data.schoolId) {
+          localStorage.setItem('schoolId', data.schoolId.toString());
+        }
         navigate('/dashboard');
       } else {
         setError('Invalid email or password');

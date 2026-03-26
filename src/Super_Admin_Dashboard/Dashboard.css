@@ -32,6 +32,22 @@
   gap: 16px;
 }
 
+.school-picker {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 14px;
+  background: var(--background);
+  color: var(--text-primary);
+  cursor: pointer;
+  min-width: 200px;
+}
+
+.school-picker:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
 .menu-toggle-btn {
   background: none;
   border: none;

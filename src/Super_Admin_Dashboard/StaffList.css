@@ -1,0 +1,122 @@
+.staff-list-container {
+  padding: 20px;
+}
+
+.staff-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.staff-list-header h2 {
+  margin: 0;
+  color: #1e2a3a;
+  font-size: 24px;
+}
+
+.staff-list-loading {
+  padding: 40px;
+  text-align: center;
+  font-size: 18px;
+  color: #718096;
+}
+
+.staff-table-wrapper {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.staff-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.staff-table thead {
+  background: var(--primary-color);
+  color: white;
+}
+
+.staff-table th {
+  padding: 16px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.staff-table tbody tr {
+  border-bottom: 1px solid #e2e8f0;
+  transition: background 0.2s;
+}
+
+.staff-table tbody tr:hover {
+  background: #f7fafc;
+}
+
+.staff-table td {
+  padding: 16px;
+  color: #4a5568;
+  font-size: 14px;
+}
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-badge.present {
+  background: #c6f6d5;
+  color: #22543d;
+}
+
+.status-badge.leave {
+  background: #fed7d7;
+  color: #742a2a;
+}
+
+.role-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.role-badge.superadmin {
+  background: #fef3c7;
+  color: #78350f;
+}
+
+.role-badge.teacher {
+  background: #dbeafe;
+  color: #1e3a8a;
+}
+
+.role-badge.principal {
+  background: #e9d5ff;
+  color: #581c87;
+}
+
+.role-badge.receptionist {
+  background: #fce7f3;
+  color: #831843;
+}
+
+.role-badge.accountant {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.role-badge.librarian {
+  background: #fed7aa;
+  color: #7c2d12;
+}
+
+.role-badge.admin {
+  background: #e0e7ff;
+  color: #3730a3;
+}

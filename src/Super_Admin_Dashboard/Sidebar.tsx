@@ -11,7 +11,7 @@ const menuGroups = [
   {
     group: 'Management',
     items: [
-      { label: 'School', children: ['Add School', 'School List', 'Academic Year'] },
+      { label: 'School', children: ['School List', 'Academic Year'] },
       { label: 'Staff', children: ['Create Staff', 'Staff List', 'Roles', 'Attendance', 'Payroll'] },
       { label: 'Students', children: ['Add Student', 'Student List', 'Attendance', 'Promote Student'] },
       { label: 'Parents', children: ['Parent List'] },
