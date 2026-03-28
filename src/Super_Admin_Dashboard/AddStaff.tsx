@@ -26,10 +26,13 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
     address: ''
   });
   const [roles, setRoles] = useState<Role[]>([]);
+  const [documents, setDocuments] = useState<Array<{ name: string; file: File }>>([]);
+  const [error, setError] = useState<string>('');
 
   useEffect(() => {
     if (isOpen) {
       fetchRoles();
+      setError(''); // Clear any previous errors when modal opens
     }
   }, [isOpen]);
 
@@ -55,27 +58,59 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(''); // Clear previous errors
+    
     try {
       const token = localStorage.getItem('token');
+      const formDataToSend = new FormData();
+      
+      formDataToSend.append('Name', formData.name);
+      formDataToSend.append('Email', formData.email);
+      formDataToSend.append('Phone', formData.phone);
+      formDataToSend.append('Address', formData.address);
+      formDataToSend.append('DOB', formData.dob);
+      formDataToSend.append('DOJ', formData.doj);
+      formDataToSend.append('RoleId', formData.roleId.toString());
+      formDataToSend.append('SchoolId', schoolId?.toString() || '0');
+      
+      // Only append documents if they exist and are valid
+      const validDocuments = documents.filter(doc => doc.file && doc.name.trim());
+      validDocuments.forEach(doc => {
+        formDataToSend.append('DocumentNames', doc.name);
+        formDataToSend.append('Files', doc.file);
+      });
+      
+      console.log('Adding staff with:', {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        documentsCount: validDocuments.length
+      });
+
       const response = await fetch(`${API_BASE_URL}/api/Admin/add-staff`, {
         method: 'POST',
         headers: {
           'accept': '*/*',
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          ...formData,
-          schoolId: schoolId
-        }),
+        body: formDataToSend,
       });
-      if (response.ok) {
+      
+      const result = await response.json();
+      console.log('API Response:', result);
+      
+      if (response.ok && result.success) {
         handleClear();
         onSuccess();
         onClose();
+      } else {
+        // Show error message from API
+        console.error('API Error:', result);
+        setError(result.message || `Failed to add staff (${response.status})`);
       }
     } catch (err) {
-      console.error('Failed to add staff');
+      console.error('Failed to add staff:', err);
+      setError('Network error. Please try again.');
     }
   };
 
@@ -89,6 +124,30 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
       phone: '',
       address: ''
     });
+    setDocuments([]);
+    setError(''); // Clear errors when clearing form
+  };
+
+  const handleAddDocument = () => {
+    setDocuments([...documents, { name: '', file: null as any }]);
+  };
+
+  const handleRemoveDocument = (index: number) => {
+    setDocuments(documents.filter((_, i) => i !== index));
+  };
+
+  const handleDocumentNameChange = (index: number, name: string) => {
+    const updated = [...documents];
+    updated[index].name = name;
+    setDocuments(updated);
+  };
+
+  const handleDocumentFileChange = (index: number, file: File | null) => {
+    if (file) {
+      const updated = [...documents];
+      updated[index].file = file;
+      setDocuments(updated);
+    }
   };
 
   return (
@@ -100,6 +159,11 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
       onCancel={handleClear}
       formId="add-staff-form"
     >
+      {error && (
+        <div className="error-message">
+          {error}
+        </div>
+      )}
       <form id="add-staff-form" onSubmit={handleSubmit}>
         <div className="form-grid">
             <div className="form-group">
@@ -177,6 +241,44 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
                 onChange={(e) => setFormData({...formData, address: e.target.value})}
               />
             </div>
+          </div>
+
+          <div className="documents-section">
+            <div className="documents-header">
+              <label>Documents</label>
+              <button type="button" className="btn-add-doc" onClick={handleAddDocument}>
+                + Add Document
+              </button>
+            </div>
+            {documents.map((doc, index) => (
+              <div key={index} className="new-document-row">
+                <input
+                  type="text"
+                  placeholder="Document Name"
+                  value={doc.name}
+                  onChange={(e) => handleDocumentNameChange(index, e.target.value)}
+                />
+                <div className="file-input-wrapper">
+                  <input
+                    type="file"
+                    id={`file-${index}`}
+                    onChange={(e) => handleDocumentFileChange(index, e.target.files?.[0] || null)}
+                    style={{ display: 'none' }}
+                  />
+                  <label htmlFor={`file-${index}`} className="file-input-label">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="7,10 12,15 17,10"/>
+                      <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    {doc.file ? doc.file.name : 'Upload'}
+                  </label>
+                </div>
+                <button type="button" className="btn-remove" onClick={() => handleRemoveDocument(index)}>
+                  ✕
+                </button>
+              </div>
+            ))}
           </div>
       </form>
     </Modal>
