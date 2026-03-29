@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import CreateSchool from './CreateSchool';
 import SchoolList from './SchoolList';
 import StaffList from './StaffList';
+import StudentList from './StudentList';
 import Sidebar from './Sidebar';
 import { API_BASE_URL } from '../config';
 import './Dashboard.css';
@@ -144,6 +145,8 @@ const Dashboard: React.FC = () => {
           <SchoolList />
         ) : activePage === 'Staff List' ? (
           <StaffList selectedSchoolId={selectedSchoolId} />
+        ) : activePage === 'Student List' ? (
+          <StudentList selectedSchoolId={selectedSchoolId} />
         ) : (
           <>
         <div className="stats-grid">
