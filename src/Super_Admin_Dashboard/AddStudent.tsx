@@ -38,6 +38,7 @@ const initialForm = {
 const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSuccess }) => {
   const [formData, setFormData] = useState(initialForm);
   const [enrollmentInfo, setEnrollmentInfo] = useState<EnrollmentInfo[]>([]);
+  const [documents, setDocuments] = useState<Array<{ name: string; file: File }>>([]);
 
   useEffect(() => {
     if (isOpen && schoolId) fetchEnrollmentInfo();
@@ -78,33 +79,36 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
+      const formDataToSend = new FormData();
+
+      formDataToSend.append('StudentName', formData.studentName);
+      formDataToSend.append('DOB', formData.dob);
+      formDataToSend.append('Email', formData.email);
+      formDataToSend.append('PhoneNumber', formData.phoneNumber);
+      formDataToSend.append('SchoolId', schoolId?.toString() || '0');
+      formDataToSend.append('ClassId', formData.classId);
+      formDataToSend.append('SectionId', formData.sectionId);
+      formDataToSend.append('SessionId', formData.sessionId);
+      formDataToSend.append('Parent.Name', formData.parentName);
+      formDataToSend.append('Parent.PhoneNumber', formData.parentPhone);
+      formDataToSend.append('Parent.Address', formData.parentAddress);
+      formDataToSend.append('Parent.Email', formData.parentEmail);
+      formDataToSend.append('Parent.Relationship', formData.parentRelationship);
+
+      const validDocuments = documents.filter(doc => doc.file && doc.name.trim());
+      validDocuments.forEach(doc => {
+        formDataToSend.append('DocumentNames', doc.name);
+        formDataToSend.append('Files', doc.file);
+      });
+
       const response = await fetch(`${API_BASE_URL}/api/Admin/add-student`, {
         method: 'POST',
-        headers: {
-          'accept': '*/*',
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          studentName: formData.studentName,
-          dob: formData.dob,
-          email: formData.email,
-          phoneNumber: formData.phoneNumber,
-          schoolId: schoolId,
-          classId: Number(formData.classId),
-          sectionId: Number(formData.sectionId),
-          sessionId: Number(formData.sessionId),
-          parent: {
-            name: formData.parentName,
-            phoneNumber: formData.parentPhone,
-            address: formData.parentAddress,
-            email: formData.parentEmail,
-            relationship: formData.parentRelationship,
-          },
-        }),
+        headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
+        body: formDataToSend,
       });
       if (response.ok) {
         setFormData(initialForm);
+        setDocuments([]);
         onSuccess();
         onClose();
       }
@@ -115,7 +119,23 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
 
   const handleClear = () => {
     setFormData(initialForm);
+    setDocuments([]);
     setEnrollmentInfo([]);
+  };
+
+  const handleAddDocument = () => setDocuments([...documents, { name: '', file: null as any }]);
+  const handleRemoveDocument = (index: number) => setDocuments(documents.filter((_, i) => i !== index));
+  const handleDocumentNameChange = (index: number, name: string) => {
+    const updated = [...documents];
+    updated[index].name = name;
+    setDocuments(updated);
+  };
+  const handleDocumentFileChange = (index: number, file: File | null) => {
+    if (file) {
+      const updated = [...documents];
+      updated[index].file = file;
+      setDocuments(updated);
+    }
   };
 
   return (
@@ -225,6 +245,42 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
             <label>Parent Address *</label>
             <textarea name="parentAddress" required value={formData.parentAddress} onChange={handleChange} />
           </div>
+        </div>
+
+        <div className="documents-section">
+          <div className="documents-header">
+            <label>Documents</label>
+            <button type="button" className="btn-add-doc" onClick={handleAddDocument}>
+              + Add Document
+            </button>
+          </div>
+          {documents.map((doc, index) => (
+            <div key={index} className="new-document-row">
+              <input
+                type="text"
+                placeholder="Document Name"
+                value={doc.name}
+                onChange={(e) => handleDocumentNameChange(index, e.target.value)}
+              />
+              <div className="file-input-wrapper">
+                <input
+                  type="file"
+                  id={`file-${index}`}
+                  onChange={(e) => handleDocumentFileChange(index, e.target.files?.[0] || null)}
+                  style={{ display: 'none' }}
+                />
+                <label htmlFor={`file-${index}`} className="file-input-label">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7,10 12,15 17,10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                  {doc.file ? doc.file.name : 'Upload'}
+                </label>
+              </div>
+              <button type="button" className="btn-remove" onClick={() => handleRemoveDocument(index)}>✕</button>
+            </div>
+          ))}
         </div>
       </form>
     </Modal>
