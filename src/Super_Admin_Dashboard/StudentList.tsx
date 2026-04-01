@@ -64,7 +64,7 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
     if (!window.confirm('Are you sure you want to delete this document?')) return;
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/Admin/delete-document?id=${documentId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/Admin/delete-student-document?id=${documentId}`, {
         method: 'DELETE',
         headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
       });
@@ -159,6 +159,7 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         student={selectedStudent}
+        schoolId={selectedSchoolId}
         onSuccess={fetchStudents}
       />
 

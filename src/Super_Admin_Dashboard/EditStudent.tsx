@@ -23,24 +23,25 @@ interface Student {
   documents: Document[];
 }
 
-interface EnrollmentInfo {
-  classId: number;
-  className: string;
-  sectionId: number;
-  sectionName: string;
-  sessionId: number;
-  yearStart: string;
-  yearEnd: string;
+interface ClassItem { id: number; name: string; }
+interface SectionItem { id: number; name: string; classId: number; }
+interface SessionItem { id: number; yearStart: string; yearEnd: string; }
+
+interface EnrollmentData {
+  classes: ClassItem[];
+  sections: SectionItem[];
+  sessions: SessionItem[];
 }
 
 interface EditStudentProps {
   isOpen: boolean;
   onClose: () => void;
   student: Student | null;
+  schoolId: number | null;
   onSuccess: () => void;
 }
 
-const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, onSuccess }) => {
+const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, schoolId, onSuccess }) => {
   const [formData, setFormData] = useState({
     studentName: '',
     dob: '',
@@ -51,53 +52,65 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, onS
     sessionId: '',
     isActive: true,
   });
-  const [enrollmentInfo, setEnrollmentInfo] = useState<EnrollmentInfo[]>([]);
+  const [enrollment, setEnrollment] = useState<EnrollmentData>({ classes: [], sections: [], sessions: [] });
   const [newDocuments, setNewDocuments] = useState<Array<{ name: string; file: File }>>([]);
   const [existingDocuments, setExistingDocuments] = useState<Array<{ id: number; name: string; url: string; originalName: string; newFile?: File }>>([]);
 
   useEffect(() => {
-    if (isOpen && student) {
-      setFormData({
-        studentName: student.studentName,
-        dob: student.dob.split('T')[0],
-        email: student.email,
-        phoneNumber: student.phoneNumber,
-        classId: '',
-        sectionId: '',
-        sessionId: '',
-        isActive: student.isActive,
-      });
-      setExistingDocuments(student.documents.map(doc => ({
-        id: doc.documentId,
-        name: doc.documentName,
-        url: doc.documentURL,
-        originalName: doc.documentName,
-      })));
+    if (isOpen && student && schoolId) {
       setNewDocuments([]);
-      fetchEnrollmentInfo(student.schoolId);
+      fetchStudentAndEnrollment(student.id, schoolId);
     }
-  }, [isOpen, student]);
+  }, [isOpen, student, schoolId]);
 
-  const fetchEnrollmentInfo = async (schoolId: number) => {
+  const fetchStudentAndEnrollment = async (studentId: number, sId: number) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/Admin/enrollment-info?schoolId=${schoolId}`, {
-        headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
-      });
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data) setEnrollmentInfo(result.data);
+      const [studentRes, enrollmentRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/Admin/student-by-id?studentId=${studentId}`, {
+          headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
+        }),
+        fetch(`${API_BASE_URL}/api/Admin/enrollment-info?schoolId=${sId}`, {
+          headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
+        }),
+      ]);
+
+      const studentResult = studentRes.ok ? await studentRes.json() : null;
+      const enrollmentResult = enrollmentRes.ok ? await enrollmentRes.json() : null;
+
+      if (enrollmentResult?.success && enrollmentResult.data) {
+        setEnrollment({
+          classes: enrollmentResult.data.classes ?? [],
+          sections: enrollmentResult.data.sections ?? [],
+          sessions: enrollmentResult.data.sessions ?? [],
+        });
+      }
+
+      if (studentResult?.success && studentResult.data) {
+        const s = studentResult.data;
+        setFormData({
+          studentName: s.studentName,
+          dob: s.dob.split('T')[0],
+          email: s.email,
+          phoneNumber: s.phoneNumber,
+          classId: s.classId?.toString() ?? '',
+          sectionId: s.sectionId?.toString() ?? '',
+          sessionId: s.sessionId?.toString() ?? '',
+          isActive: s.isActive,
+        });
+        setExistingDocuments((s.documents ?? []).map((doc: any) => ({
+          id: doc.documentId,
+          name: doc.documentName,
+          url: doc.documentURL,
+          originalName: doc.documentName,
+        })));
       }
     } catch (err) {
-      console.error('Failed to fetch enrollment info');
+      console.error('Failed to fetch student/enrollment info', err);
     }
   };
 
-  const uniqueClasses = enrollmentInfo.filter(
-    (item, idx, self) => self.findIndex(i => i.classId === item.classId) === idx
-  );
-
-  const filteredSections = enrollmentInfo.filter(item => item.classId === Number(formData.classId));
+  const filteredSections = enrollment.sections.filter(s => s.classId === Number(formData.classId));
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -105,8 +118,7 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, onS
 
   const handleClassChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const classId = e.target.value;
-    const sessionId = enrollmentInfo.find(i => i.classId === Number(classId))?.sessionId.toString() ?? '';
-    setFormData({ ...formData, classId, sectionId: '', sessionId });
+    setFormData({ ...formData, classId, sectionId: '' });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -241,29 +253,31 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, onS
             <label>Class</label>
             <select name="classId" value={formData.classId} onChange={handleClassChange}>
               <option value="">Select Class</option>
-              {uniqueClasses.map(c => (
-                <option key={c.classId} value={c.classId}>{c.className}</option>
+              {enrollment.classes.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
           </div>
           <div className="form-group">
             <label>Section</label>
-            <select name="sectionId" value={formData.sectionId} onChange={handleChange} disabled={!formData.classId}>
+            <select name="sectionId" value={formData.sectionId} onChange={handleChange}>
               <option value="">Select Section</option>
-              {filteredSections.map(s => (
-                <option key={s.sectionId} value={s.sectionId}>{s.sectionName}</option>
-              ))}
+              {enrollment.sections
+                .filter(s => !formData.classId || s.classId === Number(formData.classId))
+                .map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
             </select>
           </div>
           <div className="form-group">
             <label>Session</label>
             <select name="sessionId" value={formData.sessionId} onChange={handleChange} disabled>
-              <option value="">Select Class First</option>
-              {formData.sessionId && (
-                <option value={formData.sessionId}>
-                  {enrollmentInfo.find(i => i.sessionId === Number(formData.sessionId))?.yearStart.split('-')[0]}
+              <option value="">No Session</option>
+              {enrollment.sessions.map(s => (
+                <option key={s.id} value={s.id}>
+                  {s.yearStart.split('-')[0]}
                 </option>
-              )}
+              ))}
             </select>
           </div>
           <div className="form-group">
