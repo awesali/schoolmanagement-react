@@ -10,14 +10,14 @@ interface AddStudentProps {
   onSuccess: () => void;
 }
 
-interface EnrollmentInfo {
-  classId: number;
-  className: string;
-  sectionId: number;
-  sectionName: string;
-  sessionId: number;
-  yearStart: string;
-  yearEnd: string;
+interface ClassItem { id: number; name: string; }
+interface SectionItem { id: number; name: string; classId: number; }
+interface SessionItem { id: number; yearStart: string; yearEnd: string; }
+
+interface EnrollmentData {
+  classes: ClassItem[];
+  sections: SectionItem[];
+  sessions: SessionItem[];
 }
 
 const initialForm = {
@@ -37,7 +37,7 @@ const initialForm = {
 
 const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSuccess }) => {
   const [formData, setFormData] = useState(initialForm);
-  const [enrollmentInfo, setEnrollmentInfo] = useState<EnrollmentInfo[]>([]);
+  const [enrollment, setEnrollment] = useState<EnrollmentData>({ classes: [], sections: [], sessions: [] });
   const [documents, setDocuments] = useState<Array<{ name: string; file: File }>>([]);
 
   useEffect(() => {
@@ -52,18 +52,19 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
       });
       if (response.ok) {
         const result = await response.json();
-        if (result.success && result.data) setEnrollmentInfo(result.data);
+        if (result.success && result.data) {
+          setEnrollment(result.data);
+          if (result.data.sessions?.length === 1) {
+            setFormData(prev => ({ ...prev, sessionId: result.data.sessions[0].id.toString() }));
+          }
+        }
       }
     } catch (err) {
       console.error('Failed to fetch enrollment info');
     }
   };
 
-  const uniqueClasses = enrollmentInfo.filter(
-    (item, idx, self) => self.findIndex(i => i.classId === item.classId) === idx
-  );
-
-  const filteredSections = enrollmentInfo.filter(item => item.classId === Number(formData.classId));
+  const filteredSections = enrollment.sections.filter(s => s.classId === Number(formData.classId));
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -71,8 +72,7 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
 
   const handleClassChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const classId = e.target.value;
-    const sessionId = enrollmentInfo.find(i => i.classId === Number(classId))?.sessionId.toString() ?? '';
-    setFormData({ ...formData, classId, sectionId: '', sessionId });
+    setFormData({ ...formData, classId, sectionId: '' });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -120,7 +120,7 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
   const handleClear = () => {
     setFormData(initialForm);
     setDocuments([]);
-    setEnrollmentInfo([]);
+    setEnrollment({ classes: [], sections: [], sessions: [] });
   };
 
   const handleAddDocument = () => setDocuments([...documents, { name: '', file: null as any }]);
@@ -184,8 +184,8 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
             <label>Class *</label>
             <select name="classId" required value={formData.classId} onChange={handleClassChange}>
               <option value="">Select Class</option>
-              {uniqueClasses.map(c => (
-                <option key={c.classId} value={c.classId}>{c.className}</option>
+              {enrollment.classes.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
           </div>
@@ -194,19 +194,19 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
             <select name="sectionId" required value={formData.sectionId} onChange={handleChange} disabled={!formData.classId}>
               <option value="">Select Section</option>
               {filteredSections.map(s => (
-                <option key={s.sectionId} value={s.sectionId}>{s.sectionName}</option>
+                <option key={s.id} value={s.id}>{s.name}</option>
               ))}
             </select>
           </div>
           <div className="form-group">
             <label>Session *</label>
             <select name="sessionId" required value={formData.sessionId} onChange={handleChange} disabled>
-              <option value="">Select Class First</option>
-              {formData.sessionId && (
-                <option value={formData.sessionId}>
-                  {enrollmentInfo.find(i => i.sessionId === Number(formData.sessionId))?.yearStart.split('-')[0]}
+              <option value="">Auto Selected</option>
+              {enrollment.sessions.map(s => (
+                <option key={s.id} value={s.id}>
+                  {s.yearStart.split('-')[0]}
                 </option>
-              )}
+              ))}
             </select>
           </div>
 
