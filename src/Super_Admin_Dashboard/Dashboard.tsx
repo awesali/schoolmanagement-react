@@ -4,6 +4,8 @@ import CreateSchool from './CreateSchool';
 import SchoolList from './SchoolList';
 import StaffList from './StaffList';
 import StudentList from './StudentList';
+import ClassList from './ClassList';
+import SubjectList from './SubjectList';
 import Sidebar from './Sidebar';
 import { API_BASE_URL } from '../config';
 import './Dashboard.css';
@@ -143,10 +145,14 @@ const Dashboard: React.FC = () => {
       <div className="dashboard-content">
         {activePage === 'School List' ? (
           <SchoolList />
+        ) : activePage === 'Class List' ? (
+          <ClassList selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Staff List' ? (
           <StaffList selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Student List' ? (
           <StudentList selectedSchoolId={selectedSchoolId} />
+        ) : activePage === 'Subject List' ? (
+          <SubjectList selectedSchoolId={selectedSchoolId} />
         ) : (
           <>
         <div className="stats-grid">

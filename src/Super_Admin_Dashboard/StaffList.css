@@ -15,6 +15,15 @@
   font-size: 24px;
 }
 
+.class-count {
+  background: #f0f8ff;
+  color: #2196f3;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 500;
+  font-size: 14px;
+}
+
 .staff-list-loading {
   padding: 40px;
   text-align: center;
@@ -207,4 +216,23 @@
 .btn-delete:hover {
   background: #dc2626;
   transform: translateY(-1px);
+}
+
+/* Sections and Subjects styling */
+.sections-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.subjects-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.subjects-actions .btn-view-docs {
+  padding: 4px 8px;
+  font-size: 11px;
+  white-space: nowrap;
 }

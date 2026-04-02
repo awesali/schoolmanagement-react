@@ -12,10 +12,11 @@ const menuGroups = [
     group: 'Management',
     items: [
       { label: 'School', children: ['School List', 'Academic Year'] },
+      { label: 'Classes', children: ['Class List', 'Class Schedule'] },
       { label: 'Staff', children: ['Staff List', 'Roles', 'Attendance', 'Payroll'] },
       { label: 'Students', children: ['Add Student', 'Student List', 'Attendance', 'Promote Student'] },
       { label: 'Parents', children: ['Parent List'] },
-      { label: 'Subjects', children: ['Add Subject', 'Subject List'] },
+      { label: 'Subjects', children: ['Subject List'] },
     ],
   },
   {

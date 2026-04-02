@@ -1,0 +1,108 @@
+.class-list-container {
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.class-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.class-list-header h2 {
+  margin: 0;
+  color: #333;
+  font-size: 24px;
+}
+
+.class-count {
+  background: #f0f8ff;
+  color: #2196f3;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+
+.class-table-container {
+  overflow-x: auto;
+}
+
+.class-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.class-table th,
+.class-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.class-table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: #555;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+.class-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.class-name {
+  font-weight: 600;
+  color: #333;
+}
+
+.section-count {
+  text-align: center;
+  font-weight: 500;
+}
+
+.status {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.status.active {
+  background-color: #e8f5e8;
+  color: #4caf50;
+}
+
+.status.inactive {
+  background-color: #ffebee;
+  color: #f44336;
+}
+
+.created-date {
+  color: #666;
+  font-size: 14px;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  font-size: 16px;
+}
+
+.error {
+  text-align: center;
+  padding: 40px;
+  color: #f44336;
+  background-color: #ffebee;
+  border-radius: 8px;
+  margin: 20px;
+}

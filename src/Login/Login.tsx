@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { API_ENDPOINTS } from '../config';
+import { API_BASE_URL } from '../config';
 import './Login.css';
 
 const Login: React.FC = () => {
@@ -16,7 +16,7 @@ const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(API_ENDPOINTS.LOGIN, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'accept': '*/*',
