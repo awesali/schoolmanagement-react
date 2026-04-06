@@ -26,6 +26,7 @@ const Dashboard: React.FC = () => {
   const [schools, setSchools] = useState<School[]>([]);
   const [selectedSchoolId, setSelectedSchoolId] = useState<number | null>(null);
   const [userName, setUserName] = useState('User');
+  const [userRole, setUserRole] = useState<string>('');
   const [dashboardData, setDashboardData] = useState({
     teachersPresentToday: '0/0',
     studentsPresentToday: '0/0',
@@ -39,9 +40,12 @@ const Dashboard: React.FC = () => {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         const name = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'];
+        const roleId = payload['RoleId'];
         console.log('Decoded token:', payload);
         console.log('Extracted name:', name);
+        console.log('Extracted roleId:', roleId);
         if (name) setUserName(name);
+        if (roleId) setUserRole(roleId);
       } catch (error) {
         console.error('Error decoding token:', error);
       }
@@ -109,7 +113,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="dashboard-wrapper">
-      <Sidebar activePage={activePage} onNavigate={setActivePage} isCollapsed={isCollapsed} />
+      <Sidebar activePage={activePage} onNavigate={setActivePage} isCollapsed={isCollapsed} userRole={userRole} />
       <div className={`dashboard-main ${isCollapsed ? 'sidebar-collapsed' : ''}`}>
       <header className="dashboard-header">
         <div className="header-left">

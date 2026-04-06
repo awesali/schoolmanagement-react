@@ -5,7 +5,18 @@ interface SidebarProps {
   activePage: string;
   onNavigate: (page: string) => void;
   isCollapsed: boolean;
+  userRole?: string;
 }
+
+const teacherMenuGroups = [
+  {
+    group: 'Attendance',
+    items: [
+      { label: 'Students', children: ['Attendance'] },
+      { label: 'Staff', children: ['Attendance'] },
+    ],
+  },
+];
 
 const menuGroups = [
   {
@@ -33,9 +44,11 @@ const menuGroups = [
   },
 ];
 
-const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed }) => {
+const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, userRole }) => {
   const [openGroups, setOpenGroups] = useState<string[]>([]);
   const [openItems, setOpenItems] = useState<string[]>([]);
+
+  const currentMenuGroups = userRole === '2' ? teacherMenuGroups : menuGroups;
 
   const toggleGroup = (group: string) => {
     setOpenGroups((prev) =>
@@ -65,7 +78,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed }
           <span>Dashboard</span>
         </button>
 
-        {menuGroups.map(({ group, items }) => (
+        {currentMenuGroups.map(({ group, items }) => (
           <div key={group} className="nav-group">
             <button className="nav-group-header" onClick={() => toggleGroup(group)}>
               <span>{group}</span>
