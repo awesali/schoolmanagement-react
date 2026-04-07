@@ -1,0 +1,145 @@
+.periods-config {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.period-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px;
+  background: #f9f9f9;
+  border-radius: 4px;
+}
+
+.period-row span {
+  min-width: 80px;
+  font-weight: 500;
+}
+
+.period-row input[type="time"] {
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.period-row label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+}
+
+.period-row button {
+  background: #ff4757;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timetable-container {
+  overflow-x: auto;
+  margin-top: 20px;
+}
+
+.timetable {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 800px;
+  font-size: 12px;
+}
+
+.timetable th,
+.timetable td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+  vertical-align: top;
+}
+
+.timetable th {
+  background-color: #90EE90;
+  font-weight: bold;
+  color: #2d5016;
+}
+
+.day-name {
+  background-color: #90EE90 !important;
+  font-weight: bold;
+  color: #2d5016;
+  min-width: 100px;
+}
+
+.period-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 120px;
+  padding: 4px;
+}
+
+.period-cell select {
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  font-size: 12px;
+  width: 100%;
+}
+
+.break-cell {
+  background-color: #ffeb3b;
+  padding: 10px;
+  font-weight: bold;
+  color: #f57f17;
+  border-radius: 4px;
+}
+
+.btn.btn-secondary {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.btn.btn-secondary:hover {
+  background-color: #5a6268;
+}
+
+.timetable-btn {
+  background-color: #28a745 !important;
+  color: white !important;
+}
+
+.timetable-btn:hover {
+  background-color: #218838 !important;
+}
+
+/* Modal size adjustment for timetable */
+.modal[data-size="large"] .modal-content {
+  max-width: 95vw;
+  width: 95vw;
+  max-height: 90vh;
+}
+
+.modal[data-size="large"] .modal-body {
+  max-height: calc(90vh - 120px);
+  overflow-y: auto;
+}

@@ -12,6 +12,7 @@ interface ModalProps {
   onCancel?: () => void;
   children: React.ReactNode;
   formId?: string;
+  size?: 'normal' | 'large';
 }
 
 const Modal: React.FC<ModalProps> = ({
@@ -24,7 +25,8 @@ const Modal: React.FC<ModalProps> = ({
   showCancel = true,
   onCancel,
   children,
-  formId
+  formId,
+  size = 'normal'
 }) => {
   if (!isOpen) return null;
 
@@ -36,7 +38,7 @@ const Modal: React.FC<ModalProps> = ({
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <div className={`modal-content ${size === 'large' ? 'modal-large' : ''}`} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h3>{title}</h3>
           <div className="header-actions">

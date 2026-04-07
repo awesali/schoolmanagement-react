@@ -3,13 +3,20 @@ import { API_BASE_URL } from '../config';
 import AddClass from './AddClass';
 import EditClass from './EditClass';
 import AssignSubjects from './AssignSubjects';
+import TimeTable from './TimeTable';
 import './StaffList.css'; // Using same CSS as StaffList
+
+interface Subject {
+  id: number;
+  subjectName: string;
+}
 
 interface Section {
   id: number;
   sectionName: string;
   staffId: number;
   monitorStudentId: number;
+  subjects: Subject[];
 }
 
 interface Class {
@@ -33,8 +40,9 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId }) => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAssignSubjectsOpen, setIsAssignSubjectsOpen] = useState(false);
+  const [isTimeTableOpen, setIsTimeTableOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
-  const [selectedSection, setSelectedSection] = useState<{id: number, name: string} | null>(null);
+  const [selectedSection, setSelectedSection] = useState<{id: number, name: string, subjects: Subject[]} | null>(null);
 
   useEffect(() => {
     if (selectedSchoolId) {
@@ -102,6 +110,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId }) => {
               <th>Class Name</th>
               <th>Sections</th>
               <th>Subjects</th>
+              <th>Time Table</th>
               <th>Status</th>
               <th>Created Date</th>
             </tr>
@@ -136,11 +145,35 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId }) => {
                         key={section.id}
                         className="btn-view-docs"
                         onClick={() => {
-                          setSelectedSection({id: section.id, name: `${classItem.className}-${section.sectionName}`});
+                          setSelectedSection({
+                            id: section.id, 
+                            name: `${classItem.className}-${section.sectionName}`,
+                            subjects: section.subjects
+                          });
                           setIsAssignSubjectsOpen(true);
                         }}
                       >
                         {section.sectionName} Subjects
+                      </button>
+                    ))}
+                  </div>
+                </td>
+                <td>
+                  <div className="subjects-actions">
+                    {classItem.sections.map((section) => (
+                      <button
+                        key={section.id}
+                        className="btn-view-docs timetable-btn"
+                        onClick={() => {
+                          setSelectedSection({
+                            id: section.id, 
+                            name: `${classItem.className}-${section.sectionName}`,
+                            subjects: section.subjects
+                          });
+                          setIsTimeTableOpen(true);
+                        }}
+                      >
+                        {section.sectionName} TimeTable
                       </button>
                     ))}
                   </div>
@@ -179,9 +212,21 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId }) => {
         sectionId={selectedSection?.id || null}
         schoolId={selectedSchoolId}
         sectionName={selectedSection?.name || ''}
+        assignedSubjects={selectedSection?.subjects || []}
         onSuccess={() => {
-          // Optionally refresh data or show success message
+          fetchClasses();
           console.log('Subjects assigned successfully');
+        }}
+      />
+
+      <TimeTable
+        isOpen={isTimeTableOpen}
+        onClose={() => setIsTimeTableOpen(false)}
+        sectionId={selectedSection?.id || null}
+        schoolId={selectedSchoolId}
+        sectionName={selectedSection?.name || ''}
+        onSuccess={() => {
+          console.log('TimeTable created successfully');
         }}
       />
     </div>

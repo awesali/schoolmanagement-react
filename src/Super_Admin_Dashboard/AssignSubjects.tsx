@@ -9,6 +9,7 @@ interface AssignSubjectsProps {
   sectionId: number | null;
   schoolId: number | null;
   sectionName: string;
+  assignedSubjects?: Subject[];
   onSuccess: () => void;
 }
 
@@ -23,6 +24,7 @@ const AssignSubjects: React.FC<AssignSubjectsProps> = ({
   sectionId, 
   schoolId, 
   sectionName, 
+  assignedSubjects = [],
   onSuccess 
 }) => {
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -34,9 +36,9 @@ const AssignSubjects: React.FC<AssignSubjectsProps> = ({
     if (isOpen && schoolId) {
       fetchSubjects();
       setError('');
-      setSelectedSubjects([]);
+      setSelectedSubjects(assignedSubjects.map(subject => subject.id));
     }
-  }, [isOpen, schoolId]);
+  }, [isOpen, schoolId, assignedSubjects]);
 
   const fetchSubjects = async () => {
     if (!schoolId) return;

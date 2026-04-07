@@ -44,6 +44,12 @@
   animation: slideUp 0.3s ease;
 }
 
+.modal-large {
+  max-width: 95vw;
+  width: 95vw;
+  max-height: 90vh;
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;
