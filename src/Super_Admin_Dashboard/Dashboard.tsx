@@ -4,6 +4,7 @@ import CreateSchool from './CreateSchool';
 import SchoolList from './SchoolList';
 import StaffList from './StaffList';
 import StudentList from './StudentList';
+import StudentAttendance from './StudentAttendance';
 import ClassList from './ClassList';
 import SubjectList from './SubjectList';
 import Sidebar from './Sidebar';
@@ -157,6 +158,8 @@ const Dashboard: React.FC = () => {
           <StudentList selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Subject List' ? (
           <SubjectList selectedSchoolId={selectedSchoolId} />
+        ) : activePage === 'Attendance' ? (
+          <StudentAttendance />
         ) : (
           <>
         <div className="stats-grid">
