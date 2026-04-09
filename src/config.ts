@@ -1,5 +1,5 @@
 // Live API URL
-export const LIVE_API_BASE_URL = 'https://cognerasystems.com';
+export const LIVE_API_BASE_URL = 'https://school.cognerasystems.com';
 
 // Local API URL  
 export const LOCAL_API_BASE_URL = 'https://localhost:7015';

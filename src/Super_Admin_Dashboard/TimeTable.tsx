@@ -35,6 +35,18 @@ interface Subject {
   subjectName: string;
 }
 
+interface TimeSlot {
+  dayOfWeek: number;
+  periodId: number;
+  subjectId: number;
+  subjectName: string | null;
+}
+
+interface TimeTableData {
+  periods: (Period & { id: number; sectionId: number })[];
+  slots: TimeSlot[];
+}
+
 const TimeTable: React.FC<TimeTableProps> = ({ 
   isOpen, 
   onClose, 
@@ -48,13 +60,14 @@ const TimeTable: React.FC<TimeTableProps> = ({
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [isExistingTimetable, setIsExistingTimetable] = useState(false);
 
   const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
   useEffect(() => {
     if (isOpen && schoolId && sectionId) {
       fetchData();
-      initializeTimeTable();
+      fetchExistingTimeTable();
     }
   }, [isOpen, schoolId, sectionId]);
 
@@ -77,16 +90,88 @@ const TimeTable: React.FC<TimeTableProps> = ({
     }
   };
 
+  const fetchExistingTimeTable = async () => {
+    if (!sectionId) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/Admin/get-timetable?sectionId=${sectionId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data && result.data.periods.length > 0) {
+          setIsExistingTimetable(true);
+          loadExistingData(result.data);
+        } else {
+          setIsExistingTimetable(false);
+          initializeDefaultTimeTable();
+        }
+      } else {
+        setIsExistingTimetable(false);
+        initializeDefaultTimeTable();
+      }
+    } catch (err) {
+      console.error('Failed to fetch existing timetable');
+      initializeDefaultTimeTable();
+    }
+  };
+
+  const initializeDefaultTimeTable = () => {
+    // Initialize with at least 3 periods
+    const defaultPeriods: Period[] = [
+      { periodNumber: 1, startTime: '09:00', endTime: '09:45', isBreak: false },
+      { periodNumber: 2, startTime: '09:45', endTime: '10:30', isBreak: false },
+      { periodNumber: 3, startTime: '10:30', endTime: '11:15', isBreak: false }
+    ];
+    setPeriods(defaultPeriods);
+
+    // Initialize days with empty periods
+    const initialDays: Day[] = [];
+    for (let day = 1; day <= 6; day++) {
+      const dayPeriods: DayPeriod[] = defaultPeriods.map(period => ({
+        periodId: period.periodNumber,
+        subjectId: 0
+      }));
+      initialDays.push({ dayOfWeek: day, periods: dayPeriods });
+    }
+    setDays(initialDays);
+  };
+
+  const loadExistingData = (data: TimeTableData) => {
+    // Load periods
+    const existingPeriods = data.periods.map(p => ({
+      periodNumber: p.periodNumber,
+      startTime: p.startTime.substring(0, 5), // Remove seconds
+      endTime: p.endTime.substring(0, 5), // Remove seconds
+      isBreak: p.isBreak
+    }));
+    setPeriods(existingPeriods);
+
+    // Load days with slots
+    const daysData: Day[] = [];
+    for (let day = 1; day <= 6; day++) {
+      const daySlots = data.slots.filter(slot => slot.dayOfWeek === day);
+      const dayPeriods: DayPeriod[] = existingPeriods.map(period => {
+        const slot = daySlots.find(s => s.periodId === period.periodNumber);
+        return {
+          periodId: period.periodNumber,
+          subjectId: slot ? slot.subjectId : 0
+        };
+      });
+      daysData.push({ dayOfWeek: day, periods: dayPeriods });
+    }
+    setDays(daysData);
+  };
+
   const initializeTimeTable = () => {
     // Initialize default periods
     const defaultPeriods: Period[] = [
       { periodNumber: 1, startTime: '09:00', endTime: '09:45', isBreak: false },
       { periodNumber: 2, startTime: '09:45', endTime: '10:30', isBreak: false },
       { periodNumber: 3, startTime: '10:30', endTime: '10:45', isBreak: true },
-      { periodNumber: 4, startTime: '10:45', endTime: '11:30', isBreak: false },
-      { periodNumber: 5, startTime: '11:30', endTime: '12:15', isBreak: false },
-      { periodNumber: 6, startTime: '12:15', endTime: '13:00', isBreak: false },
-      { periodNumber: 7, startTime: '13:00', endTime: '13:45', isBreak: false }
+      { periodNumber: 4, startTime: '10:45', endTime: '11:30', isBreak: false }
     ];
     setPeriods(defaultPeriods);
 
@@ -159,8 +244,22 @@ const TimeTable: React.FC<TimeTableProps> = ({
     
     try {
       const token = localStorage.getItem('token');
-      const requestData = {
+      
+      // For update API, use direct field structure
+      const requestData = isExistingTimetable ? {
         sectionId,
+        schoolId,
+        periods: periods.map(p => ({
+          sectionId,
+          periodNumber: p.periodNumber,
+          startTime: p.startTime + ':00',
+          endTime: p.endTime + ':00',
+          isBreak: p.isBreak
+        })),
+        days
+      } : {
+        sectionId,
+        schoolId,
         periods: periods.map(p => ({
           ...p,
           startTime: p.startTime + ':00',
@@ -169,8 +268,14 @@ const TimeTable: React.FC<TimeTableProps> = ({
         days
       };
 
-      const response = await fetch(`${API_BASE_URL}/api/Admin/save-timetable`, {
-        method: 'POST',
+      const apiUrl = isExistingTimetable 
+        ? `${API_BASE_URL}/api/Admin/update-timetable`
+        : `${API_BASE_URL}/api/Admin/save-timetable`;
+      
+      const method = isExistingTimetable ? 'PUT' : 'POST';
+
+      const response = await fetch(apiUrl, {
+        method,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
@@ -184,7 +289,7 @@ const TimeTable: React.FC<TimeTableProps> = ({
         onSuccess();
         onClose();
       } else {
-        setError(result.message || 'Failed to create timetable');
+        setError(result.message || `Failed to ${isExistingTimetable ? 'update' : 'create'} timetable`);
       }
     } catch (err) {
       setError('Network error. Please try again.');
@@ -198,7 +303,7 @@ const TimeTable: React.FC<TimeTableProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={`Time Table - ${sectionName}`}
-      submitLabel={loading ? "Creating..." : "Create Time Table"}
+      submitLabel={loading ? (isExistingTimetable ? "Updating..." : "Creating...") : (isExistingTimetable ? "Update Time Table" : "Create Time Table")}
       onCancel={() => {}}
       formId="timetable-form"
       size="large"
@@ -206,42 +311,6 @@ const TimeTable: React.FC<TimeTableProps> = ({
       {error && <div className="error-message">{error}</div>}
       
       <form id="timetable-form" onSubmit={handleSubmit}>
-        {/* Period Configuration */}
-        <div className="form-group">
-          <label>Configure Periods</label>
-          <div className="periods-config">
-            {periods.map((period) => (
-              <div key={period.periodNumber} className="period-row">
-                <span>Period {period.periodNumber}</span>
-                <input
-                  type="time"
-                  value={period.startTime}
-                  onChange={(e) => updatePeriod('startTime', period.periodNumber, e.target.value)}
-                />
-                <input
-                  type="time"
-                  value={period.endTime}
-                  onChange={(e) => updatePeriod('endTime', period.periodNumber, e.target.value)}
-                />
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={period.isBreak}
-                    onChange={(e) => updatePeriod('isBreak', period.periodNumber, e.target.checked)}
-                  />
-                  Break
-                </label>
-                {periods.length > 1 && (
-                  <button type="button" onClick={() => removePeriod(period.periodNumber)}>×</button>
-                )}
-              </div>
-            ))}
-            <button type="button" onClick={addPeriod} className="btn btn-secondary">
-              + Add Period
-            </button>
-          </div>
-        </div>
-
         {/* Timetable Grid */}
         <div className="timetable-container">
           <table className="timetable">
@@ -250,11 +319,62 @@ const TimeTable: React.FC<TimeTableProps> = ({
                 <th>Day</th>
                 {periods.map(period => (
                   <th key={period.periodNumber}>
-                    {period.isBreak ? 'Break' : `Period ${period.periodNumber}`}
-                    <br />
-                    <small>{period.startTime}-{period.endTime}</small>
+                    <div className="period-header">
+                      <div className="period-title">
+                        {period.isBreak ? 'Break' : `Period ${period.periodNumber}`}
+                        <button 
+                          type="button" 
+                          className="remove-period-btn"
+                          onClick={() => removePeriod(period.periodNumber)}
+                          title="Remove Period"
+                        >
+                          ×
+                        </button>
+                      </div>
+                      <label className="break-checkbox">
+                        <input
+                          type="checkbox"
+                          checked={period.isBreak}
+                          onChange={(e) => updatePeriod('isBreak', period.periodNumber, e.target.checked)}
+                        />
+                        Break
+                      </label>
+                    </div>
                   </th>
                 ))}
+                <th>
+                  <button 
+                    type="button" 
+                    onClick={addPeriod} 
+                    className="add-period-btn"
+                    title="Add Period"
+                  >
+                    + Add Period
+                  </button>
+                </th>
+              </tr>
+              <tr className="time-row">
+                <th className="time-label">Time</th>
+                {periods.map(period => (
+                  <th key={`time-${period.periodNumber}`} className="time-config">
+                    <div className="time-inputs">
+                      <input
+                        type="time"
+                        value={period.startTime}
+                        onChange={(e) => updatePeriod('startTime', period.periodNumber, e.target.value)}
+                        title="Start Time"
+                      />
+                      <span>-</span>
+                      <input
+                        type="time"
+                        value={period.endTime}
+                        onChange={(e) => updatePeriod('endTime', period.periodNumber, e.target.value)}
+                        title="End Time"
+                      />
+                    </div>
+                  </th>
+                ))}
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -285,6 +405,7 @@ const TimeTable: React.FC<TimeTableProps> = ({
                       </td>
                     );
                   })}
+                  <td></td>
                 </tr>
               ))}
             </tbody>

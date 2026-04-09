@@ -43,7 +43,7 @@ const Modal: React.FC<ModalProps> = ({
           <h3>{title}</h3>
           <div className="header-actions">
             {showCancel && (
-              <button type="button" className="btn btn-secondary" onClick={handleCancel}>
+              <button type="button" className="btn btn-primary" onClick={handleCancel}>
                 Clear
               </button>
             )}

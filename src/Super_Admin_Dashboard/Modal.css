@@ -128,29 +128,41 @@
   letter-spacing: 0.5px;
 }
 
-.btn-primary {
-  background: white;
-  color: var(--primary-color);
-  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.3);
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.4);
-}
-
-.btn-primary:active {
-  transform: translateY(0);
-}
-
+.btn-primary,
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: var(--primary-color) !important;
+  color: white !important;
+  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3) !important;
 }
 
+.btn-primary:hover,
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.5);
-  transform: translateY(-2px);
+  background: #3b82f6 !important;
+  color: white !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4) !important;
+}
+
+.btn-primary:active,
+.btn-secondary:active {
+  background: var(--primary-color) !important;
+  color: white !important;
+  transform: translateY(0) !important;
+}
+
+/* Force exact same styling for header buttons */
+.header-actions .btn-secondary {
+  background: var(--primary-color) !important;
+  color: white !important;
+  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3) !important;
+  border: none !important;
+  opacity: 1 !important;
+}
+
+.header-actions .btn-secondary:hover {
+  background: #3b82f6 !important;
+  color: white !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4) !important;
+  opacity: 1 !important;
 }
