@@ -3,6 +3,7 @@ import { API_BASE_URL } from '../config';
 import AddStudent from './AddStudent';
 import EditStudent from './EditStudent';
 import Modal from './Modal';
+import Pagination from './Pagination';
 import './StudentList.css';
 
 interface Document {
@@ -14,6 +15,7 @@ interface Document {
 interface Student {
   id: number;
   studentName: string;
+  rollNumber?: string;
   dob: string;
   email: string;
   phoneNumber: string;
@@ -33,25 +35,48 @@ interface StudentListProps {
 const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [showDocuments, setShowDocuments] = useState(false);
 
   useEffect(() => {
-    if (selectedSchoolId) fetchStudents();
+    if (selectedSchoolId) {
+      setCurrentPage(1);
+      fetchStudents(1, pageSize);
+    }
   }, [selectedSchoolId]);
 
-  const fetchStudents = async () => {
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    fetchStudents(page, pageSize);
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setCurrentPage(1);
+    fetchStudents(1, size);
+  };
+
+  const fetchStudents = async (page: number = 1, size: number = pageSize) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/Admin/students-by-school?schoolId=${selectedSchoolId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/Student/students-by-school?schoolId=${selectedSchoolId}&page=${page}&pageSize=${size}`, {
         headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
       });
       if (response.ok) {
         const result = await response.json();
-        if (result.success && result.data) setStudents(result.data.map((s: Student) => ({ ...s, documents: s.documents ?? [] })));
+        if (result.success && result.data) {
+          setStudents(result.data.map((s: Student) => ({ ...s, documents: s.documents ?? [] })));
+          setCurrentPage(result.currentPage);
+          setTotalPages(result.totalPages);
+          setTotalRecords(result.totalRecords);
+        }
       }
     } catch (err) {
       console.error('Failed to fetch students');
@@ -64,12 +89,12 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
     if (!window.confirm('Are you sure you want to delete this document?')) return;
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/Admin/delete-student-document?id=${documentId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/Student/delete-student-document?id=${documentId}`, {
         method: 'DELETE',
         headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
       });
       if (response.ok) {
-        fetchStudents();
+        fetchStudents(currentPage, pageSize);
         if (selectedStudent) {
           setSelectedStudent({
             ...selectedStudent,
@@ -101,6 +126,7 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
           <thead>
             <tr>
               <th>Name</th>
+              <th>Roll No.</th>
               <th>Email</th>
               <th>Phone</th>
               <th>DOB</th>
@@ -122,6 +148,7 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
                     {student.studentName}
                   </span>
                 </td>
+                <td>{student.rollNumber || '-'}</td>
                 <td>{student.email}</td>
                 <td>{student.phoneNumber}</td>
                 <td>{student.dob.split('T')[0].split('-').reverse().join('/')}</td>
@@ -148,11 +175,21 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
         </table>
       </div>
 
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalRecords={totalRecords}
+        pageSize={pageSize}
+        onPageChange={handlePageChange}
+        onPageSizeChange={handlePageSizeChange}
+        pageSizeOptions={[5, 10, 20, 50]}
+      />
+
       <AddStudent
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         schoolId={selectedSchoolId}
-        onSuccess={fetchStudents}
+        onSuccess={() => fetchStudents(currentPage, pageSize)}
       />
 
       <EditStudent
@@ -160,7 +197,7 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
         onClose={() => setIsEditModalOpen(false)}
         student={selectedStudent}
         schoolId={selectedSchoolId}
-        onSuccess={fetchStudents}
+        onSuccess={() => fetchStudents(currentPage, pageSize)}
       />
 
       <Modal

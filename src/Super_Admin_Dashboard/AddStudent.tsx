@@ -22,6 +22,7 @@ interface EnrollmentData {
 
 const initialForm = {
   studentName: '',
+  rollNumber: '',
   dob: '',
   email: '',
   phoneNumber: '',
@@ -47,7 +48,7 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
   const fetchEnrollmentInfo = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/Admin/enrollment-info?schoolId=${schoolId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/Student/enrollment-info?schoolId=${schoolId}`, {
         headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
       });
       if (response.ok) {
@@ -82,6 +83,7 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
       const formDataToSend = new FormData();
 
       formDataToSend.append('StudentName', formData.studentName);
+      formDataToSend.append('RollNumber', formData.rollNumber);
       formDataToSend.append('DOB', formData.dob);
       formDataToSend.append('Email', formData.email);
       formDataToSend.append('PhoneNumber', formData.phoneNumber);
@@ -101,7 +103,7 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
         formDataToSend.append('Files', doc.file);
       });
 
-      const response = await fetch(`${API_BASE_URL}/api/Admin/add-student`, {
+      const response = await fetch(`${API_BASE_URL}/api/Student/add-student`, {
         method: 'POST',
         headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
         body: formDataToSend,
@@ -156,6 +158,10 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
           <div className="form-group">
             <label>Student Name *</label>
             <input type="text" name="studentName" required value={formData.studentName} onChange={handleChange} />
+          </div>
+          <div className="form-group">
+            <label>Roll Number *</label>
+            <input type="text" name="rollNumber" required value={formData.rollNumber} onChange={handleChange} />
           </div>
           <div className="form-group">
             <label>Email *</label>

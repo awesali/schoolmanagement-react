@@ -4,6 +4,7 @@ import AddClass from './AddClass';
 import EditClass from './EditClass';
 import AssignSubjects from './AssignSubjects';
 import TimeTable from './TimeTable';
+import Pagination from './Pagination';
 import './StaffList.css'; // Using same CSS as StaffList
 
 interface Subject {
@@ -37,6 +38,11 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId }) => {
   const [classes, setClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [pageInput, setPageInput] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAssignSubjectsOpen, setIsAssignSubjectsOpen] = useState(false);
@@ -46,11 +52,29 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId }) => {
 
   useEffect(() => {
     if (selectedSchoolId) {
-      fetchClasses();
+      setCurrentPage(1);
+      fetchClasses(1);
     }
   }, [selectedSchoolId]);
 
-  const fetchClasses = async () => {
+  useEffect(() => {
+    if (selectedSchoolId && currentPage > 1) {
+      fetchClasses(currentPage);
+    }
+  }, [currentPage]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    fetchClasses(page, pageSize);
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setCurrentPage(1);
+    fetchClasses(1, size);
+  };
+
+  const fetchClasses = async (page: number = 1, size: number = pageSize) => {
     if (!selectedSchoolId) return;
     
     setLoading(true);
@@ -58,7 +82,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId }) => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/Admin/calss-list?schoolId=${selectedSchoolId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/Class/calss-list?schoolId=${selectedSchoolId}&page=${page}&pageSize=${size}`, {
         headers: {
           'accept': '*/*',
           'Authorization': `Bearer ${token}`,
@@ -69,6 +93,9 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId }) => {
         const result = await response.json();
         if (result.success && result.data) {
           setClasses(result.data);
+          setCurrentPage(result.currentPage);
+          setTotalPages(result.totalPages);
+          setTotalRecords(result.totalRecords);
         } else {
           setError(result.message || 'Failed to fetch classes');
         }
@@ -192,18 +219,28 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId }) => {
         </table>
       </div>
 
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalRecords={totalRecords}
+        pageSize={pageSize}
+        onPageChange={handlePageChange}
+        onPageSizeChange={handlePageSizeChange}
+        pageSizeOptions={[5, 10, 20, 50]}
+      />
+
       <AddClass
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         schoolId={selectedSchoolId}
-        onSuccess={fetchClasses}
+        onSuccess={() => fetchClasses(currentPage)}
       />
 
       <EditClass
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         classData={selectedClass}
-        onSuccess={fetchClasses}
+        onSuccess={() => fetchClasses(currentPage)}
       />
 
       <AssignSubjects
@@ -214,7 +251,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId }) => {
         sectionName={selectedSection?.name || ''}
         assignedSubjects={selectedSection?.subjects || []}
         onSuccess={() => {
-          fetchClasses();
+          fetchClasses(currentPage);
           console.log('Subjects assigned successfully');
         }}
       />

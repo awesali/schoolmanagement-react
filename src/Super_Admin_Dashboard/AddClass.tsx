@@ -79,7 +79,7 @@ const AddClass: React.FC<AddClassProps> = ({ isOpen, onClose, schoolId, onSucces
         sections: validSections
       };
 
-      const response = await fetch(`${API_BASE_URL}/api/Admin/create-class-with-sections`, {
+      const response = await fetch(`${API_BASE_URL}/api/Class/create-class-with-sections`, {
         method: 'POST',
         headers: {
           'accept': '*/*',

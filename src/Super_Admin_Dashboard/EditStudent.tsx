@@ -12,6 +12,7 @@ interface Document {
 interface Student {
   id: number;
   studentName: string;
+  rollNumber?: string;
   dob: string;
   email: string;
   phoneNumber: string;
@@ -44,6 +45,7 @@ interface EditStudentProps {
 const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, schoolId, onSuccess }) => {
   const [formData, setFormData] = useState({
     studentName: '',
+    rollNumber: '',
     dob: '',
     email: '',
     phoneNumber: '',
@@ -59,6 +61,18 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
   useEffect(() => {
     if (isOpen && student && schoolId) {
       setNewDocuments([]);
+      // Prefill form with data from the list first
+      setFormData({
+        studentName: student.studentName,
+        rollNumber: student.rollNumber || '',
+        dob: student.dob.split('T')[0],
+        email: student.email,
+        phoneNumber: student.phoneNumber,
+        classId: '',
+        sectionId: '',
+        sessionId: '',
+        isActive: student.isActive,
+      });
       fetchStudentAndEnrollment(student.id, schoolId);
     }
   }, [isOpen, student, schoolId]);
@@ -67,7 +81,7 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
     try {
       const token = localStorage.getItem('token');
       const [studentRes, enrollmentRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/Admin/student-by-id?studentId=${studentId}`, {
+        fetch(`${API_BASE_URL}/api/Student/student-by-id?studentId=${studentId}`, {
           headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
         }),
         fetch(`${API_BASE_URL}/api/Admin/enrollment-info?schoolId=${sId}`, {
@@ -88,8 +102,11 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
 
       if (studentResult?.success && studentResult.data) {
         const s = studentResult.data;
-        setFormData({
+        console.log('Student data from API:', s);
+        // Update form data but preserve rollNumber from list if API doesn't have it
+        setFormData(prev => ({
           studentName: s.studentName,
+          rollNumber: s.rollNumber || s.rollNo || prev.rollNumber,
           dob: s.dob.split('T')[0],
           email: s.email,
           phoneNumber: s.phoneNumber,
@@ -97,7 +114,7 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
           sectionId: s.sectionId?.toString() ?? '',
           sessionId: s.sessionId?.toString() ?? '',
           isActive: s.isActive,
-        });
+        }));
         setExistingDocuments((s.documents ?? []).map((doc: any) => ({
           id: doc.documentId,
           name: doc.documentName,
@@ -131,6 +148,7 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
 
       formDataToSend.append('Id', student.id.toString());
       formDataToSend.append('StudentName', formData.studentName);
+      formDataToSend.append('RollNumber', formData.rollNumber);
       formDataToSend.append('Email', formData.email);
       formDataToSend.append('PhoneNumber', formData.phoneNumber);
       formDataToSend.append('DOB', new Date(formData.dob).toISOString());
@@ -164,7 +182,7 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
       documentNames.forEach(name => formDataToSend.append('DocumentNames', name));
       files.forEach(file => formDataToSend.append('Files', file));
 
-      const response = await fetch(`${API_BASE_URL}/api/Admin/update-student`, {
+      const response = await fetch(`${API_BASE_URL}/api/Student/update-student`, {
         method: 'PUT',
         headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
         body: formDataToSend,
@@ -225,6 +243,10 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
           <div className="form-group">
             <label>Student Name *</label>
             <input type="text" name="studentName" required value={formData.studentName} onChange={handleChange} />
+          </div>
+          <div className="form-group">
+            <label>Roll Number</label>
+            <input type="text" name="rollNumber" value={formData.rollNumber} onChange={handleChange} />
           </div>
           <div className="form-group">
             <label>Email *</label>

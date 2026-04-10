@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
+import Pagination from './Pagination';
 import './StaffList.css';
 
 interface Student {
@@ -18,6 +19,10 @@ const StudentAttendance: React.FC = () => {
   const [view, setView] = useState<View>('select');
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
   const [attendance, setAttendance] = useState<Record<number, AttendanceStatus>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -26,6 +31,10 @@ const StudentAttendance: React.FC = () => {
   const [historyDate, setHistoryDate] = useState('');
   const [history, setHistory] = useState<{ studentId: number; studentName: string; sectionName: string; attendanceDate: string; status: string }[] | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyCurrentPage, setHistoryCurrentPage] = useState(1);
+  const [historyTotalPages, setHistoryTotalPages] = useState(1);
+  const [historyTotalRecords, setHistoryTotalRecords] = useState(0);
+  const [historyPageSize, setHistoryPageSize] = useState(10);
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type });
@@ -33,32 +42,42 @@ const StudentAttendance: React.FC = () => {
   };
 
   useEffect(() => {
-    if (view === 'mark') fetchStudents();
+    if (view === 'mark') {
+      setCurrentPage(1);
+      fetchStudents(1, pageSize);
+    }
     if (view === 'history') {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       const formattedDate = yesterday.toISOString().split('T')[0];
       setHistoryDate(formattedDate);
-      fetchHistoryForDate(formattedDate);
+      setHistoryCurrentPage(1);
+      fetchHistoryForDate(formattedDate, 1, historyPageSize);
     }
   }, [view]);
 
-  const fetchStudents = async () => {
+  const fetchStudents = async (page: number = 1, size: number = pageSize) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/Admin/GetStudentsBySection`, {
+      const response = await fetch(`${API_BASE_URL}/api/Student/GetStudentsBySection?page=${page}&pageSize=${size}`, {
         headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
       });
       if (response.ok) {
-        const data = await response.json();
-        setStudents(data);
-        const initial: Record<number, AttendanceStatus> = {};
-        data.forEach((s: Student) => { initial[s.id] = null; });
-        setAttendance(initial);
+        const result = await response.json();
+        if (result.success && result.data) {
+          setStudents(result.data);
+          setCurrentPage(result.currentPage);
+          setTotalPages(result.totalPages);
+          setTotalRecords(result.totalRecords);
+          const initial: Record<number, AttendanceStatus> = {};
+          result.data.forEach((s: Student) => { initial[s.id] = null; });
+          setAttendance(initial);
+        }
       }
     } catch (err) {
       console.error('Failed to fetch students');
+      setStudents([]);
     } finally {
       setLoading(false);
     }
@@ -82,7 +101,7 @@ const StudentAttendance: React.FC = () => {
         attendanceDate: new Date().toISOString(),
         students: students.map(s => ({ studentId: s.id, status: attendance[s.id] })),
       };
-      const response = await fetch(`${API_BASE_URL}/api/Admin/StudentsAttendance`, {
+      const response = await fetch(`${API_BASE_URL}/api/Student/StudentsAttendance`, {
         method: 'POST',
         headers: { 'accept': '*/*', 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
         body: JSON.stringify(payload),
@@ -104,21 +123,27 @@ const StudentAttendance: React.FC = () => {
     }
   };
 
-  const fetchHistoryForDate = async (date: string) => {
+  const fetchHistoryForDate = async (date: string, page: number = 1, size: number = historyPageSize) => {
     try {
       setHistoryLoading(true);
       setHistory(null);
       const token = localStorage.getItem('token');
       const formatted = date.split('-').reverse().join('-');
-      const response = await fetch(`${API_BASE_URL}/api/Admin/Student-attendance-history?date=${formatted}`, {
+      const response = await fetch(`${API_BASE_URL}/api/Student/Student-attendance-history?date=${formatted}&page=${page}&pageSize=${size}`, {
         headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
       });
       if (response.ok) {
-        const data = await response.json();
-        setHistory(data);
+        const result = await response.json();
+        if (result.success && result.data) {
+          setHistory(result.data);
+          setHistoryCurrentPage(result.currentPage);
+          setHistoryTotalPages(result.totalPages);
+          setHistoryTotalRecords(result.totalRecords);
+        }
       }
     } catch (err) {
       console.error('Failed to fetch attendance history');
+      setHistory([]);
     } finally {
       setHistoryLoading(false);
     }
@@ -126,7 +151,30 @@ const StudentAttendance: React.FC = () => {
 
   const fetchHistory = async () => {
     if (!historyDate) return;
-    fetchHistoryForDate(historyDate);
+    setHistoryCurrentPage(1);
+    fetchHistoryForDate(historyDate, 1, historyPageSize);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    fetchStudents(page, pageSize);
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setCurrentPage(1);
+    fetchStudents(1, size);
+  };
+
+  const handleHistoryPageChange = (page: number) => {
+    setHistoryCurrentPage(page);
+    fetchHistoryForDate(historyDate, page, historyPageSize);
+  };
+
+  const handleHistoryPageSizeChange = (size: number) => {
+    setHistoryPageSize(size);
+    setHistoryCurrentPage(1);
+    fetchHistoryForDate(historyDate, 1, size);
   };
 
   const toast_el = toast && (
@@ -251,6 +299,16 @@ const StudentAttendance: React.FC = () => {
           </table>
         </div>
       )}
+      
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalRecords={totalRecords}
+        pageSize={pageSize}
+        onPageChange={handlePageChange}
+        onPageSizeChange={handlePageSizeChange}
+        pageSizeOptions={[5, 10, 20, 50]}
+      />
     </div>
   );
 
@@ -294,6 +352,18 @@ const StudentAttendance: React.FC = () => {
             </table>
           )}
         </div>
+      )}
+      
+      {history !== null && history.length > 0 && (
+        <Pagination
+          currentPage={historyCurrentPage}
+          totalPages={historyTotalPages}
+          totalRecords={historyTotalRecords}
+          pageSize={historyPageSize}
+          onPageChange={handleHistoryPageChange}
+          onPageSizeChange={handleHistoryPageSizeChange}
+          pageSizeOptions={[5, 10, 20, 50]}
+        />
       )}
     </div>
   );

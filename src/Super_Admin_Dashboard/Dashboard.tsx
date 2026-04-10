@@ -42,9 +42,6 @@ const Dashboard: React.FC = () => {
         const payload = JSON.parse(atob(token.split('.')[1]));
         const name = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'];
         const roleId = payload['RoleId'];
-        console.log('Decoded token:', payload);
-        console.log('Extracted name:', name);
-        console.log('Extracted roleId:', roleId);
         if (name) setUserName(name);
         if (roleId) setUserRole(roleId);
       } catch (error) {
@@ -88,7 +85,6 @@ const Dashboard: React.FC = () => {
       const token = localStorage.getItem('token');
       
       if (!selectedSchoolId) {
-        console.error('No school selected');
         return;
       }
       
@@ -98,12 +94,18 @@ const Dashboard: React.FC = () => {
           'Authorization': `Bearer ${token}`,
         },
       });
+      
       if (response.ok) {
-        const data = await response.json();
-        setDashboardData(data);
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          setDashboardData(result.data);
+        } else if (result.teachersPresentToday !== undefined) {
+          setDashboardData(result);
+        }
       }
     } catch (err) {
-      console.error('Failed to fetch dashboard data');
+      console.error('Failed to fetch dashboard data:', err);
     }
   };
 

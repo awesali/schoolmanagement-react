@@ -88,7 +88,7 @@ const AssignSubjects: React.FC<AssignSubjectsProps> = ({
         subjectIds: selectedSubjects
       };
 
-      const response = await fetch(`${API_BASE_URL}/api/Admin/assign-subjects-to-section`, {
+      const response = await fetch(`${API_BASE_URL}/api/Subject/assign-subjects-to-section`, {
         method: 'POST',
         headers: {
           'accept': '*/*',

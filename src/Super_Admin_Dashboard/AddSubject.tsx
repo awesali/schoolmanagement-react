@@ -64,7 +64,7 @@ const AddSubject: React.FC<AddSubjectProps> = ({ isOpen, onClose, schoolId, onSu
         staffId: formData.staffId
       };
 
-      const response = await fetch(`${API_BASE_URL}/api/Admin/add-subject`, {
+      const response = await fetch(`${API_BASE_URL}/api/Subject/add-subject`, {
         method: 'POST',
         headers: {
           'accept': '*/*',

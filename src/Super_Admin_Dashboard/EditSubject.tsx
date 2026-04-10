@@ -83,7 +83,7 @@ const EditSubject: React.FC<EditSubjectProps> = ({ isOpen, onClose, subject, onS
         staffId: formData.staffId
       };
 
-      const response = await fetch(`${API_BASE_URL}/api/Admin/update-subject`, {
+      const response = await fetch(`${API_BASE_URL}/api/Subject/update-subject`, {
         method: 'PUT',
         headers: {
           'accept': '*/*',

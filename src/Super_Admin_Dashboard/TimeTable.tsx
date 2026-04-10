@@ -95,7 +95,7 @@ const TimeTable: React.FC<TimeTableProps> = ({
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/Admin/get-timetable?sectionId=${sectionId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/Timetable/get-timetable?sectionId=${sectionId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -269,8 +269,8 @@ const TimeTable: React.FC<TimeTableProps> = ({
       };
 
       const apiUrl = isExistingTimetable 
-        ? `${API_BASE_URL}/api/Admin/update-timetable`
-        : `${API_BASE_URL}/api/Admin/save-timetable`;
+        ? `${API_BASE_URL}/api/Timetable/update-timetable`
+        : `${API_BASE_URL}/api/Timetable/save-timetable`;
       
       const method = isExistingTimetable ? 'PUT' : 'POST';
 

@@ -3,6 +3,7 @@ import { API_BASE_URL } from '../config';
 import AddStaff from './AddStaff';
 import EditStaff from './EditStaff';
 import Modal from './Modal';
+import Pagination from './Pagination';
 import './StaffList.css';
 
 interface Document {
@@ -33,6 +34,10 @@ interface StaffListProps {
 const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
@@ -55,7 +60,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
       
       if (response.ok) {
         // Refresh the staff list to update document counts
-        fetchStaff();
+        fetchStaff(currentPage, pageSize);
         // Update the selected staff documents in the modal
         if (selectedStaff) {
           const updatedStaff = {
@@ -75,15 +80,27 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
 
   useEffect(() => {
     if (selectedSchoolId) {
-      fetchStaff();
+      setCurrentPage(1);
+      fetchStaff(1, pageSize);
     }
   }, [selectedSchoolId]);
 
-  const fetchStaff = async () => {
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    fetchStaff(page, pageSize);
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setCurrentPage(1);
+    fetchStaff(1, size);
+  };
+
+  const fetchStaff = async (page: number = 1, size: number = pageSize) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/Admin/Staff-by-school?schoolId=${selectedSchoolId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/Admin/Staff-by-school?schoolId=${selectedSchoolId}&page=${page}&pageSize=${size}`, {
         headers: {
           'accept': '*/*',
           'Authorization': `Bearer ${token}`,
@@ -93,6 +110,9 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
         const result = await response.json();
         if (result.success && result.data) {
           setStaff(result.data);
+          setCurrentPage(result.currentPage);
+          setTotalPages(result.totalPages);
+          setTotalRecords(result.totalRecords);
         }
       }
     } catch (err) {
@@ -178,18 +198,28 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
         </table>
       </div>
 
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalRecords={totalRecords}
+        pageSize={pageSize}
+        onPageChange={handlePageChange}
+        onPageSizeChange={handlePageSizeChange}
+        pageSizeOptions={[5, 10, 20, 50]}
+      />
+
       <AddStaff
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         schoolId={selectedSchoolId}
-        onSuccess={fetchStaff}
+        onSuccess={() => fetchStaff(currentPage, pageSize)}
       />
 
       <EditStaff
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         staff={selectedStaff}
-        onSuccess={fetchStaff}
+        onSuccess={() => fetchStaff(currentPage, pageSize)}
       />
 
       <Modal

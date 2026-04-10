@@ -100,7 +100,7 @@ const EditClass: React.FC<EditClassProps> = ({ isOpen, onClose, classData, onSuc
         sections: validSections
       };
 
-      const response = await fetch(`${API_BASE_URL}/api/Admin/update-class-with-sections`, {
+      const response = await fetch(`${API_BASE_URL}/api/Class/update-class-with-sections`, {
         method: 'PUT',
         headers: {
           'accept': '*/*',

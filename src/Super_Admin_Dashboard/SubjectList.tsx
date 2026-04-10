@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import AddSubject from './AddSubject';
 import EditSubject from './EditSubject';
+import Pagination from './Pagination';
 import './StaffList.css';
 
 interface Subject {
@@ -22,27 +23,43 @@ interface SubjectListProps {
 const SubjectList: React.FC<SubjectListProps> = ({ selectedSchoolId }) => {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
 
   useEffect(() => {
     if (selectedSchoolId) {
-      setSubjects([]); // Clear previous subjects
-      fetchSubjects();
+      setSubjects([]);
+      setCurrentPage(1);
+      fetchSubjects(1, pageSize);
     } else {
       setSubjects([]);
       setLoading(false);
     }
   }, [selectedSchoolId]);
 
-  const fetchSubjects = async () => {
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    fetchSubjects(page, pageSize);
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setCurrentPage(1);
+    fetchSubjects(1, size);
+  };
+
+  const fetchSubjects = async (page: number = 1, size: number = pageSize) => {
     if (!selectedSchoolId) return;
     
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/Admin/subjects-by-school?schoolId=${selectedSchoolId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/Subject/subjects-by-school?schoolId=${selectedSchoolId}&page=${page}&pageSize=${size}`, {
         headers: {
           'accept': '*/*',
           'Authorization': `Bearer ${token}`,
@@ -52,6 +69,9 @@ const SubjectList: React.FC<SubjectListProps> = ({ selectedSchoolId }) => {
         const result = await response.json();
         if (result.success && result.data) {
           setSubjects(result.data);
+          setCurrentPage(result.currentPage);
+          setTotalPages(result.totalPages);
+          setTotalRecords(result.totalRecords);
         } else {
           setSubjects([]);
         }
@@ -126,18 +146,28 @@ const SubjectList: React.FC<SubjectListProps> = ({ selectedSchoolId }) => {
         </table>
       </div>
 
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalRecords={totalRecords}
+        pageSize={pageSize}
+        onPageChange={handlePageChange}
+        onPageSizeChange={handlePageSizeChange}
+        pageSizeOptions={[5, 10, 20, 50]}
+      />
+
       <AddSubject
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         schoolId={selectedSchoolId}
-        onSuccess={fetchSubjects}
+        onSuccess={() => fetchSubjects(currentPage, pageSize)}
       />
 
       <EditSubject
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         subject={selectedSubject}
-        onSuccess={fetchSubjects}
+        onSuccess={() => fetchSubjects(currentPage, pageSize)}
       />
     </div>
   );
