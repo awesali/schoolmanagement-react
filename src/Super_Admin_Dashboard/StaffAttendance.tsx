@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
-import Pagination from './Pagination';
 import './StaffList.css';
 
 type AttendanceStatus = 'Present' | 'Absent' | null;
@@ -8,19 +7,15 @@ type View = 'select' | 'mark' | 'history';
 
 const StaffAttendance: React.FC = () => {
   const [view, setView] = useState<View>('select');
-  const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [alreadyMarked, setAlreadyMarked] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [attendance, setAttendance] = useState<AttendanceStatus>(null);
-  const [historyDate, setHistoryDate] = useState('');
-  const [history, setHistory] = useState<{ staffId: number; staffName: string; attendanceDate: string; status: string }[] | null>(null);
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [history, setHistory] = useState<{ attendanceDate: string; status: string }[] | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
-  const [historyCurrentPage, setHistoryCurrentPage] = useState(1);
-  const [historyTotalPages, setHistoryTotalPages] = useState(1);
-  const [historyTotalRecords, setHistoryTotalRecords] = useState(0);
-  const [historyPageSize, setHistoryPageSize] = useState(10);
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type });
@@ -29,18 +24,12 @@ const StaffAttendance: React.FC = () => {
 
   useEffect(() => {
     if (view === 'history') {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const formattedDate = yesterday.toISOString().split('T')[0];
-      setHistoryDate(formattedDate);
-      setHistoryCurrentPage(1);
-      fetchHistoryForDate(formattedDate, 1, historyPageSize);
+      const today = new Date();
+      const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      setFromDate(firstOfMonth.toISOString().split('T')[0]);
+      setToDate(today.toISOString().split('T')[0]);
     }
   }, [view]);
-
-  const handleMark = (status: AttendanceStatus) => {
-    setAttendance(status);
-  };
 
   const handleSubmit = async () => {
     if (attendance === null) {
@@ -51,23 +40,24 @@ const StaffAttendance: React.FC = () => {
       setSubmitting(true);
       const token = localStorage.getItem('token');
       const payload = {
-        attendanceDate: new Date().toISOString().split('T')[0],
+        attendanceDate: new Date().toISOString(),
         status: attendance,
       };
-      const response = await fetch(`${API_BASE_URL}/api/Staff/MarkAttendance`, {
+      const response = await fetch(`${API_BASE_URL}/api/Staff/staff/mark-attendance`, {
         method: 'POST',
         headers: { 'accept': '*/*', 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(payload),
       });
       const result = await response.json();
-      if (response.ok) {
+      if (response.ok && result?.success) {
         setSubmitted(true);
-        showToast(`Attendance marked successfully for ${new Date().toLocaleDateString()}!`, 'success');
+        showToast(result.message || `Attendance marked successfully for ${new Date().toLocaleDateString()}!`, 'success');
       } else {
-        if (result?.message?.toLowerCase().includes('already')) {
+        const msg = result?.message || 'Failed to mark attendance';
+        if (msg.toLowerCase().includes('already')) {
           setAlreadyMarked(true);
         }
-        showToast(result?.message || 'Failed to mark attendance', 'error');
+        showToast(msg, 'error');
       }
     } catch (err) {
       console.error('Failed to submit attendance');
@@ -77,23 +67,18 @@ const StaffAttendance: React.FC = () => {
     }
   };
 
-  const fetchHistoryForDate = async (date: string, page: number = 1, size: number = historyPageSize) => {
+  const fetchHistory = async () => {
+    if (!fromDate || !toDate) return;
     try {
       setHistoryLoading(true);
       setHistory(null);
       const token = localStorage.getItem('token');
-      const formatted = date.split('-').reverse().join('-');
-      const response = await fetch(`${API_BASE_URL}/api/Staff/AttendanceHistory?date=${formatted}&page=${page}&pageSize=${size}`, {
+      const response = await fetch(`${API_BASE_URL}/api/Staff/staff/attendance-history?fromDate=${fromDate}&toDate=${toDate}`, {
         headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
       });
       if (response.ok) {
         const result = await response.json();
-        if (result.success && result.data) {
-          setHistory(result.data);
-          setHistoryCurrentPage(result.currentPage);
-          setHistoryTotalPages(result.totalPages);
-          setHistoryTotalRecords(result.totalRecords);
-        }
+        setHistory(Array.isArray(result) ? result : []);
       }
     } catch (err) {
       console.error('Failed to fetch attendance history');
@@ -101,23 +86,6 @@ const StaffAttendance: React.FC = () => {
     } finally {
       setHistoryLoading(false);
     }
-  };
-
-  const fetchHistory = async () => {
-    if (!historyDate) return;
-    setHistoryCurrentPage(1);
-    fetchHistoryForDate(historyDate, 1, historyPageSize);
-  };
-
-  const handleHistoryPageChange = (page: number) => {
-    setHistoryCurrentPage(page);
-    fetchHistoryForDate(historyDate, page, historyPageSize);
-  };
-
-  const handleHistoryPageSizeChange = (size: number) => {
-    setHistoryPageSize(size);
-    setHistoryCurrentPage(1);
-    fetchHistoryForDate(historyDate, 1, size);
   };
 
   const toast_el = toast && (
@@ -144,7 +112,6 @@ const StaffAttendance: React.FC = () => {
         </p>
 
         <div style={{ display: 'flex', gap: '24px' }}>
-          {/* Mark Attendance Card */}
           <div
             onClick={() => setView('mark')}
             style={{ cursor: 'pointer', width: '260px', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 16px rgba(74,144,226,0.15)', border: '1px solid var(--border)', background: 'var(--surface)', transition: 'transform 0.2s, box-shadow 0.2s' }}
@@ -163,7 +130,6 @@ const StaffAttendance: React.FC = () => {
             </div>
           </div>
 
-          {/* History Card */}
           <div
             onClick={() => setView('history')}
             style={{ cursor: 'pointer', width: '260px', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 16px rgba(80,200,120,0.15)', border: '1px solid var(--border)', background: 'var(--surface)', transition: 'transform 0.2s, box-shadow 0.2s' }}
@@ -175,7 +141,7 @@ const StaffAttendance: React.FC = () => {
               <div style={{ color: 'white', fontWeight: 700, fontSize: '18px' }}>Previous Attendance</div>
             </div>
             <div style={{ padding: '16px 24px', textAlign: 'center' }}>
-              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>View by date</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>View by date range</div>
               <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>Check History</div>
             </div>
           </div>
@@ -216,15 +182,10 @@ const StaffAttendance: React.FC = () => {
           </p>
           <div style={{ display: 'flex', gap: '16px' }}>
             <button
-              onClick={() => handleMark('Present')}
+              onClick={() => setAttendance('Present')}
               style={{
-                padding: '16px 32px',
-                borderRadius: '12px',
-                border: '3px solid',
-                cursor: 'pointer',
-                fontWeight: 700,
-                fontSize: '16px',
-                transition: 'all 0.2s',
+                padding: '16px 32px', borderRadius: '12px', border: '3px solid', cursor: 'pointer',
+                fontWeight: 700, fontSize: '16px', transition: 'all 0.2s',
                 borderColor: attendance === 'Present' ? '#22543d' : '#e2e8f0',
                 background: attendance === 'Present' ? '#c6f6d5' : 'white',
                 color: attendance === 'Present' ? '#22543d' : '#718096',
@@ -234,15 +195,10 @@ const StaffAttendance: React.FC = () => {
               ✓ Present
             </button>
             <button
-              onClick={() => handleMark('Absent')}
+              onClick={() => setAttendance('Absent')}
               style={{
-                padding: '16px 32px',
-                borderRadius: '12px',
-                border: '3px solid',
-                cursor: 'pointer',
-                fontWeight: 700,
-                fontSize: '16px',
-                transition: 'all 0.2s',
+                padding: '16px 32px', borderRadius: '12px', border: '3px solid', cursor: 'pointer',
+                fontWeight: 700, fontSize: '16px', transition: 'all 0.2s',
                 borderColor: attendance === 'Absent' ? '#742a2a' : '#e2e8f0',
                 background: attendance === 'Absent' ? '#fed7d7' : 'white',
                 color: attendance === 'Absent' ? '#742a2a' : '#718096',
@@ -267,8 +223,10 @@ const StaffAttendance: React.FC = () => {
           <h2>Attendance History</h2>
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <input type="date" value={historyDate} max={new Date().toISOString().split('T')[0]} onChange={(e) => setHistoryDate(e.target.value)} style={{ padding: '8px 12px', borderRadius: '8px', border: '2px solid #e2e8f0', fontSize: '14px' }} />
-          <button className="btn btn-primary" onClick={fetchHistory} disabled={!historyDate || historyLoading}>
+          <input type="date" value={fromDate} max={toDate || new Date().toISOString().split('T')[0]} onChange={(e) => setFromDate(e.target.value)} style={{ padding: '8px 12px', borderRadius: '8px', border: '2px solid #e2e8f0', fontSize: '14px' }} />
+          <span style={{ color: '#718096', fontWeight: 600 }}>to</span>
+          <input type="date" value={toDate} min={fromDate} max={new Date().toISOString().split('T')[0]} onChange={(e) => setToDate(e.target.value)} style={{ padding: '8px 12px', borderRadius: '8px', border: '2px solid #e2e8f0', fontSize: '14px' }} />
+          <button className="btn btn-primary" onClick={fetchHistory} disabled={!fromDate || !toDate || historyLoading}>
             {historyLoading ? 'Loading...' : 'View'}
           </button>
         </div>
@@ -277,17 +235,16 @@ const StaffAttendance: React.FC = () => {
       {history !== null && (
         <div className="staff-table-wrapper" style={{ marginTop: '12px' }}>
           {history.length === 0 ? (
-            <p style={{ padding: '20px', textAlign: 'center', color: '#718096' }}>No attendance records found for this date.</p>
+            <p style={{ padding: '20px', textAlign: 'center', color: '#718096' }}>No attendance records found for this date range.</p>
           ) : (
             <table className="staff-table">
               <thead>
-                <tr><th>#</th><th>Staff Name</th><th>Date</th><th>Status</th></tr>
+                <tr><th>#</th><th>Date</th><th>Status</th></tr>
               </thead>
               <tbody>
                 {history.map((record, index) => (
-                  <tr key={record.staffId}>
+                  <tr key={index}>
                     <td>{index + 1}</td>
-                    <td>{record.staffName}</td>
                     <td>{record.attendanceDate.split('T')[0].split('-').reverse().join('/')}</td>
                     <td><span className={`status-badge ${record.status === 'Present' ? 'active' : 'inactive'}`}>{record.status}</span></td>
                   </tr>
@@ -296,18 +253,6 @@ const StaffAttendance: React.FC = () => {
             </table>
           )}
         </div>
-      )}
-      
-      {history !== null && history.length > 0 && (
-        <Pagination
-          currentPage={historyCurrentPage}
-          totalPages={historyTotalPages}
-          totalRecords={historyTotalRecords}
-          pageSize={historyPageSize}
-          onPageChange={handleHistoryPageChange}
-          onPageSizeChange={handleHistoryPageSizeChange}
-          pageSizeOptions={[5, 10, 20, 50]}
-        />
       )}
     </div>
   );

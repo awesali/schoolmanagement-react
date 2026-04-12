@@ -36,6 +36,7 @@ const Dashboard: React.FC = () => {
     employeesOnLeave: 0,
   });
   const [attendanceType, setAttendanceType] = useState<'student' | 'staff' | null>(null);
+  const [showAttendancePopup, setShowAttendancePopup] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -45,13 +46,30 @@ const Dashboard: React.FC = () => {
         const name = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'];
         const roleId = payload['RoleId'];
         if (name) setUserName(name);
-        if (roleId) setUserRole(roleId);
+        if (roleId) {
+          setUserRole(roleId);
+          if (roleId === '2') checkAttendance(token);
+        }
       } catch (error) {
         console.error('Error decoding token:', error);
       }
     }
     fetchSchools();
   }, []);
+
+  const checkAttendance = async (token: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/Staff/check-attendance`, {
+        headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const result = await response.json();
+        if (result.shouldMarkAttendance) setShowAttendancePopup(true);
+      }
+    } catch (err) {
+      console.error('Failed to check attendance status');
+    }
+  };
 
   useEffect(() => {
     if (selectedSchoolId) {
@@ -328,6 +346,37 @@ const Dashboard: React.FC = () => {
       <button onClick={handleLogout} className="logout-btn">Logout</button>
       <CreateSchool isOpen={isCreateSchoolOpen} onClose={() => setIsCreateSchoolOpen(false)} />
       </div>
+
+      {showAttendancePopup && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+        }}>
+          <div className="card" style={{ width: '100%', maxWidth: '420px', padding: '36px 32px', textAlign: 'center', borderRadius: '16px' }}>
+            <div style={{ fontSize: '52px', marginBottom: '16px' }}>📋</div>
+            <h2 style={{ color: 'var(--text-primary)', marginBottom: '10px' }}>Mark Your Attendance</h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '15px', lineHeight: '1.6', marginBottom: '28px' }}>
+              You haven't marked your attendance for today,{' '}
+              <strong>{new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</strong>.
+              <br />Please head over to the Attendance section to mark yourself present or absent.
+            </p>
+            <button
+              className="btn btn-primary"
+              style={{ width: '100%', marginBottom: '12px' }}
+              onClick={() => { setShowAttendancePopup(false); handleNavigate('Attendance', 'staff'); }}
+            >
+              Mark Attendance Now
+            </button>
+            <button
+              className="btn"
+              style={{ width: '100%', background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
+              onClick={() => setShowAttendancePopup(false)}
+            >
+              Remind Me Later
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
