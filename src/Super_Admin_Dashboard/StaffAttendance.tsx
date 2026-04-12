@@ -3,58 +3,24 @@ import { API_BASE_URL } from '../config';
 import Pagination from './Pagination';
 import './StaffList.css';
 
-interface Student {
-  id: number;
-  studentName: string;
-  className: string;
-  sectionName: string;
-  sectionId: number;
-  academicSession: string;
-}
-
 type AttendanceStatus = 'Present' | 'Absent' | null;
 type View = 'select' | 'mark' | 'history';
 
-const StudentAttendance: React.FC = () => {
+const StaffAttendance: React.FC = () => {
   const [view, setView] = useState<View>('select');
-  const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalRecords, setTotalRecords] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
-  const [attendance, setAttendance] = useState<Record<number, AttendanceStatus>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [alreadyMarked, setAlreadyMarked] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [attendance, setAttendance] = useState<AttendanceStatus>(null);
   const [historyDate, setHistoryDate] = useState('');
-  const [history, setHistory] = useState<{ studentId: number; studentName: string; sectionName: string; attendanceDate: string; status: string }[] | null>(null);
+  const [history, setHistory] = useState<{ staffId: number; staffName: string; attendanceDate: string; status: string }[] | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyCurrentPage, setHistoryCurrentPage] = useState(1);
   const [historyTotalPages, setHistoryTotalPages] = useState(1);
   const [historyTotalRecords, setHistoryTotalRecords] = useState(0);
   const [historyPageSize, setHistoryPageSize] = useState(10);
-  const [userRole, setUserRole] = useState<number | null>(null);
-
-  const extractRoleFromToken = () => {
-    const token = localStorage.getItem('token');
-    if (!token) return null;
-    
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const role = payload['RoleId'];
-      return role ? parseInt(role) : null;
-    } catch (err) {
-      console.error('Failed to extract role from token');
-      return null;
-    }
-  };
-
-  useEffect(() => {
-    const role = extractRoleFromToken();
-    setUserRole(role);
-  }, []);
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type });
@@ -62,10 +28,6 @@ const StudentAttendance: React.FC = () => {
   };
 
   useEffect(() => {
-    if (view === 'mark') {
-      setCurrentPage(1);
-      fetchStudents(1, pageSize);
-    }
     if (view === 'history') {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
@@ -76,52 +38,23 @@ const StudentAttendance: React.FC = () => {
     }
   }, [view]);
 
-  const fetchStudents = async (page: number = 1, size: number = pageSize) => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/Student/GetStudentsBySection?page=${page}&pageSize=${size}`, {
-        headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
-      });
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data) {
-          setStudents(result.data);
-          setCurrentPage(result.currentPage);
-          setTotalPages(result.totalPages);
-          setTotalRecords(result.totalRecords);
-          const initial: Record<number, AttendanceStatus> = {};
-          result.data.forEach((s: Student) => { initial[s.id] = null; });
-          setAttendance(initial);
-        }
-      }
-    } catch (err) {
-      console.error('Failed to fetch students');
-      setStudents([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleMark = (studentId: number, status: AttendanceStatus) => {
-    setAttendance(prev => ({ ...prev, [studentId]: status }));
+  const handleMark = (status: AttendanceStatus) => {
+    setAttendance(status);
   };
 
   const handleSubmit = async () => {
-    const unmarked = students.filter(s => attendance[s.id] === null);
-    if (unmarked.length > 0) {
-      alert(`Please mark attendance for all students. ${unmarked.length} student(s) unmarked.`);
+    if (attendance === null) {
+      alert('Please mark your attendance (Present or Absent).');
       return;
     }
     try {
       setSubmitting(true);
       const token = localStorage.getItem('token');
       const payload = {
-        sectionId: students[0]?.sectionId,
         attendanceDate: new Date().toISOString().split('T')[0],
-        students: students.map(s => ({ studentId: s.id, status: attendance[s.id] })),
+        status: attendance,
       };
-      const response = await fetch(`${API_BASE_URL}/api/Student/StudentsAttendance`, {
+      const response = await fetch(`${API_BASE_URL}/api/Staff/MarkAttendance`, {
         method: 'POST',
         headers: { 'accept': '*/*', 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(payload),
@@ -150,7 +83,7 @@ const StudentAttendance: React.FC = () => {
       setHistory(null);
       const token = localStorage.getItem('token');
       const formatted = date.split('-').reverse().join('-');
-      const response = await fetch(`${API_BASE_URL}/api/Student/Student-attendance-history?date=${formatted}&page=${page}&pageSize=${size}`, {
+      const response = await fetch(`${API_BASE_URL}/api/Staff/AttendanceHistory?date=${formatted}&page=${page}&pageSize=${size}`, {
         headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
       });
       if (response.ok) {
@@ -174,17 +107,6 @@ const StudentAttendance: React.FC = () => {
     if (!historyDate) return;
     setHistoryCurrentPage(1);
     fetchHistoryForDate(historyDate, 1, historyPageSize);
-  };
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    fetchStudents(page, pageSize);
-  };
-
-  const handlePageSizeChange = (size: number) => {
-    setPageSize(size);
-    setCurrentPage(1);
-    fetchStudents(1, size);
   };
 
   const handleHistoryPageChange = (page: number) => {
@@ -214,7 +136,7 @@ const StudentAttendance: React.FC = () => {
   if (view === 'select') return (
     <div className="staff-list-container">
       {toast_el}
-      <div className="staff-list-header"><h2>Student Attendance</h2></div>
+      <div className="staff-list-header"><h2>Staff Attendance</h2></div>
 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '12px' }}>
         <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '8px', letterSpacing: '0.5px', textTransform: 'uppercase', fontWeight: 600 }}>
@@ -222,26 +144,24 @@ const StudentAttendance: React.FC = () => {
         </p>
 
         <div style={{ display: 'flex', gap: '24px' }}>
-          {/* Mark Attendance Card - Hidden for Role 1 */}
-          {userRole !== 1 && (
-            <div
-              onClick={() => setView('mark')}
-              style={{ cursor: 'pointer', width: '260px', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 16px rgba(74,144,226,0.15)', border: '1px solid var(--border)', background: 'var(--surface)', transition: 'transform 0.2s, box-shadow 0.2s' }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(74,144,226,0.25)'; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(74,144,226,0.15)'; }}
-            >
-              <div style={{ background: 'linear-gradient(135deg, var(--primary-color) 0%, #357abd 100%)', padding: '32px 24px', textAlign: 'center' }}>
-                <div style={{ fontSize: '52px', marginBottom: '8px' }}>📋</div>
-                <div style={{ color: 'white', fontWeight: 700, fontSize: '18px' }}>Mark Attendance</div>
-              </div>
-              <div style={{ padding: '16px 24px', textAlign: 'center' }}>
-                <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Today</div>
-                <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                  {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                </div>
+          {/* Mark Attendance Card */}
+          <div
+            onClick={() => setView('mark')}
+            style={{ cursor: 'pointer', width: '260px', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 16px rgba(74,144,226,0.15)', border: '1px solid var(--border)', background: 'var(--surface)', transition: 'transform 0.2s, box-shadow 0.2s' }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(74,144,226,0.25)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(74,144,226,0.15)'; }}
+          >
+            <div style={{ background: 'linear-gradient(135deg, var(--primary-color) 0%, #357abd 100%)', padding: '32px 24px', textAlign: 'center' }}>
+              <div style={{ fontSize: '52px', marginBottom: '8px' }}>📋</div>
+              <div style={{ color: 'white', fontWeight: 700, fontSize: '18px' }}>Mark Attendance</div>
+            </div>
+            <div style={{ padding: '16px 24px', textAlign: 'center' }}>
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Today</div>
+              <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
               </div>
             </div>
-          )}
+          </div>
 
           {/* History Card */}
           <div
@@ -289,49 +209,51 @@ const StudentAttendance: React.FC = () => {
         </div>
       )}
 
-      {loading ? <div className="staff-list-loading">Loading...</div> : (
-        <div className="staff-table-wrapper">
-          <table className="staff-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Student Name</th>
-                <th>Class</th>
-                <th>Section</th>
-                <th>Session</th>
-                <th>Attendance</th>
-              </tr>
-            </thead>
-            <tbody>
-              {students.map((student, index) => (
-                <tr key={student.id}>
-                  <td>{index + 1}</td>
-                  <td>{student.studentName}</td>
-                  <td><span className="role-badge teacher">{student.className}</span></td>
-                  <td><span className="role-badge principal">{student.sectionName}</span></td>
-                  <td>{student.academicSession.split('-')[0]}</td>
-                  <td>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button onClick={() => handleMark(student.id, 'Present')} style={{ padding: '6px 16px', borderRadius: '8px', border: '2px solid', cursor: 'pointer', fontWeight: 600, fontSize: '13px', borderColor: attendance[student.id] === 'Present' ? '#22543d' : '#e2e8f0', background: attendance[student.id] === 'Present' ? '#c6f6d5' : 'white', color: attendance[student.id] === 'Present' ? '#22543d' : '#718096' }}>Present</button>
-                      <button onClick={() => handleMark(student.id, 'Absent')} style={{ padding: '6px 16px', borderRadius: '8px', border: '2px solid', cursor: 'pointer', fontWeight: 600, fontSize: '13px', borderColor: attendance[student.id] === 'Absent' ? '#742a2a' : '#e2e8f0', background: attendance[student.id] === 'Absent' ? '#fed7d7' : 'white', color: attendance[student.id] === 'Absent' ? '#742a2a' : '#718096' }}>Absent</button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '50vh', gap: '24px' }}>
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ fontSize: '16px', color: 'var(--text-secondary)', marginBottom: '24px', fontWeight: 600 }}>
+            Mark your attendance for today
+          </p>
+          <div style={{ display: 'flex', gap: '16px' }}>
+            <button
+              onClick={() => handleMark('Present')}
+              style={{
+                padding: '16px 32px',
+                borderRadius: '12px',
+                border: '3px solid',
+                cursor: 'pointer',
+                fontWeight: 700,
+                fontSize: '16px',
+                transition: 'all 0.2s',
+                borderColor: attendance === 'Present' ? '#22543d' : '#e2e8f0',
+                background: attendance === 'Present' ? '#c6f6d5' : 'white',
+                color: attendance === 'Present' ? '#22543d' : '#718096',
+                boxShadow: attendance === 'Present' ? '0 4px 12px rgba(34, 84, 61, 0.2)' : 'none',
+              }}
+            >
+              ✓ Present
+            </button>
+            <button
+              onClick={() => handleMark('Absent')}
+              style={{
+                padding: '16px 32px',
+                borderRadius: '12px',
+                border: '3px solid',
+                cursor: 'pointer',
+                fontWeight: 700,
+                fontSize: '16px',
+                transition: 'all 0.2s',
+                borderColor: attendance === 'Absent' ? '#742a2a' : '#e2e8f0',
+                background: attendance === 'Absent' ? '#fed7d7' : 'white',
+                color: attendance === 'Absent' ? '#742a2a' : '#718096',
+                boxShadow: attendance === 'Absent' ? '0 4px 12px rgba(116, 42, 42, 0.2)' : 'none',
+              }}
+            >
+              ✗ Absent
+            </button>
+          </div>
         </div>
-      )}
-      
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalRecords={totalRecords}
-        pageSize={pageSize}
-        onPageChange={handlePageChange}
-        onPageSizeChange={handlePageSizeChange}
-        pageSizeOptions={[5, 10, 20, 50]}
-      />
+      </div>
     </div>
   );
 
@@ -359,14 +281,13 @@ const StudentAttendance: React.FC = () => {
           ) : (
             <table className="staff-table">
               <thead>
-                <tr><th>#</th><th>Student Name</th><th>Section</th><th>Date</th><th>Status</th></tr>
+                <tr><th>#</th><th>Staff Name</th><th>Date</th><th>Status</th></tr>
               </thead>
               <tbody>
                 {history.map((record, index) => (
-                  <tr key={record.studentId}>
+                  <tr key={record.staffId}>
                     <td>{index + 1}</td>
-                    <td>{record.studentName}</td>
-                    <td><span className="role-badge principal">{record.sectionName}</span></td>
+                    <td>{record.staffName}</td>
                     <td>{record.attendanceDate.split('T')[0].split('-').reverse().join('/')}</td>
                     <td><span className={`status-badge ${record.status === 'Present' ? 'active' : 'inactive'}`}>{record.status}</span></td>
                   </tr>
@@ -392,4 +313,4 @@ const StudentAttendance: React.FC = () => {
   );
 };
 
-export default StudentAttendance;
+export default StaffAttendance;

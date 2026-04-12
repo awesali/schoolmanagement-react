@@ -5,6 +5,7 @@ import SchoolList from './SchoolList';
 import StaffList from './StaffList';
 import StudentList from './StudentList';
 import StudentAttendance from './StudentAttendance';
+import StaffAttendance from './StaffAttendance';
 import ClassList from './ClassList';
 import SubjectList from './SubjectList';
 import Sidebar from './Sidebar';
@@ -34,6 +35,7 @@ const Dashboard: React.FC = () => {
     totalEmployees: 0,
     employeesOnLeave: 0,
   });
+  const [attendanceType, setAttendanceType] = useState<'student' | 'staff' | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -114,9 +116,18 @@ const Dashboard: React.FC = () => {
     navigate('/login');
   };
 
+  const handleNavigate = (page: string, type?: 'student' | 'staff') => {
+    setActivePage(page);
+    if (page === 'Attendance' && type) {
+      setAttendanceType(type);
+    } else {
+      setAttendanceType(null);
+    }
+  };
+
   return (
     <div className="dashboard-wrapper">
-      <Sidebar activePage={activePage} onNavigate={setActivePage} isCollapsed={isCollapsed} userRole={userRole} />
+      <Sidebar activePage={activePage} onNavigate={handleNavigate} isCollapsed={isCollapsed} userRole={userRole} />
       <div className={`dashboard-main ${isCollapsed ? 'sidebar-collapsed' : ''}`}>
       <header className="dashboard-header">
         <div className="header-left">
@@ -161,7 +172,15 @@ const Dashboard: React.FC = () => {
         ) : activePage === 'Subject List' ? (
           <SubjectList selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Attendance' ? (
-          <StudentAttendance />
+          attendanceType === 'student' ? (
+            <StudentAttendance />
+          ) : attendanceType === 'staff' ? (
+            <StaffAttendance />
+          ) : (
+            <div style={{ padding: '20px', textAlign: 'center', color: '#718096' }}>
+              <p>Please select an attendance type from the menu</p>
+            </div>
+          )
         ) : (
           <>
         <div className="stats-grid">

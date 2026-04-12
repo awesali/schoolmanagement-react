@@ -3,7 +3,7 @@ import './Sidebar.css';
 
 interface SidebarProps {
   activePage: string;
-  onNavigate: (page: string) => void;
+  onNavigate: (page: string, attendanceType?: 'student' | 'staff') => void;
   isCollapsed: boolean;
   userRole?: string;
 }
@@ -62,6 +62,32 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, 
     );
   };
 
+  const getFilteredMenuGroups = () => {
+    return currentMenuGroups.map(group => ({
+      ...group,
+      items: group.items.map(item => ({
+        ...item,
+        children: item.children.filter(child => {
+          if (userRole === '1' && item.label === 'Students' && child === 'Attendance') {
+            return false;
+          }
+          return true;
+        })
+      })).filter(item => item.children.length > 0)
+    })).filter(group => group.items.length > 0);
+  };
+
+  const filteredMenuGroups = getFilteredMenuGroups();
+
+  const handleAttendanceClick = (child: string, parentLabel: string) => {
+    if (child === 'Attendance') {
+      const attendanceType = parentLabel === 'Students' ? 'student' : 'staff';
+      onNavigate('Attendance', attendanceType);
+    } else {
+      onNavigate(child);
+    }
+  };
+
   return (
     <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-logo">
@@ -78,7 +104,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, 
           <span>Dashboard</span>
         </button>
 
-        {currentMenuGroups.map(({ group, items }) => (
+        {filteredMenuGroups.map(({ group, items }) => (
           <div key={group} className="nav-group">
             <button className="nav-group-header" onClick={() => toggleGroup(group)}>
               <span>{group}</span>
@@ -98,7 +124,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, 
                           <button
                             key={child}
                             className={`nav-leaf-item ${activePage === child ? 'active' : ''}`}
-                            onClick={() => onNavigate(child)}
+                            onClick={() => handleAttendanceClick(child, label)}
                           >
                             {child}
                           </button>
