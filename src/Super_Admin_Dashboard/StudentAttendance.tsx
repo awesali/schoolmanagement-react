@@ -35,6 +35,26 @@ const StudentAttendance: React.FC = () => {
   const [historyTotalPages, setHistoryTotalPages] = useState(1);
   const [historyTotalRecords, setHistoryTotalRecords] = useState(0);
   const [historyPageSize, setHistoryPageSize] = useState(10);
+  const [userRole, setUserRole] = useState<number | null>(null);
+
+  const extractRoleFromToken = () => {
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+    
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const role = payload['RoleId'];
+      return role ? parseInt(role) : null;
+    } catch (err) {
+      console.error('Failed to extract role from token');
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    const role = extractRoleFromToken();
+    setUserRole(role);
+  }, []);
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type });
@@ -98,26 +118,27 @@ const StudentAttendance: React.FC = () => {
       const token = localStorage.getItem('token');
       const payload = {
         sectionId: students[0]?.sectionId,
-        attendanceDate: new Date().toISOString(),
+        attendanceDate: new Date().toISOString().split('T')[0],
         students: students.map(s => ({ studentId: s.id, status: attendance[s.id] })),
       };
       const response = await fetch(`${API_BASE_URL}/api/Student/StudentsAttendance`, {
         method: 'POST',
-        headers: { 'accept': '*/*', 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        headers: { 'accept': '*/*', 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(payload),
       });
+      const result = await response.json();
       if (response.ok) {
         setSubmitted(true);
         showToast(`Attendance marked successfully for ${new Date().toLocaleDateString()}!`, 'success');
       } else {
-        const result = await response.json();
         if (result?.message?.toLowerCase().includes('already')) {
           setAlreadyMarked(true);
-          showToast('Attendance has already been marked for today.', 'error');
         }
+        showToast(result?.message || 'Failed to mark attendance', 'error');
       }
     } catch (err) {
       console.error('Failed to submit attendance');
+      showToast('An error occurred while marking attendance', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -201,24 +222,26 @@ const StudentAttendance: React.FC = () => {
         </p>
 
         <div style={{ display: 'flex', gap: '24px' }}>
-          {/* Mark Attendance Card */}
-          <div
-            onClick={() => setView('mark')}
-            style={{ cursor: 'pointer', width: '260px', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 16px rgba(74,144,226,0.15)', border: '1px solid var(--border)', background: 'var(--surface)', transition: 'transform 0.2s, box-shadow 0.2s' }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(74,144,226,0.25)'; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(74,144,226,0.15)'; }}
-          >
-            <div style={{ background: 'linear-gradient(135deg, var(--primary-color) 0%, #357abd 100%)', padding: '32px 24px', textAlign: 'center' }}>
-              <div style={{ fontSize: '52px', marginBottom: '8px' }}>📋</div>
-              <div style={{ color: 'white', fontWeight: 700, fontSize: '18px' }}>Mark Attendance</div>
-            </div>
-            <div style={{ padding: '16px 24px', textAlign: 'center' }}>
-              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Today</div>
-              <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+          {/* Mark Attendance Card - Hidden for Role 1 */}
+          {userRole !== 1 && (
+            <div
+              onClick={() => setView('mark')}
+              style={{ cursor: 'pointer', width: '260px', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 16px rgba(74,144,226,0.15)', border: '1px solid var(--border)', background: 'var(--surface)', transition: 'transform 0.2s, box-shadow 0.2s' }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(74,144,226,0.25)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(74,144,226,0.15)'; }}
+            >
+              <div style={{ background: 'linear-gradient(135deg, var(--primary-color) 0%, #357abd 100%)', padding: '32px 24px', textAlign: 'center' }}>
+                <div style={{ fontSize: '52px', marginBottom: '8px' }}>📋</div>
+                <div style={{ color: 'white', fontWeight: 700, fontSize: '18px' }}>Mark Attendance</div>
+              </div>
+              <div style={{ padding: '16px 24px', textAlign: 'center' }}>
+                <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Today</div>
+                <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* History Card */}
           <div
