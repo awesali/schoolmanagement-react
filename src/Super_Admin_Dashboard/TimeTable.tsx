@@ -7,10 +7,21 @@ import './TimeTable.css';
 interface TimeTableProps {
   isOpen: boolean;
   onClose: () => void;
-  sectionId: number | null;
+  classData: Class | null;
   schoolId: number | null;
-  sectionName: string;
   onSuccess: () => void;
+}
+
+interface Class {
+  id: number;
+  className: string;
+  sections: Section[];
+}
+
+interface Section {
+  id: number;
+  sectionName: string;
+  subjects: Subject[];
 }
 
 interface Period {
@@ -50,14 +61,14 @@ interface TimeTableData {
 const TimeTable: React.FC<TimeTableProps> = ({ 
   isOpen, 
   onClose, 
-  sectionId, 
+  classData, 
   schoolId, 
-  sectionName, 
   onSuccess 
 }) => {
   const [periods, setPeriods] = useState<Period[]>([]);
   const [days, setDays] = useState<Day[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [selectedSectionId, setSelectedSectionId] = useState<number | null>(null);
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [isExistingTimetable, setIsExistingTimetable] = useState(false);
@@ -65,11 +76,20 @@ const TimeTable: React.FC<TimeTableProps> = ({
   const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
   useEffect(() => {
-    if (isOpen && schoolId && sectionId) {
+    if (isOpen && schoolId) {
       fetchData();
+      // Set first section as default if available
+      if (classData && classData.sections.length > 0) {
+        setSelectedSectionId(classData.sections[0].id);
+      }
+    }
+  }, [isOpen, schoolId, classData]);
+
+  useEffect(() => {
+    if (selectedSectionId) {
       fetchExistingTimeTable();
     }
-  }, [isOpen, schoolId, sectionId]);
+  }, [selectedSectionId]);
 
   const fetchData = async () => {
     if (!schoolId) return;
@@ -91,11 +111,11 @@ const TimeTable: React.FC<TimeTableProps> = ({
   };
 
   const fetchExistingTimeTable = async () => {
-    if (!sectionId) return;
+    if (!selectedSectionId) return;
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/Timetable/get-timetable?sectionId=${sectionId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/Timetable/get-timetable?sectionId=${selectedSectionId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -237,7 +257,7 @@ const TimeTable: React.FC<TimeTableProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!sectionId || !schoolId) return;
+    if (!selectedSectionId || !schoolId) return;
     
     setError('');
     setLoading(true);
@@ -247,10 +267,10 @@ const TimeTable: React.FC<TimeTableProps> = ({
       
       // For update API, use direct field structure
       const requestData = isExistingTimetable ? {
-        sectionId,
+        sectionId: selectedSectionId,
         schoolId,
         periods: periods.map(p => ({
-          sectionId,
+          sectionId: selectedSectionId,
           periodNumber: p.periodNumber,
           startTime: p.startTime + ':00',
           endTime: p.endTime + ':00',
@@ -258,7 +278,7 @@ const TimeTable: React.FC<TimeTableProps> = ({
         })),
         days
       } : {
-        sectionId,
+        sectionId: selectedSectionId,
         schoolId,
         periods: periods.map(p => ({
           ...p,
@@ -298,6 +318,9 @@ const TimeTable: React.FC<TimeTableProps> = ({
     }
   };
 
+  const selectedSection = classData?.sections.find(s => s.id === selectedSectionId);
+  const sectionName = selectedSection ? `${classData?.className}-${selectedSection.sectionName}` : 'No Section Selected';
+
   return (
     <Modal
       isOpen={isOpen}
@@ -311,8 +334,27 @@ const TimeTable: React.FC<TimeTableProps> = ({
       {error && <div className="error-message">{error}</div>}
       
       <form id="timetable-form" onSubmit={handleSubmit}>
+        {/* Section Picker */}
+        <div className="form-group">
+          <label>Select Section *</label>
+          <select
+            value={selectedSectionId || ''}
+            onChange={(e) => setSelectedSectionId(Number(e.target.value))}
+            className="form-control"
+            style={{ marginBottom: '20px' }}
+          >
+            <option value="">Select Section</option>
+            {classData?.sections.map((section) => (
+              <option key={section.id} value={section.id}>
+                {classData.className}-{section.sectionName}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {/* Timetable Grid */}
-        <div className="timetable-container">
+        {selectedSectionId && (
+          <div className="timetable-container">
           <table className="timetable">
             <thead>
               <tr>
@@ -410,7 +452,8 @@ const TimeTable: React.FC<TimeTableProps> = ({
               ))}
             </tbody>
           </table>
-        </div>
+          </div>
+        )}
       </form>
     </Modal>
   );

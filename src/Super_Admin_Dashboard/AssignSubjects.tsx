@@ -6,11 +6,21 @@ import './AddStaff.css';
 interface AssignSubjectsProps {
   isOpen: boolean;
   onClose: () => void;
-  sectionId: number | null;
+  classData: Class | null;
   schoolId: number | null;
-  sectionName: string;
-  assignedSubjects?: Subject[];
   onSuccess: () => void;
+}
+
+interface Class {
+  id: number;
+  className: string;
+  sections: Section[];
+}
+
+interface Section {
+  id: number;
+  sectionName: string;
+  subjects: AssignedSubject[];
 }
 
 interface Subject {
@@ -18,17 +28,21 @@ interface Subject {
   subjectName: string;
 }
 
+interface AssignedSubject {
+  subjectId: number;
+  subjectName: string;
+}
+
 const AssignSubjects: React.FC<AssignSubjectsProps> = ({ 
   isOpen, 
   onClose, 
-  sectionId, 
+  classData, 
   schoolId, 
-  sectionName, 
-  assignedSubjects = [],
   onSuccess 
 }) => {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [selectedSubjects, setSelectedSubjects] = useState<number[]>([]);
+  const [selectedSectionId, setSelectedSectionId] = useState<number | null>(null);
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState(false);
 
@@ -36,9 +50,21 @@ const AssignSubjects: React.FC<AssignSubjectsProps> = ({
     if (isOpen && schoolId) {
       fetchSubjects();
       setError('');
-      setSelectedSubjects(assignedSubjects.map(subject => subject.id));
+      // Set first section as default if available
+      if (classData && classData.sections.length > 0) {
+        setSelectedSectionId(classData.sections[0].id);
+      }
     }
-  }, [isOpen, schoolId, assignedSubjects]);
+  }, [isOpen, schoolId, classData]);
+
+  useEffect(() => {
+    if (selectedSectionId && classData) {
+      const section = classData.sections.find(s => s.id === selectedSectionId);
+      if (section) {
+        setSelectedSubjects(section.subjects.map(subject => subject.subjectId));
+      }
+    }
+  }, [selectedSectionId, classData]);
 
   const fetchSubjects = async () => {
     if (!schoolId) return;
@@ -72,8 +98,12 @@ const AssignSubjects: React.FC<AssignSubjectsProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!sectionId || !schoolId || selectedSubjects.length === 0) {
-      setError('Please select at least one subject');
+    
+    // Filter out null/undefined values
+    const validSubjectIds = selectedSubjects.filter(id => id !== null && id !== undefined);
+    
+    if (!selectedSectionId || !schoolId || validSubjectIds.length === 0) {
+      setError('Please select a section and at least one subject');
       return;
     }
     
@@ -83,9 +113,9 @@ const AssignSubjects: React.FC<AssignSubjectsProps> = ({
     try {
       const token = localStorage.getItem('token');
       const requestData = {
-        sectionId: sectionId,
+        sectionId: selectedSectionId,
         schoolId: schoolId,
-        subjectIds: selectedSubjects
+        subjectIds: validSubjectIds
       };
 
       const response = await fetch(`${API_BASE_URL}/api/Subject/assign-subjects-to-section`, {
@@ -117,8 +147,12 @@ const AssignSubjects: React.FC<AssignSubjectsProps> = ({
 
   const handleClear = () => {
     setSelectedSubjects([]);
+    setSelectedSectionId(null);
     setError('');
   };
+
+  const selectedSection = classData?.sections.find(s => s.id === selectedSectionId);
+  const sectionName = selectedSection ? `${classData?.className}-${selectedSection.sectionName}` : 'No Section Selected';
 
   return (
     <Modal
@@ -137,6 +171,22 @@ const AssignSubjects: React.FC<AssignSubjectsProps> = ({
       <form id="assign-subjects-form" onSubmit={handleSubmit}>
         <div className="form-grid">
           <div className="form-group full-width">
+            <label>Select Section *</label>
+            <select
+              value={selectedSectionId || ''}
+              onChange={(e) => setSelectedSectionId(Number(e.target.value))}
+              className="form-control"
+            >
+              <option value="">Select Section</option>
+              {classData?.sections.map((section) => (
+                <option key={section.id} value={section.id}>
+                  {classData.className}-{section.sectionName}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="form-group full-width">
             <label>Select Subjects *</label>
             <div className="subjects-checkbox-list">
               {subjects.map((subject) => (
@@ -146,6 +196,7 @@ const AssignSubjects: React.FC<AssignSubjectsProps> = ({
                     id={`subject-${subject.id}`}
                     checked={selectedSubjects.includes(subject.id)}
                     onChange={() => handleSubjectToggle(subject.id)}
+                    disabled={!selectedSectionId}
                   />
                   <label htmlFor={`subject-${subject.id}`}>
                     {subject.subjectName}

@@ -7,6 +7,7 @@ import StudentList from './StudentList';
 import StudentAttendance from './StudentAttendance';
 import ClassList from './ClassList';
 import SubjectList from './SubjectList';
+import ExamList from './ExamList';
 import Sidebar from './Sidebar';
 import { API_BASE_URL } from '../config';
 import './Dashboard.css';
@@ -160,6 +161,8 @@ const Dashboard: React.FC = () => {
           <StudentList selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Subject List' ? (
           <SubjectList selectedSchoolId={selectedSchoolId} />
+        ) : activePage === 'Exam List' ? (
+          <ExamList selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Attendance' ? (
           <StudentAttendance />
         ) : (

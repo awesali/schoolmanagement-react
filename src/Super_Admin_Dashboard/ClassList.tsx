@@ -5,10 +5,10 @@ import EditClass from './EditClass';
 import AssignSubjects from './AssignSubjects';
 import TimeTable from './TimeTable';
 import Pagination from './Pagination';
-import './StaffList.css'; // Using same CSS as StaffList
+import './ClassList.css';
 
 interface Subject {
-  id: number;
+  subjectId: number;
   subjectName: string;
 }
 
@@ -110,28 +110,28 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId }) => {
   };
 
   if (loading) {
-    return <div className="staff-list-loading">Loading classes...</div>;
+    return <div className="loading">Loading classes...</div>;
   }
 
   if (error) {
-    return <div className="staff-list-loading">Error: {error}</div>;
+    return <div className="error">Error: {error}</div>;
   }
 
   if (!selectedSchoolId) {
-    return <div className="staff-list-loading">Please select a school</div>;
+    return <div className="loading">Please select a school</div>;
   }
 
   return (
-    <div className="staff-list-container">
-      <div className="staff-list-header">
+    <div className="class-list-container">
+      <div className="class-list-header">
         <h2>Class List</h2>
         <button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>
           + Add Class
         </button>
       </div>
       
-      <div className="staff-table-wrapper">
-        <table className="staff-table">
+      <div className="class-table-container">
+        <table className="class-table">
           <thead>
             <tr>
               <th>Class Name</th>
@@ -147,7 +147,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId }) => {
               <tr key={classItem.id}>
                 <td className="class-name">
                   <span 
-                    className="staff-name-link"
+                    className="class-name"
                     onClick={() => {
                       setSelectedClass(classItem);
                       setIsEditModalOpen(true);
@@ -159,54 +159,36 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId }) => {
                 <td>
                   <div className="sections-list">
                     {classItem.sections.map((section) => (
-                      <span key={section.id} className="role-badge teacher">
+                      <span key={section.id} className="section-badge">
                         {section.sectionName}
                       </span>
                     ))}
                   </div>
                 </td>
                 <td>
-                  <div className="subjects-actions">
-                    {classItem.sections.map((section) => (
-                      <button
-                        key={section.id}
-                        className="btn-view-docs"
-                        onClick={() => {
-                          setSelectedSection({
-                            id: section.id, 
-                            name: `${classItem.className}-${section.sectionName}`,
-                            subjects: section.subjects
-                          });
-                          setIsAssignSubjectsOpen(true);
-                        }}
-                      >
-                        {section.sectionName} Subjects
-                      </button>
-                    ))}
-                  </div>
+                  <button
+                    className="btn-view-docs"
+                    onClick={() => {
+                      setSelectedClass(classItem);
+                      setIsAssignSubjectsOpen(true);
+                    }}
+                  >
+                    Subjects
+                  </button>
                 </td>
                 <td>
-                  <div className="subjects-actions">
-                    {classItem.sections.map((section) => (
-                      <button
-                        key={section.id}
-                        className="btn-view-docs timetable-btn"
-                        onClick={() => {
-                          setSelectedSection({
-                            id: section.id, 
-                            name: `${classItem.className}-${section.sectionName}`,
-                            subjects: section.subjects
-                          });
-                          setIsTimeTableOpen(true);
-                        }}
-                      >
-                        {section.sectionName} TimeTable
-                      </button>
-                    ))}
-                  </div>
+                  <button
+                    className="btn-view-docs timetable-btn"
+                    onClick={() => {
+                      setSelectedClass(classItem);
+                      setIsTimeTableOpen(true);
+                    }}
+                  >
+                    TimeTable
+                  </button>
                 </td>
                 <td>
-                  <span className={`status-badge ${classItem.isActive ? 'active' : 'inactive'}`}>
+                  <span className={`status ${classItem.isActive ? 'active' : 'inactive'}`}>
                     {classItem.isActive ? 'Active' : 'Inactive'}
                   </span>
                 </td>
@@ -246,10 +228,8 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId }) => {
       <AssignSubjects
         isOpen={isAssignSubjectsOpen}
         onClose={() => setIsAssignSubjectsOpen(false)}
-        sectionId={selectedSection?.id || null}
+        classData={selectedClass}
         schoolId={selectedSchoolId}
-        sectionName={selectedSection?.name || ''}
-        assignedSubjects={selectedSection?.subjects || []}
         onSuccess={() => {
           fetchClasses(currentPage);
           console.log('Subjects assigned successfully');
@@ -259,9 +239,8 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId }) => {
       <TimeTable
         isOpen={isTimeTableOpen}
         onClose={() => setIsTimeTableOpen(false)}
-        sectionId={selectedSection?.id || null}
+        classData={selectedClass}
         schoolId={selectedSchoolId}
-        sectionName={selectedSection?.name || ''}
         onSuccess={() => {
           console.log('TimeTable created successfully');
         }}

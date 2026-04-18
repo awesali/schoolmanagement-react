@@ -60,7 +60,24 @@
 
 .class-name {
   font-weight: 600;
-  color: #333;
+  color: #007bff;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.class-name:hover {
+  color: #0056b3;
+}
+
+.section-badge {
+  display: inline-block;
+  background: #e3f2fd;
+  color: #1976d2;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  margin: 2px;
 }
 
 .section-count {

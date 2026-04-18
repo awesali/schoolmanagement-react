@@ -39,7 +39,7 @@ const menuGroups = [
   {
     group: 'Exams',
     items: [
-      { label: 'Academic Exam', children: ['Add Exam', 'Marks Entry', 'Result'] },
+      { label: 'Academic Exam', children: ['Exam List', 'Add Exam', 'Marks Entry', 'Result'] },
     ],
   },
 ];
