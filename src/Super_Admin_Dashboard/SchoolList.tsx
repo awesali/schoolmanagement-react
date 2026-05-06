@@ -49,33 +49,39 @@ const SchoolList: React.FC = () => {
   return (
     <div className="school-list-container">
       <h2>School List</h2>
-      <div className="school-cards">
-        {schools.map((school) => (
-          <div key={school.id} className="school-card">
-            <div className="school-card-header">
-              <h3>{school.schoolName}</h3>
+      {schools.length === 0 ? (
+        <div className="school-list-loading" style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+          No schools available. Please create a new school.
+        </div>
+      ) : (
+        <div className="school-cards">
+          {schools.map((school) => (
+            <div key={school.id} className="school-card">
+              <div className="school-card-header">
+                <h3>{school.schoolName}</h3>
+              </div>
+              <div className="school-card-body">
+                <div className="school-info">
+                  <span className="info-label">Address:</span>
+                  <span className="info-value">{school.address}</span>
+                </div>
+                <div className="school-info">
+                  <span className="info-label">Phone:</span>
+                  <span className="info-value">{school.phone}</span>
+                </div>
+                <div className="school-info">
+                  <span className="info-label">Email:</span>
+                  <span className="info-value">{school.email || 'N/A'}</span>
+                </div>
+                <div className="school-info">
+                  <span className="info-label">Created:</span>
+                  <span className="info-value">{new Date(school.created_Date).toLocaleDateString()}</span>
+                </div>
+              </div>
             </div>
-            <div className="school-card-body">
-              <div className="school-info">
-                <span className="info-label">Address:</span>
-                <span className="info-value">{school.address}</span>
-              </div>
-              <div className="school-info">
-                <span className="info-label">Phone:</span>
-                <span className="info-value">{school.phone}</span>
-              </div>
-              <div className="school-info">
-                <span className="info-label">Email:</span>
-                <span className="info-value">{school.email || 'N/A'}</span>
-              </div>
-              <div className="school-info">
-                <span className="info-label">Created:</span>
-                <span className="info-value">{new Date(school.created_Date).toLocaleDateString()}</span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

@@ -110,96 +110,102 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId }) => {
   };
 
   if (loading) {
-    return <div className="loading">Loading classes...</div>;
+    return <div className="staff-list-loading">Loading classes...</div>;
   }
 
   if (error) {
-    return <div className="error">Error: {error}</div>;
+    return <div className="staff-list-loading">Error: {error}</div>;
   }
 
   if (!selectedSchoolId) {
-    return <div className="loading">Please select a school</div>;
+    return <div className="staff-list-loading">Please select a school</div>;
   }
 
   return (
-    <div className="class-list-container">
-      <div className="class-list-header">
+    <div className="staff-list-container">
+      <div className="staff-list-header">
         <h2>Class List</h2>
         <button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>
           + Add Class
         </button>
       </div>
       
-      <div className="class-table-container">
-        <table className="class-table">
-          <thead>
-            <tr>
-              <th>Class Name</th>
-              <th>Sections</th>
-              <th>Subjects</th>
-              <th>Time Table</th>
-              <th>Status</th>
-              <th>Created Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {classes.map((classItem) => (
-              <tr key={classItem.id}>
-                <td className="class-name">
-                  <span 
-                    className="class-name"
-                    onClick={() => {
-                      setSelectedClass(classItem);
-                      setIsEditModalOpen(true);
-                    }}
-                  >
-                    {classItem.className}
-                  </span>
-                </td>
-                <td>
-                  <div className="sections-list">
-                    {classItem.sections.map((section) => (
-                      <span key={section.id} className="section-badge">
-                        {section.sectionName}
-                      </span>
-                    ))}
-                  </div>
-                </td>
-                <td>
-                  <button
-                    className="btn-view-docs"
-                    onClick={() => {
-                      setSelectedClass(classItem);
-                      setIsAssignSubjectsOpen(true);
-                    }}
-                  >
-                    Subjects
-                  </button>
-                </td>
-                <td>
-                  <button
-                    className="btn-view-docs timetable-btn"
-                    onClick={() => {
-                      setSelectedClass(classItem);
-                      setIsTimeTableOpen(true);
-                    }}
-                  >
-                    TimeTable
-                  </button>
-                </td>
-                <td>
-                  <span className={`status ${classItem.isActive ? 'active' : 'inactive'}`}>
-                    {classItem.isActive ? 'Active' : 'Inactive'}
-                  </span>
-                </td>
-                <td className="created-date">
-                  {new Date(classItem.createdDate).toLocaleDateString()}
-                </td>
+      {classes.length === 0 ? (
+        <div className="staff-list-loading" style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+          No classes available. Please add a new class.
+        </div>
+      ) : (
+        <div className="staff-table-wrapper">
+          <table className="staff-table">
+            <thead>
+              <tr>
+                <th>Class Name</th>
+                <th>Sections</th>
+                <th>Subjects</th>
+                <th>Time Table</th>
+                <th>Status</th>
+                <th>Created Date</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {classes.map((classItem) => (
+                <tr key={classItem.id}>
+                  <td className="class-name">
+                    <span 
+                      className="staff-name-link"
+                      onClick={() => {
+                        setSelectedClass(classItem);
+                        setIsEditModalOpen(true);
+                      }}
+                    >
+                      {classItem.className}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="sections-list">
+                      {classItem.sections.map((section) => (
+                        <span key={section.id} className="section-badge">
+                          {section.sectionName}
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                  <td>
+                    <button
+                      className="btn-view-docs"
+                      onClick={() => {
+                        setSelectedClass(classItem);
+                        setIsAssignSubjectsOpen(true);
+                      }}
+                    >
+                      Subjects
+                    </button>
+                  </td>
+                  <td>
+                    <button
+                      className="btn-view-docs timetable-btn"
+                      onClick={() => {
+                        setSelectedClass(classItem);
+                        setIsTimeTableOpen(true);
+                      }}
+                    >
+                      TimeTable
+                    </button>
+                  </td>
+                  <td>
+                    <span className={`status-badge ${classItem.isActive ? 'active' : 'inactive'}`}>
+                      {classItem.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td className="created-date">
+                    {new Date(classItem.createdDate).toLocaleDateString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       <Pagination
         currentPage={currentPage}

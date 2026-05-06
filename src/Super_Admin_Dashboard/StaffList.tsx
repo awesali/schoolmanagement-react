@@ -138,65 +138,71 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
           + Add Staff
         </button>
       </div>
-      <div className="staff-table-wrapper">
-        <table className="staff-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Phone</th>
-              <th>DOB</th>
-              <th>DOJ</th>
-              <th>Role</th>
-              <th>Status</th>
-              <th>Documents</th>
-            </tr>
-          </thead>
-          <tbody>
-            {staff.map((member) => (
-              <tr key={member.id}>
-                <td>
-                  <span 
-                    className="staff-name-link"
-                    onClick={() => {
-                      setSelectedStaff(member);
-                      setIsEditModalOpen(true);
-                    }}
-                  >
-                    {member.name}
-                  </span>
-                </td>
-                <td>{member.email}</td>
-                <td>{member.phone}</td>
-                <td>{new Date(member.dob).toLocaleDateString()}</td>
-                <td>{new Date(member.doj).toLocaleDateString()}</td>
-                <td>
-                  <span className={`role-badge ${member.roleName.toLowerCase()}`}>
-                    {member.roleName}
-                  </span>
-                </td>
-                <td>
-                  <span className={`status-badge ${member.isActive ? 'active' : 'inactive'}`}>
-                    {member.isActive ? 'Active' : 'Inactive'}
-                  </span>
-                </td>
-                <td>
-                  <button 
-                    className="btn-view-docs"
-                    onClick={() => {
-                      setSelectedStaff(member);
-                      setShowDocuments(true);
-                    }}
-                    disabled={member.documents.length === 0}
-                  >
-                    View ({member.documents.length})
-                  </button>
-                </td>
+      {staff.length === 0 ? (
+        <div className="staff-list-loading" style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+          No staff members available. Please add a new staff member.
+        </div>
+      ) : (
+        <div className="staff-table-wrapper">
+          <table className="staff-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>DOB</th>
+                <th>DOJ</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Documents</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {staff.map((member) => (
+                <tr key={member.id}>
+                  <td>
+                    <span 
+                      className="staff-name-link"
+                      onClick={() => {
+                        setSelectedStaff(member);
+                        setIsEditModalOpen(true);
+                      }}
+                    >
+                      {member.name}
+                    </span>
+                  </td>
+                  <td>{member.email}</td>
+                  <td>{member.phone}</td>
+                  <td>{new Date(member.dob).toLocaleDateString()}</td>
+                  <td>{new Date(member.doj).toLocaleDateString()}</td>
+                  <td>
+                    <span className={`role-badge ${member.roleName.toLowerCase()}`}>
+                      {member.roleName}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={`status-badge ${member.isActive ? 'active' : 'inactive'}`}>
+                      {member.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td>
+                    <button 
+                      className="btn-view-docs"
+                      onClick={() => {
+                        setSelectedStaff(member);
+                        setShowDocuments(true);
+                      }}
+                      disabled={member.documents.length === 0}
+                    >
+                      View ({member.documents.length})
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       <Pagination
         currentPage={currentPage}
