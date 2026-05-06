@@ -59,9 +59,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
       });
       
       if (response.ok) {
-        // Refresh the staff list to update document counts
         fetchStaff(currentPage, pageSize);
-        // Update the selected staff documents in the modal
         if (selectedStaff) {
           const updatedStaff = {
             ...selectedStaff,
@@ -138,75 +136,94 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
           + Add Staff
         </button>
       </div>
-      <div className="staff-table-wrapper">
-        <table className="staff-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Phone</th>
-              <th>DOB</th>
-              <th>DOJ</th>
-              <th>Role</th>
-              <th>Status</th>
-              <th>Documents</th>
-            </tr>
-          </thead>
-          <tbody>
-            {staff.map((member) => (
-              <tr key={member.id}>
-                <td>
-                  <span 
-                    className="staff-name-link"
-                    onClick={() => {
-                      setSelectedStaff(member);
-                      setIsEditModalOpen(true);
-                    }}
-                  >
-                    {member.name}
-                  </span>
-                </td>
-                <td>{member.email}</td>
-                <td>{member.phone}</td>
-                <td>{new Date(member.dob).toLocaleDateString()}</td>
-                <td>{new Date(member.doj).toLocaleDateString()}</td>
-                <td>
-                  <span className={`role-badge ${member.roleName.toLowerCase()}`}>
-                    {member.roleName}
-                  </span>
-                </td>
-                <td>
-                  <span className={`status-badge ${member.isActive ? 'active' : 'inactive'}`}>
-                    {member.isActive ? 'Active' : 'Inactive'}
-                  </span>
-                </td>
-                <td>
-                  <button 
-                    className="btn-view-docs"
-                    onClick={() => {
-                      setSelectedStaff(member);
-                      setShowDocuments(true);
-                    }}
-                    disabled={member.documents.length === 0}
-                  >
-                    View ({member.documents.length})
-                  </button>
-                </td>
+      {staff.length === 0 ? (
+        <div style={{
+          background: 'white',
+          borderRadius: '8px',
+          padding: '60px 20px',
+          textAlign: 'center',
+          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+        }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>👨‍💼</div>
+          <h3 style={{ margin: '0 0 8px 0', color: '#2d3748', fontSize: '20px', fontWeight: '600' }}>No Staff Members Found</h3>
+          <p style={{ margin: '0 0 24px 0', color: '#718096', fontSize: '14px' }}>Start by adding your first staff member to the system</p>
+          <button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>
+            + Add First Staff Member
+          </button>
+        </div>
+      ) : (
+        <div className="staff-table-wrapper">
+          <table className="staff-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>DOB</th>
+                <th>DOJ</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Documents</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {staff.map((member) => (
+                <tr key={member.id}>
+                  <td>
+                    <span 
+                      className="staff-name-link"
+                      onClick={() => {
+                        setSelectedStaff(member);
+                        setIsEditModalOpen(true);
+                      }}
+                    >
+                      {member.name}
+                    </span>
+                  </td>
+                  <td>{member.email}</td>
+                  <td>{member.phone}</td>
+                  <td>{new Date(member.dob).toLocaleDateString()}</td>
+                  <td>{new Date(member.doj).toLocaleDateString()}</td>
+                  <td>
+                    <span className={`role-badge ${member.roleName.toLowerCase()}`}>
+                      {member.roleName}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={`status-badge ${member.isActive ? 'active' : 'inactive'}`}>
+                      {member.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td>
+                    <button 
+                      className="btn-view-docs"
+                      onClick={() => {
+                        setSelectedStaff(member);
+                        setShowDocuments(true);
+                      }}
+                      disabled={member.documents.length === 0}
+                    >
+                      View ({member.documents.length})
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalRecords={totalRecords}
-        pageSize={pageSize}
-        onPageChange={handlePageChange}
-        onPageSizeChange={handlePageSizeChange}
-        pageSizeOptions={[5, 10, 20, 50]}
-      />
+      {staff.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalRecords={totalRecords}
+          pageSize={pageSize}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+          pageSizeOptions={[5, 10, 20, 50]}
+        />
+      )}
 
       <AddStaff
         isOpen={isAddModalOpen}

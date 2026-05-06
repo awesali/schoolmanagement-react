@@ -85,13 +85,14 @@ const ExamList: React.FC<ExamListProps> = ({ selectedSchoolId }) => {
           setTotalPages(result.totalPages);
           setTotalRecords(result.totalRecords);
         } else {
-          setError(result.message || 'Failed to fetch scheduled exams');
+          setExams([]);
         }
       } else {
-        setError('Failed to fetch scheduled exams');
+        setExams([]);
       }
     } catch (err) {
       setError('Network error occurred');
+      setExams([]);
     } finally {
       setLoading(false);
     }
@@ -120,68 +121,86 @@ const ExamList: React.FC<ExamListProps> = ({ selectedSchoolId }) => {
         </div>
       </div>
       
-      <div className="staff-table-wrapper">
-        <table className="staff-table">
-          <thead>
-            <tr>
-              <th>Exam Name</th>
-              <th>Exam Title</th>
-              <th>Start Date</th>
-              <th>End Date</th>
-              <th>Classes</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {exams.map((exam) => (
-              <tr key={exam.examId}>
-                <td>
-                  <span className="staff-name-link">
-                    {exam.examName}
-                  </span>
-                </td>
-                <td>
-                  <span className="section-badge">
-                    {exam.examTitle}
-                  </span>
-                </td>
-                <td>{formatDate(exam.startDate)}</td>
-                <td>{formatDate(exam.endDate)}</td>
-                <td>
-                  <span className="count-badge">
-                    {exam.classCount}
-                  </span>
-                </td>
-                <td>
-                  <button 
-                    className="btn-view-docs"
-                    onClick={() => {
-                      setSelectedExam({
-                        examId: exam.examId,
-                        examName: exam.examName,
-                        examTitle: exam.examTitle
-                      });
-                      setIsDetailModalOpen(true);
-                    }}
-                  >
-                    View Schedule
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {exams.length === 0 ? (
+        <div style={{
+          background: 'white',
+          borderRadius: '8px',
+          padding: '60px 20px',
+          textAlign: 'center',
+          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+        }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>📝</div>
+          <h3 style={{ margin: '0 0 8px 0', color: '#2d3748', fontSize: '20px', fontWeight: '600' }}>No Exams Scheduled</h3>
+          <p style={{ margin: '0', color: '#718096', fontSize: '14px' }}>There are no exam schedules available at the moment</p>
+        </div>
+      ) : (
+        <>
+          <div className="staff-table-wrapper">
+            <table className="staff-table">
+              <thead>
+                <tr>
+                  <th>Exam Name</th>
+                  <th>Exam Title</th>
+                  <th>Start Date</th>
+                  <th>End Date</th>
+                  <th>Classes</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {exams.map((exam) => (
+                  <tr key={exam.examId}>
+                    <td>
+                      <span className="staff-name-link">
+                        {exam.examName}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="section-badge">
+                        {exam.examTitle}
+                      </span>
+                    </td>
+                    <td>{formatDate(exam.startDate)}</td>
+                    <td>{formatDate(exam.endDate)}</td>
+                    <td>
+                      <span className="count-badge">
+                        {exam.classCount}
+                      </span>
+                    </td>
+                    <td>
+                      <button 
+                        className="btn-view-docs"
+                        onClick={() => {
+                          setSelectedExam({
+                            examId: exam.examId,
+                            examName: exam.examName,
+                            examTitle: exam.examTitle
+                          });
+                          setIsDetailModalOpen(true);
+                        }}
+                      >
+                        View Schedule
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalRecords={totalRecords}
-        pageSize={pageSize}
-        onPageChange={handlePageChange}
-        onPageSizeChange={handlePageSizeChange}
-        pageSizeOptions={[5, 10, 20, 50]}
-      />
+          {exams.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalRecords={totalRecords}
+              pageSize={pageSize}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              pageSizeOptions={[5, 10, 20, 50]}
+            />
+          )}
+        </>
+      )}
 
       <AddExam
         isOpen={isAddModalOpen}

@@ -121,69 +121,88 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
           + Add Student
         </button>
       </div>
-      <div className="staff-table-wrapper">
-        <table className="staff-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Roll No.</th>
-              <th>Email</th>
-              <th>Phone</th>
-              <th>DOB</th>
-              <th>Class</th>
-              <th>Section</th>
-              <th>Session</th>
-              <th>Status</th>
-              <th>Documents</th>
-            </tr>
-          </thead>
-          <tbody>
-            {students.map((student) => (
-              <tr key={student.id}>
-                <td>
-                  <span
-                    className="staff-name-link"
-                    onClick={() => { setSelectedStudent(student); setIsEditModalOpen(true); }}
-                  >
-                    {student.studentName}
-                  </span>
-                </td>
-                <td>{student.rollNumber || '-'}</td>
-                <td>{student.email}</td>
-                <td>{student.phoneNumber}</td>
-                <td>{student.dob.split('T')[0].split('-').reverse().join('/')}</td>
-                <td><span className="role-badge teacher">{student.className}</span></td>
-                <td><span className="role-badge principal">{student.sectionName}</span></td>
-                <td>{student.academicSession.split('-')[0]}</td>
-                <td>
-                  <span className={`status-badge ${student.isActive ? 'active' : 'inactive'}`}>
-                    {student.isActive ? 'Active' : 'Inactive'}
-                  </span>
-                </td>
-                <td>
-                  <button
-                    className="btn-view-docs"
-                    onClick={() => { setSelectedStudent(student); setShowDocuments(true); }}
-                    disabled={student.documents.length === 0}
-                  >
-                    View ({student.documents.length})
-                  </button>
-                </td>
+      {students.length === 0 ? (
+        <div style={{
+          background: 'white',
+          borderRadius: '8px',
+          padding: '60px 20px',
+          textAlign: 'center',
+          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+        }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>👥</div>
+          <h3 style={{ margin: '0 0 8px 0', color: '#2d3748', fontSize: '20px', fontWeight: '600' }}>No Students Found</h3>
+          <p style={{ margin: '0 0 24px 0', color: '#718096', fontSize: '14px' }}>Start by adding your first student to the system</p>
+          <button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>
+            + Add First Student
+          </button>
+        </div>
+      ) : (
+        <div className="staff-table-wrapper">
+          <table className="staff-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Roll No.</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>DOB</th>
+                <th>Class</th>
+                <th>Section</th>
+                <th>Session</th>
+                <th>Status</th>
+                <th>Documents</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {students.map((student) => (
+                <tr key={student.id}>
+                  <td>
+                    <span
+                      className="staff-name-link"
+                      onClick={() => { setSelectedStudent(student); setIsEditModalOpen(true); }}
+                    >
+                      {student.studentName}
+                    </span>
+                  </td>
+                  <td>{student.rollNumber || '-'}</td>
+                  <td>{student.email}</td>
+                  <td>{student.phoneNumber}</td>
+                  <td>{student.dob.split('T')[0].split('-').reverse().join('/')}</td>
+                  <td><span className="role-badge teacher">{student.className}</span></td>
+                  <td><span className="role-badge principal">{student.sectionName}</span></td>
+                  <td>{student.academicSession.split('-')[0]}</td>
+                  <td>
+                    <span className={`status-badge ${student.isActive ? 'active' : 'inactive'}`}>
+                      {student.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td>
+                    <button
+                      className="btn-view-docs"
+                      onClick={() => { setSelectedStudent(student); setShowDocuments(true); }}
+                      disabled={student.documents.length === 0}
+                    >
+                      View ({student.documents.length})
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalRecords={totalRecords}
-        pageSize={pageSize}
-        onPageChange={handlePageChange}
-        onPageSizeChange={handlePageSizeChange}
-        pageSizeOptions={[5, 10, 20, 50]}
-      />
+      {students.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalRecords={totalRecords}
+          pageSize={pageSize}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+          pageSizeOptions={[5, 10, 20, 50]}
+        />
+      )}
 
       <AddStudent
         isOpen={isAddModalOpen}

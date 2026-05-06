@@ -102,59 +102,78 @@ const SubjectList: React.FC<SubjectListProps> = ({ selectedSchoolId }) => {
           + Add Subject
         </button>
       </div>
-      <div className="staff-table-wrapper">
-        <table className="staff-table">
-          <thead>
-            <tr>
-              <th>Subject Name</th>
-              <th>Teacher Name</th>
-              <th>Created Date</th>
-              <th>Modified Date</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {subjects.map((subject) => (
-              <tr key={`${subject.id}-${subject.teacherId}`}>
-                <td>
-                  <span 
-                    className="staff-name-link"
-                    onClick={() => {
-                      setSelectedSubject(subject);
-                      setIsEditModalOpen(true);
-                    }}
-                  >
-                    {subject.subjectName}
-                  </span>
-                </td>
-                <td>{subject.teacherName || 'Not Assigned'}</td>
-                <td>{new Date(subject.created_Date).toLocaleDateString()}</td>
-                <td>
-                  {subject.modified_Date 
-                    ? new Date(subject.modified_Date).toLocaleDateString() 
-                    : '-'
-                  }
-                </td>
-                <td>
-                  <span className={`status-badge ${subject.isActive ? 'active' : 'inactive'}`}>
-                    {subject.isActive ? 'Active' : 'Inactive'}
-                  </span>
-                </td>
+      {subjects.length === 0 ? (
+        <div style={{
+          background: 'white',
+          borderRadius: '8px',
+          padding: '60px 20px',
+          textAlign: 'center',
+          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+        }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>📚</div>
+          <h3 style={{ margin: '0 0 8px 0', color: '#2d3748', fontSize: '20px', fontWeight: '600' }}>No Subjects Found</h3>
+          <p style={{ margin: '0 0 24px 0', color: '#718096', fontSize: '14px' }}>Start by adding your first subject to the system</p>
+          <button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>
+            + Add First Subject
+          </button>
+        </div>
+      ) : (
+        <div className="staff-table-wrapper">
+          <table className="staff-table">
+            <thead>
+              <tr>
+                <th>Subject Name</th>
+                <th>Teacher Name</th>
+                <th>Created Date</th>
+                <th>Modified Date</th>
+                <th>Status</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {subjects.map((subject) => (
+                <tr key={`${subject.id}-${subject.teacherId}`}>
+                  <td>
+                    <span 
+                      className="staff-name-link"
+                      onClick={() => {
+                        setSelectedSubject(subject);
+                        setIsEditModalOpen(true);
+                      }}
+                    >
+                      {subject.subjectName}
+                    </span>
+                  </td>
+                  <td>{subject.teacherName || 'Not Assigned'}</td>
+                  <td>{new Date(subject.created_Date).toLocaleDateString()}</td>
+                  <td>
+                    {subject.modified_Date 
+                      ? new Date(subject.modified_Date).toLocaleDateString() 
+                      : '-'
+                    }
+                  </td>
+                  <td>
+                    <span className={`status-badge ${subject.isActive ? 'active' : 'inactive'}`}>
+                      {subject.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalRecords={totalRecords}
-        pageSize={pageSize}
-        onPageChange={handlePageChange}
-        onPageSizeChange={handlePageSizeChange}
-        pageSizeOptions={[5, 10, 20, 50]}
-      />
+      {subjects.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalRecords={totalRecords}
+          pageSize={pageSize}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+          pageSizeOptions={[5, 10, 20, 50]}
+        />
+      )}
 
       <AddSubject
         isOpen={isAddModalOpen}
