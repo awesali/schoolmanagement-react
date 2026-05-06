@@ -9,6 +9,7 @@ import StaffAttendance from './StaffAttendance';
 import ClassList from './ClassList';
 import SubjectList from './SubjectList';
 import ExamList from './ExamList';
+import AcademicYear from './AcademicYear';
 import Sidebar from './Sidebar';
 import { API_BASE_URL } from '../config';
 import './Dashboard.css';
@@ -19,6 +20,15 @@ interface School {
   address: string;
   email: string;
   phone: string;
+}
+
+interface StaffAttendanceRecord {
+  id: number;
+  name: string;
+  role: string;
+  date: string;
+  status: 'Present' | 'Absent' | 'Leave';
+  time: string;
 }
 
 const Dashboard: React.FC = () => {
@@ -38,6 +48,14 @@ const Dashboard: React.FC = () => {
   });
   const [attendanceType, setAttendanceType] = useState<'student' | 'staff' | null>(null);
   const [showAttendancePopup, setShowAttendancePopup] = useState(false);
+  const [staffAttendanceData] = useState<StaffAttendanceRecord[]>([
+    { id: 1, name: 'Rajesh Kumar', role: 'Mathematics Teacher', date: new Date().toLocaleDateString(), status: 'Present', time: '08:30 AM' },
+    { id: 2, name: 'Priya Singh', role: 'English Teacher', date: new Date().toLocaleDateString(), status: 'Present', time: '08:45 AM' },
+    { id: 3, name: 'Amit Patel', role: 'Science Teacher', date: new Date().toLocaleDateString(), status: 'Absent', time: '-' },
+    { id: 4, name: 'Neha Sharma', role: 'History Teacher', date: new Date().toLocaleDateString(), status: 'Leave', time: '-' },
+    { id: 5, name: 'Vikram Singh', role: 'PE Teacher', date: new Date().toLocaleDateString(), status: 'Present', time: '09:00 AM' },
+    { id: 6, name: 'Anjali Verma', role: 'Computer Teacher', date: new Date().toLocaleDateString(), status: 'Present', time: '08:50 AM' },
+  ]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -49,7 +67,14 @@ const Dashboard: React.FC = () => {
         if (name) setUserName(name);
         if (roleId) {
           setUserRole(roleId);
-          if (roleId === '2') checkAttendance(token);
+          console.log('User Role from token:', roleId);
+          // Only check attendance for staff (roleId === '2')
+          if (roleId === '2') {
+            checkAttendance(token);
+          } else {
+            // Ensure popup is never shown for non-staff users
+            setShowAttendancePopup(false);
+          }
         }
       } catch (error) {
         console.error('Error decoding token:', error);
@@ -58,6 +83,7 @@ const Dashboard: React.FC = () => {
     fetchSchools();
   }, []);
 
+
   const checkAttendance = async (token: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/Staff/check-attendance`, {
@@ -65,7 +91,9 @@ const Dashboard: React.FC = () => {
       });
       if (response.ok) {
         const result = await response.json();
-        if (result.shouldMarkAttendance) setShowAttendancePopup(true);
+        if (result.shouldMarkAttendance) {
+          setShowAttendancePopup(true);
+        }
       }
     } catch (err) {
       console.error('Failed to check attendance status');
@@ -182,6 +210,8 @@ const Dashboard: React.FC = () => {
       <div className="dashboard-content">
         {activePage === 'School List' ? (
           <SchoolList />
+        ) : activePage === 'Academic Year' ? (
+          <AcademicYear selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Class List' ? (
           <ClassList selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Staff List' ? (
@@ -321,25 +351,49 @@ const Dashboard: React.FC = () => {
               <button className="add-btn">+ Add New Event</button>
             </div>
 
-            <div className="faculty-leave">
-              <h3>Faculty On Leave</h3>
-              <div className="faculty-list">
-                <div className="faculty-item">
-                  <div className="faculty-avatar"></div>
-                  <div className="faculty-info">
-                    <div className="faculty-name">Suchita Sachdeva</div>
-                    <div className="faculty-details">📚 Mathematics 🎓 Class XI</div>
-                  </div>
-                </div>
-                <div className="faculty-item">
-                  <div className="faculty-avatar"></div>
-                  <div className="faculty-info">
-                    <div className="faculty-name">Suchita Sachdeva</div>
-                    <div className="faculty-details">📚 Mathematics 🎓 Class XI</div>
-                  </div>
+            {userRole === '1' && (
+              <div className="faculty-leave">
+                <h3>Staff Attendance Today</h3>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{
+                    width: '100%',
+                    borderCollapse: 'collapse',
+                    fontSize: '13px'
+                  }}>
+                    <thead>
+                      <tr style={{ background: '#f0f4f8', borderBottom: '2px solid #e0e0e0' }}>
+                        <th style={{ padding: '10px', textAlign: 'left', fontWeight: '600', color: '#475569' }}>Name</th>
+                        <th style={{ padding: '10px', textAlign: 'left', fontWeight: '600', color: '#475569' }}>Role</th>
+                        <th style={{ padding: '10px', textAlign: 'center', fontWeight: '600', color: '#475569' }}>Status</th>
+                        <th style={{ padding: '10px', textAlign: 'center', fontWeight: '600', color: '#475569' }}>Time</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {staffAttendanceData.map((record) => (
+                        <tr key={record.id} style={{ borderBottom: '1px solid #e0e0e0' }}>
+                          <td style={{ padding: '10px', color: '#2d3748' }}>{record.name}</td>
+                          <td style={{ padding: '10px', color: '#718096', fontSize: '12px' }}>{record.role}</td>
+                          <td style={{ padding: '10px', textAlign: 'center' }}>
+                            <span style={{
+                              display: 'inline-block',
+                              padding: '4px 12px',
+                              borderRadius: '12px',
+                              fontSize: '12px',
+                              fontWeight: '600',
+                              background: record.status === 'Present' ? '#c6f6d5' : record.status === 'Absent' ? '#fed7d7' : '#fef3c7',
+                              color: record.status === 'Present' ? '#22543d' : record.status === 'Absent' ? '#742a2a' : '#78350f'
+                            }}>
+                              {record.status}
+                            </span>
+                          </td>
+                          <td style={{ padding: '10px', textAlign: 'center', color: '#718096' }}>{record.time}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
         </>
@@ -350,7 +404,7 @@ const Dashboard: React.FC = () => {
       <CreateSchool isOpen={isCreateSchoolOpen} onClose={() => setIsCreateSchoolOpen(false)} />
       </div>
 
-      {showAttendancePopup && (
+      {showAttendancePopup && userRole === '2' && (
         <div style={{
           position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,

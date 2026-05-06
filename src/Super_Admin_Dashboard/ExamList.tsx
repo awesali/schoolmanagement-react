@@ -85,13 +85,14 @@ const ExamList: React.FC<ExamListProps> = ({ selectedSchoolId }) => {
           setTotalPages(result.totalPages);
           setTotalRecords(result.totalRecords);
         } else {
-          setError(result.message || 'Failed to fetch scheduled exams');
+          setExams([]);
         }
       } else {
-        setError('Failed to fetch scheduled exams');
+        setExams([]);
       }
     } catch (err) {
       setError('Network error occurred');
+      setExams([]);
     } finally {
       setLoading(false);
     }
@@ -179,15 +180,19 @@ const ExamList: React.FC<ExamListProps> = ({ selectedSchoolId }) => {
         </div>
       )}
 
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalRecords={totalRecords}
-        pageSize={pageSize}
-        onPageChange={handlePageChange}
-        onPageSizeChange={handlePageSizeChange}
-        pageSizeOptions={[5, 10, 20, 50]}
-      />
+          {exams.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalRecords={totalRecords}
+              pageSize={pageSize}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              pageSizeOptions={[5, 10, 20, 50]}
+            />
+          )}
+        </>
+      )}
 
       <AddExam
         isOpen={isAddModalOpen}

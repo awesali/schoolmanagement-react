@@ -59,9 +59,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
       });
       
       if (response.ok) {
-        // Refresh the staff list to update document counts
         fetchStaff(currentPage, pageSize);
-        // Update the selected staff documents in the modal
         if (selectedStaff) {
           const updatedStaff = {
             ...selectedStaff,
@@ -204,15 +202,17 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
         </div>
       )}
 
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalRecords={totalRecords}
-        pageSize={pageSize}
-        onPageChange={handlePageChange}
-        onPageSizeChange={handlePageSizeChange}
-        pageSizeOptions={[5, 10, 20, 50]}
-      />
+      {staff.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalRecords={totalRecords}
+          pageSize={pageSize}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+          pageSizeOptions={[5, 10, 20, 50]}
+        />
+      )}
 
       <AddStaff
         isOpen={isAddModalOpen}

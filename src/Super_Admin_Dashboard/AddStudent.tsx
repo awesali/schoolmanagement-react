@@ -161,7 +161,7 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
           </div>
           <div className="form-group">
             <label>Roll Number *</label>
-            <input type="text" name="rollNumber" required value={formData.rollNumber} onChange={handleChange} />
+            <input type="number" name="rollNumber" required value={formData.rollNumber} onChange={handleChange} />
           </div>
           <div className="form-group">
             <label>Email *</label>
