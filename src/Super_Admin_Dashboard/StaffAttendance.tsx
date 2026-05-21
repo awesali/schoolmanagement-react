@@ -5,7 +5,11 @@ import './StaffList.css';
 type AttendanceStatus = 'Present' | 'Absent' | null;
 type View = 'select' | 'mark' | 'history';
 
-const StaffAttendance: React.FC = () => {
+interface StaffAttendanceProps {
+  selectedSchoolId: number | null;
+}
+
+const StaffAttendance: React.FC<StaffAttendanceProps> = ({ selectedSchoolId }) => {
   const [view, setView] = useState<View>('select');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -68,12 +72,12 @@ const StaffAttendance: React.FC = () => {
   };
 
   const fetchHistory = async () => {
-    if (!fromDate || !toDate) return;
+    if (!fromDate || !toDate || !selectedSchoolId) return;
     try {
       setHistoryLoading(true);
       setHistory(null);
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/Staff/staff/attendance-history?fromDate=${fromDate}&toDate=${toDate}`, {
+      const response = await fetch(`${API_BASE_URL}/api/Staff/staff/attendance-history?fromDate=${fromDate}&toDate=${toDate}&schoolId=${selectedSchoolId}`, {
         headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
       });
       if (response.ok) {

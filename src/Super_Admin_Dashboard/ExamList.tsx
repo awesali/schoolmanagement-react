@@ -126,71 +126,68 @@ const ExamList: React.FC<ExamListProps> = ({ selectedSchoolId }) => {
           No exam schedules available. Please add a new exam.
         </div>
       ) : (
-        <div className="staff-table-wrapper">
-          <table className="staff-table">
-            <thead>
-              <tr>
-                <th>Exam Name</th>
-                <th>Exam Title</th>
-                <th>Start Date</th>
-                <th>End Date</th>
-                <th>Classes</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {exams.map((exam) => (
-                <tr key={exam.examId}>
-                  <td>
-                    <span className="staff-name-link">
-                      {exam.examName}
-                    </span>
-                  </td>
-                  <td>
-                    <span className="section-badge">
-                      {exam.examTitle}
-                    </span>
-                  </td>
-                  <td>{formatDate(exam.startDate)}</td>
-                  <td>{formatDate(exam.endDate)}</td>
-                  <td>
-                    <span className="count-badge">
-                      {exam.classCount}
-                    </span>
-                  </td>
-                  <td>
-                    <button 
-                      className="btn-view-docs"
-                      onClick={() => {
-                        setSelectedExam({
-                          examId: exam.examId,
-                          examName: exam.examName,
-                          examTitle: exam.examTitle
-                        });
-                        setIsDetailModalOpen(true);
-                      }}
-                    >
-                      View Schedule
-                    </button>
-                  </td>
+        <>
+          <div className="staff-table-wrapper">
+            <table className="staff-table">
+              <thead>
+                <tr>
+                  <th>Exam Name</th>
+                  <th>Exam Title</th>
+                  <th>Start Date</th>
+                  <th>End Date</th>
+                  <th>Classes</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-          {exams.length > 0 && (
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalRecords={totalRecords}
-              pageSize={pageSize}
-              onPageChange={handlePageChange}
-              onPageSizeChange={handlePageSizeChange}
-              pageSizeOptions={[5, 10, 20, 50]}
-            />
-          )}
+              </thead>
+              <tbody>
+                {exams.map((exam) => (
+                  <tr key={exam.examId}>
+                    <td>
+                      <span className="staff-name-link">
+                        {exam.examName}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="section-badge">
+                        {exam.examTitle}
+                      </span>
+                    </td>
+                    <td>{formatDate(exam.startDate)}</td>
+                    <td>{formatDate(exam.endDate)}</td>
+                    <td>
+                      <span className="count-badge">
+                        {exam.classCount}
+                      </span>
+                    </td>
+                    <td>
+                      <button 
+                        className="btn-view-docs"
+                        onClick={() => {
+                          setSelectedExam({
+                            examId: exam.examId,
+                            examName: exam.examName,
+                            examTitle: exam.examTitle
+                          });
+                          setIsDetailModalOpen(true);
+                        }}
+                      >
+                        View Schedule
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalRecords={totalRecords}
+            pageSize={pageSize}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            pageSizeOptions={[5, 10, 20, 50]}
+          />
         </>
       )}
 

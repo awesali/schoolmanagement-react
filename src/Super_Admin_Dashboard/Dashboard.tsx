@@ -226,7 +226,7 @@ const Dashboard: React.FC = () => {
           attendanceType === 'student' ? (
             <StudentAttendance />
           ) : attendanceType === 'staff' ? (
-            <StaffAttendance />
+            <StaffAttendance selectedSchoolId={selectedSchoolId} />
           ) : (
             <div style={{ padding: '20px', textAlign: 'center', color: '#718096' }}>
               <p>Please select an attendance type from the menu</p>
