@@ -42,7 +42,7 @@ interface Day {
 }
 
 interface Subject {
-  id: number;
+  subjectId: number;
   subjectName: string;
 }
 
@@ -86,27 +86,28 @@ const TimeTable: React.FC<TimeTableProps> = ({
   }, [isOpen, schoolId, classData]);
 
   useEffect(() => {
-    if (selectedSectionId) {
+    if (selectedSectionId && schoolId) {
       fetchExistingTimeTable();
+      fetchSubjects(selectedSectionId);
     }
   }, [selectedSectionId]);
 
-  const fetchData = async () => {
-    if (!schoolId) return;
-    
+  const fetchData = async () => {};
+
+  const fetchSubjects = async (sectionId: number) => {
+    setSubjects([]);
     try {
       const token = localStorage.getItem('token');
-      
-      // Fetch subjects
-      const subjectsResponse = await fetch(`${API_BASE_URL}/api/Common/subjects/${schoolId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/Subject/GetSubjectsBySection?sectionId=${sectionId}&schoolId=${schoolId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (subjectsResponse.ok) {
-        const subjectsResult = await subjectsResponse.json();
-        if (subjectsResult.success) setSubjects(subjectsResult.data);
+      if (response.ok) {
+        const data = await response.json();
+        setSubjects(data);
       }
+      // 404 = no subjects found, subjects stays []
     } catch (err) {
-      console.error('Failed to fetch data');
+      console.error('Failed to fetch subjects');
     }
   };
 
@@ -435,9 +436,12 @@ const TimeTable: React.FC<TimeTableProps> = ({
                               value={dayPeriod.subjectId}
                               onChange={(e) => updateDayPeriod(day.dayOfWeek, dayPeriod.periodId, Number(e.target.value))}
                             >
-                              <option value={0}>Select Subject</option>
+                              {subjects.length === 0
+                                ? <option value={0}>No subjects found for this section</option>
+                                : <option value={0}>Select Subject</option>
+                              }
                               {subjects.map(subject => (
-                                <option key={subject.id} value={subject.id}>
+                                <option key={subject.subjectId} value={subject.subjectId}>
                                   {subject.subjectName}
                                 </option>
                               ))}

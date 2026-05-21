@@ -5,7 +5,28 @@ import './StaffList.css';
 type AttendanceStatus = 'Present' | 'Absent' | null;
 type View = 'select' | 'mark' | 'history';
 
-const StaffAttendance: React.FC = () => {
+interface StaffAttendanceRecord {
+  staffName: string;
+  email: string;
+  phone: string;
+  attendanceDate: string;
+  status: string;
+}
+
+const statusStyle = (status: string) => ({
+  display: 'inline-block', padding: '4px 12px', borderRadius: '12px',
+  fontSize: '12px', fontWeight: 600 as const,
+  background: status === 'Present' ? '#c6f6d5' : status === 'Absent' ? '#fed7d7' : '#fef3c7',
+  color: status === 'Present' ? '#22543d' : status === 'Absent' ? '#742a2a' : '#78350f',
+});
+
+const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number | null }> = ({ userRole, selectedSchoolId }) => {
+  const [adminAttendance, setAdminAttendance] = useState<StaffAttendanceRecord[]>([]);
+  const [adminLoading, setAdminLoading] = useState(false);
+  const today = new Date().toISOString().split('T')[0];
+  const [adminFromDate, setAdminFromDate] = useState(today);
+  const [adminToDate, setAdminToDate] = useState(today);
+  const [isFiltered, setIsFiltered] = useState(false);
   const [view, setView] = useState<View>('select');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -99,6 +120,122 @@ const StaffAttendance: React.FC = () => {
       {toast.type === 'success' ? '✅' : '⚠️'} {toast.message}
     </div>
   );
+
+  const fetchAdminAttendance = async (fromDate?: string, toDate?: string) => {
+    try {
+      setAdminLoading(true);
+      const token = localStorage.getItem('token');
+      let url: string;
+      if (fromDate && toDate) {
+        const fmt = (d: string) => { const [y, m, day] = d.split('-'); return `${m}/${day}/${y}`; };
+        url = `${API_BASE_URL}/api/Admin/GetStaffAttendanceHistoryByDate?fromDate=${fmt(fromDate)}&toDate=${fmt(toDate)}`;
+      } else {
+        url = `${API_BASE_URL}/api/Admin/GetStaffAttendanceBySchool?schoolId=${selectedSchoolId}`;
+      }
+      const response = await fetch(url, {
+        headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAdminAttendance(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch staff attendance');
+    } finally {
+      setAdminLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (userRole === '1' && selectedSchoolId) {
+      fetchAdminAttendance();
+    }
+  }, [userRole, selectedSchoolId]);  // eslint-disable-line
+
+  // --- Super Admin View ---
+  if (userRole === '1') {
+    const presentCount = adminAttendance.filter(s => s.status === 'Present').length;
+    const absentCount = adminAttendance.filter(s => s.status === 'Absent').length;
+    const leaveCount = adminAttendance.filter(s => s.status === 'Leave').length;
+
+    const handleFilter = () => {
+      setIsFiltered(true);
+      fetchAdminAttendance(adminFromDate, adminToDate);
+    };
+
+    const handleReset = () => {
+      setIsFiltered(false);
+      setAdminFromDate(today);
+      setAdminToDate(today);
+      fetchAdminAttendance();
+    };
+
+    return (
+      <div className="staff-list-container">
+        <div className="staff-list-header">
+          <h2>Staff Attendance</h2>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <input type="date" value={adminFromDate} max={adminToDate} onChange={e => setAdminFromDate(e.target.value)}
+              style={{ padding: '8px 12px', borderRadius: '8px', border: '2px solid #e2e8f0', fontSize: '14px' }} />
+            <span style={{ color: '#718096', fontWeight: 600 }}>to</span>
+            <input type="date" value={adminToDate} min={adminFromDate} max={today} onChange={e => setAdminToDate(e.target.value)}
+              style={{ padding: '8px 12px', borderRadius: '8px', border: '2px solid #e2e8f0', fontSize: '14px' }} />
+            <button className="btn btn-primary" onClick={handleFilter} disabled={adminLoading}>Search</button>
+            {isFiltered && <button className="btn" onClick={handleReset} style={{ border: '1px solid #e2e8f0' }}>Reset</button>}
+          </div>
+        </div>
+
+        {adminLoading ? (
+          <div style={{ textAlign: 'center', padding: '60px', color: '#718096' }}>Loading...</div>
+        ) : (
+          <>
+            <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
+              {[{ label: 'Present', count: presentCount, bg: '#c6f6d5', color: '#22543d' },
+                { label: 'Absent', count: absentCount, bg: '#fed7d7', color: '#742a2a' },
+                { label: 'On Leave', count: leaveCount, bg: '#fef3c7', color: '#78350f' }]
+                .map(({ label, count, bg, color }) => (
+                  <div key={label} style={{ flex: 1, background: bg, borderRadius: '12px', padding: '16px 20px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '28px', fontWeight: 700, color }}>{count}</div>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color }}>{label}</div>
+                  </div>
+                ))}
+            </div>
+
+            <div className="staff-table-wrapper">
+              {adminAttendance.length === 0 ? (
+                <p style={{ padding: '20px', textAlign: 'center', color: '#718096' }}>No attendance records found.</p>
+              ) : (
+                <table className="staff-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Phone</th>
+                      <th>Date</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {adminAttendance.map((staff, index) => (
+                      <tr key={index}>
+                        <td>{index + 1}</td>
+                        <td>{staff.staffName}</td>
+                        <td>{staff.email}</td>
+                        <td>{staff.phone}</td>
+                        <td>{staff.attendanceDate.split('T')[0].split('-').reverse().join('/')}</td>
+                        <td><span style={statusStyle(staff.status)}>{staff.status}</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
 
   // --- Selection Screen ---
   if (view === 'select') return (

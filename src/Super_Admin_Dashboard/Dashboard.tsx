@@ -22,15 +22,6 @@ interface School {
   phone: string;
 }
 
-interface StaffAttendanceRecord {
-  id: number;
-  name: string;
-  role: string;
-  date: string;
-  status: 'Present' | 'Absent' | 'Leave';
-  time: string;
-}
-
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [isCreateSchoolOpen, setIsCreateSchoolOpen] = useState(false);
@@ -48,15 +39,6 @@ const Dashboard: React.FC = () => {
   });
   const [attendanceType, setAttendanceType] = useState<'student' | 'staff' | null>(null);
   const [showAttendancePopup, setShowAttendancePopup] = useState(false);
-  const [staffAttendanceData] = useState<StaffAttendanceRecord[]>([
-    { id: 1, name: 'Rajesh Kumar', role: 'Mathematics Teacher', date: new Date().toLocaleDateString(), status: 'Present', time: '08:30 AM' },
-    { id: 2, name: 'Priya Singh', role: 'English Teacher', date: new Date().toLocaleDateString(), status: 'Present', time: '08:45 AM' },
-    { id: 3, name: 'Amit Patel', role: 'Science Teacher', date: new Date().toLocaleDateString(), status: 'Absent', time: '-' },
-    { id: 4, name: 'Neha Sharma', role: 'History Teacher', date: new Date().toLocaleDateString(), status: 'Leave', time: '-' },
-    { id: 5, name: 'Vikram Singh', role: 'PE Teacher', date: new Date().toLocaleDateString(), status: 'Present', time: '09:00 AM' },
-    { id: 6, name: 'Anjali Verma', role: 'Computer Teacher', date: new Date().toLocaleDateString(), status: 'Present', time: '08:50 AM' },
-  ]);
-
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -226,7 +208,7 @@ const Dashboard: React.FC = () => {
           attendanceType === 'student' ? (
             <StudentAttendance />
           ) : attendanceType === 'staff' ? (
-            <StaffAttendance />
+            <StaffAttendance userRole={userRole} selectedSchoolId={selectedSchoolId} />
           ) : (
             <div style={{ padding: '20px', textAlign: 'center', color: '#718096' }}>
               <p>Please select an attendance type from the menu</p>
@@ -351,49 +333,7 @@ const Dashboard: React.FC = () => {
               <button className="add-btn">+ Add New Event</button>
             </div>
 
-            {userRole === '1' && (
-              <div className="faculty-leave">
-                <h3>Staff Attendance Today</h3>
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{
-                    width: '100%',
-                    borderCollapse: 'collapse',
-                    fontSize: '13px'
-                  }}>
-                    <thead>
-                      <tr style={{ background: '#f0f4f8', borderBottom: '2px solid #e0e0e0' }}>
-                        <th style={{ padding: '10px', textAlign: 'left', fontWeight: '600', color: '#475569' }}>Name</th>
-                        <th style={{ padding: '10px', textAlign: 'left', fontWeight: '600', color: '#475569' }}>Role</th>
-                        <th style={{ padding: '10px', textAlign: 'center', fontWeight: '600', color: '#475569' }}>Status</th>
-                        <th style={{ padding: '10px', textAlign: 'center', fontWeight: '600', color: '#475569' }}>Time</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {staffAttendanceData.map((record) => (
-                        <tr key={record.id} style={{ borderBottom: '1px solid #e0e0e0' }}>
-                          <td style={{ padding: '10px', color: '#2d3748' }}>{record.name}</td>
-                          <td style={{ padding: '10px', color: '#718096', fontSize: '12px' }}>{record.role}</td>
-                          <td style={{ padding: '10px', textAlign: 'center' }}>
-                            <span style={{
-                              display: 'inline-block',
-                              padding: '4px 12px',
-                              borderRadius: '12px',
-                              fontSize: '12px',
-                              fontWeight: '600',
-                              background: record.status === 'Present' ? '#c6f6d5' : record.status === 'Absent' ? '#fed7d7' : '#fef3c7',
-                              color: record.status === 'Present' ? '#22543d' : record.status === 'Absent' ? '#742a2a' : '#78350f'
-                            }}>
-                              {record.status}
-                            </span>
-                          </td>
-                          <td style={{ padding: '10px', textAlign: 'center', color: '#718096' }}>{record.time}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
+
           </div>
         </div>
         </>
