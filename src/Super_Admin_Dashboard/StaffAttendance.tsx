@@ -5,11 +5,33 @@ import './StaffList.css';
 type AttendanceStatus = 'Present' | 'Absent' | null;
 type View = 'select' | 'mark' | 'history';
 
-interface StaffAttendanceProps {
-  selectedSchoolId: number | null;
+interface StaffAttendanceRecord {
+  staffName: string;
+  email: string;
+  phone: string;
+  attendanceDate: string;
+  status: string;
 }
 
-const StaffAttendance: React.FC<StaffAttendanceProps> = ({ selectedSchoolId }) => {
+const statusStyle = (status: string) => ({
+  display: 'inline-block', padding: '4px 12px', borderRadius: '12px',
+  fontSize: '12px', fontWeight: 600 as const,
+  background: status === 'Present' ? '#c6f6d5' : status === 'Absent' ? '#fed7d7' : status === 'Late' ? '#e9d8fd' : '#fef3c7',
+  color: status === 'Present' ? '#22543d' : status === 'Absent' ? '#742a2a' : status === 'Late' ? '#553c9a' : '#78350f',
+});
+
+
+const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number | null }> = ({ userRole, selectedSchoolId }) => {
+  const today = new Date().toISOString().split('T')[0];
+
+  // Admin state
+  const [adminAttendance, setAdminAttendance] = useState<StaffAttendanceRecord[]>([]);
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [adminFromDate, setAdminFromDate] = useState(today);
+  const [adminToDate, setAdminToDate] = useState(today);
+  const [isFiltered, setIsFiltered] = useState(false);
+
+  // Teacher state
   const [view, setView] = useState<View>('select');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -26,95 +48,13 @@ const StaffAttendance: React.FC<StaffAttendanceProps> = ({ selectedSchoolId }) =
     setTimeout(() => setToast(null), 3000);
   };
 
-  useEffect(() => {
-    if (view === 'history') {
-      const today = new Date();
-      const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-      setFromDate(firstOfMonth.toISOString().split('T')[0]);
-      setToDate(today.toISOString().split('T')[0]);
-    }
-  }, [view]);
-
-  const handleSubmit = async () => {
-    if (attendance === null) {
-      alert('Please mark your attendance (Present or Absent).');
-      return;
-    }
-    try {
-      setSubmitting(true);
-      const token = localStorage.getItem('token');
-      const payload = {
-        attendanceDate: new Date().toISOString(),
-        status: attendance,
-      };
-      const response = await fetch(`${API_BASE_URL}/api/Staff/staff/mark-attendance`, {
-        method: 'POST',
-        headers: { 'accept': '*/*', 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(payload),
-      });
-      const result = await response.json();
-      if (response.ok && result?.success) {
-        setSubmitted(true);
-        showToast(result.message || `Attendance marked successfully for ${new Date().toLocaleDateString()}!`, 'success');
-      } else {
-        const msg = result?.message || 'Failed to mark attendance';
-        if (msg.toLowerCase().includes('already')) {
-          setAlreadyMarked(true);
-        }
-        showToast(msg, 'error');
-      }
-    } catch (err) {
-      console.error('Failed to submit attendance');
-      showToast('An error occurred while marking attendance', 'error');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const fetchHistory = async () => {
-    if (!fromDate || !toDate || !selectedSchoolId) return;
-    try {
-      setHistoryLoading(true);
-      setHistory(null);
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/Staff/staff/attendance-history?fromDate=${fromDate}&toDate=${toDate}&schoolId=${selectedSchoolId}`, {
-        headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
-      });
-      if (response.ok) {
-        const result = await response.json();
-        setHistory(Array.isArray(result) ? result : []);
-      }
-    } catch (err) {
-      console.error('Failed to fetch attendance history');
-      setHistory([]);
-    } finally {
-      setHistoryLoading(false);
-    }
-  };
-
-  const toast_el = toast && (
-    <div style={{
-      position: 'fixed', top: '24px', right: '24px', zIndex: 9999,
-      padding: '14px 24px', borderRadius: '10px', fontWeight: 600, fontSize: '14px',
-      boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-      background: toast.type === 'success' ? '#22543d' : '#742a2a',
-      color: 'white', animation: 'slideUp 0.3s ease',
-    }}>
-      {toast.type === 'success' ? '✅' : '⚠️'} {toast.message}
-    </div>
-  );
-
-  const fetchAdminAttendance = async (fromDate?: string, toDate?: string) => {
+  const fetchAdminAttendance = async (from?: string, to?: string) => {
     try {
       setAdminLoading(true);
       const token = localStorage.getItem('token');
-      let url: string;
-      if (fromDate && toDate) {
-        const fmt = (d: string) => { const [y, m, day] = d.split('-'); return `${m}/${day}/${y}`; };
-        url = `${API_BASE_URL}/api/Admin/GetStaffAttendanceHistoryByDate?fromDate=${fmt(fromDate)}&toDate=${fmt(toDate)}`;
-      } else {
-        url = `${API_BASE_URL}/api/Admin/GetStaffAttendanceBySchool?schoolId=${selectedSchoolId}`;
-      }
+      const url = from && to
+        ? `${API_BASE_URL}/api/Admin/GetStaffAttendanceHistoryByDate?fromDate=${from}&toDate=${to}`
+        : `${API_BASE_URL}/api/Admin/GetStaffAttendanceBySchool?schoolId=${selectedSchoolId}`;
       const response = await fetch(url, {
         headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
       });
@@ -133,25 +73,84 @@ const StaffAttendance: React.FC<StaffAttendanceProps> = ({ selectedSchoolId }) =
     if (userRole === '1' && selectedSchoolId) {
       fetchAdminAttendance();
     }
-  }, [userRole, selectedSchoolId]);  // eslint-disable-line
+  }, [userRole, selectedSchoolId]); // eslint-disable-line
+
+  useEffect(() => {
+    if (view === 'history') {
+      const now = new Date();
+      const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      setFromDate(firstOfMonth.toISOString().split('T')[0]);
+      setToDate(now.toISOString().split('T')[0]);
+    }
+  }, [view]);
+
+  const handleSubmit = async () => {
+    if (attendance === null) {
+      alert('Please mark your attendance (Present or Absent).');
+      return;
+    }
+    try {
+      setSubmitting(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/Staff/staff/mark-attendance`, {
+        method: 'POST',
+        headers: { 'accept': '*/*', 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ attendanceDate: new Date().toISOString(), status: attendance }),
+      });
+      const result = await response.json();
+      if (response.ok && result?.success) {
+        setSubmitted(true);
+        showToast(result.message || `Attendance marked successfully for ${new Date().toLocaleDateString()}!`, 'success');
+      } else {
+        const msg = result?.message || 'Failed to mark attendance';
+        if (msg.toLowerCase().includes('already')) setAlreadyMarked(true);
+        showToast(msg, 'error');
+      }
+    } catch (err) {
+      showToast('An error occurred while marking attendance', 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const fetchHistory = async () => {
+    if (!fromDate || !toDate) return;
+    try {
+      setHistoryLoading(true);
+      setHistory(null);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/Staff/staff/attendance-history?fromDate=${fromDate}&toDate=${toDate}`, {
+        headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const result = await response.json();
+        setHistory(Array.isArray(result) ? result : []);
+      }
+    } catch (err) {
+      setHistory([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const toast_el = toast && (
+    <div style={{
+      position: 'fixed', top: '24px', right: '24px', zIndex: 9999,
+      padding: '14px 24px', borderRadius: '10px', fontWeight: 600, fontSize: '14px',
+      boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+      background: toast.type === 'success' ? '#22543d' : '#742a2a',
+      color: 'white',
+    }}>
+      {toast.type === 'success' ? '✅' : '⚠️'} {toast.message}
+    </div>
+  );
 
   // --- Super Admin View ---
   if (userRole === '1') {
     const presentCount = adminAttendance.filter(s => s.status === 'Present').length;
     const absentCount = adminAttendance.filter(s => s.status === 'Absent').length;
     const leaveCount = adminAttendance.filter(s => s.status === 'Leave').length;
-
-    const handleFilter = () => {
-      setIsFiltered(true);
-      fetchAdminAttendance(adminFromDate, adminToDate);
-    };
-
-    const handleReset = () => {
-      setIsFiltered(false);
-      setAdminFromDate(today);
-      setAdminToDate(today);
-      fetchAdminAttendance();
-    };
+    const lateCount = adminAttendance.filter(s => s.status === 'Late').length;
 
     return (
       <div className="staff-list-container">
@@ -163,8 +162,11 @@ const StaffAttendance: React.FC<StaffAttendanceProps> = ({ selectedSchoolId }) =
             <span style={{ color: '#718096', fontWeight: 600 }}>to</span>
             <input type="date" value={adminToDate} min={adminFromDate} max={today} onChange={e => setAdminToDate(e.target.value)}
               style={{ padding: '8px 12px', borderRadius: '8px', border: '2px solid #e2e8f0', fontSize: '14px' }} />
-            <button className="btn btn-primary" onClick={handleFilter} disabled={adminLoading}>Search</button>
-            {isFiltered && <button className="btn" onClick={handleReset} style={{ border: '1px solid #e2e8f0' }}>Reset</button>}
+            <button className="btn btn-primary" onClick={() => { setIsFiltered(true); fetchAdminAttendance(adminFromDate, adminToDate); }} disabled={adminLoading}>Search</button>
+            {isFiltered && (
+              <button className="btn" onClick={() => { setIsFiltered(false); setAdminFromDate(today); setAdminToDate(today); fetchAdminAttendance(); }}
+                style={{ border: '1px solid #e2e8f0' }}>Reset</button>
+            )}
           </div>
         </div>
 
@@ -175,6 +177,7 @@ const StaffAttendance: React.FC<StaffAttendanceProps> = ({ selectedSchoolId }) =
             <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
               {[{ label: 'Present', count: presentCount, bg: '#c6f6d5', color: '#22543d' },
                 { label: 'Absent', count: absentCount, bg: '#fed7d7', color: '#742a2a' },
+                { label: 'Late', count: lateCount, bg: '#e9d8fd', color: '#553c9a' },
                 { label: 'On Leave', count: leaveCount, bg: '#fef3c7', color: '#78350f' }]
                 .map(({ label, count, bg, color }) => (
                   <div key={label} style={{ flex: 1, background: bg, borderRadius: '12px', padding: '16px 20px', textAlign: 'center' }}>
@@ -225,15 +228,12 @@ const StaffAttendance: React.FC<StaffAttendanceProps> = ({ selectedSchoolId }) =
     <div className="staff-list-container">
       {toast_el}
       <div className="staff-list-header"><h2>Staff Attendance</h2></div>
-
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '12px' }}>
         <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '8px', letterSpacing: '0.5px', textTransform: 'uppercase', fontWeight: 600 }}>
           What would you like to do today?
         </p>
-
         <div style={{ display: 'flex', gap: '24px' }}>
-          <div
-            onClick={() => setView('mark')}
+          <div onClick={() => setView('mark')}
             style={{ cursor: 'pointer', width: '260px', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 16px rgba(74,144,226,0.15)', border: '1px solid var(--border)', background: 'var(--surface)', transition: 'transform 0.2s, box-shadow 0.2s' }}
             onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(74,144,226,0.25)'; }}
             onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(74,144,226,0.15)'; }}
@@ -250,8 +250,7 @@ const StaffAttendance: React.FC<StaffAttendanceProps> = ({ selectedSchoolId }) =
             </div>
           </div>
 
-          <div
-            onClick={() => setView('history')}
+          <div onClick={() => setView('history')}
             style={{ cursor: 'pointer', width: '260px', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 16px rgba(80,200,120,0.15)', border: '1px solid var(--border)', background: 'var(--surface)', transition: 'transform 0.2s, box-shadow 0.2s' }}
             onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(80,200,120,0.25)'; }}
             onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(80,200,120,0.15)'; }}
@@ -301,32 +300,22 @@ const StaffAttendance: React.FC<StaffAttendanceProps> = ({ selectedSchoolId }) =
             Mark your attendance for today
           </p>
           <div style={{ display: 'flex', gap: '16px' }}>
-            <button
-              onClick={() => setAttendance('Present')}
-              style={{
-                padding: '16px 32px', borderRadius: '12px', border: '3px solid', cursor: 'pointer',
-                fontWeight: 700, fontSize: '16px', transition: 'all 0.2s',
-                borderColor: attendance === 'Present' ? '#22543d' : '#e2e8f0',
-                background: attendance === 'Present' ? '#c6f6d5' : 'white',
-                color: attendance === 'Present' ? '#22543d' : '#718096',
-                boxShadow: attendance === 'Present' ? '0 4px 12px rgba(34, 84, 61, 0.2)' : 'none',
-              }}
-            >
-              ✓ Present
-            </button>
-            <button
-              onClick={() => setAttendance('Absent')}
-              style={{
-                padding: '16px 32px', borderRadius: '12px', border: '3px solid', cursor: 'pointer',
-                fontWeight: 700, fontSize: '16px', transition: 'all 0.2s',
-                borderColor: attendance === 'Absent' ? '#742a2a' : '#e2e8f0',
-                background: attendance === 'Absent' ? '#fed7d7' : 'white',
-                color: attendance === 'Absent' ? '#742a2a' : '#718096',
-                boxShadow: attendance === 'Absent' ? '0 4px 12px rgba(116, 42, 42, 0.2)' : 'none',
-              }}
-            >
-              ✗ Absent
-            </button>
+            <button onClick={() => setAttendance('Present')} style={{
+              padding: '16px 32px', borderRadius: '12px', border: '3px solid', cursor: 'pointer',
+              fontWeight: 700, fontSize: '16px', transition: 'all 0.2s',
+              borderColor: attendance === 'Present' ? '#22543d' : '#e2e8f0',
+              background: attendance === 'Present' ? '#c6f6d5' : 'white',
+              color: attendance === 'Present' ? '#22543d' : '#718096',
+              boxShadow: attendance === 'Present' ? '0 4px 12px rgba(34, 84, 61, 0.2)' : 'none',
+            }}>✓ Present</button>
+            <button onClick={() => setAttendance('Absent')} style={{
+              padding: '16px 32px', borderRadius: '12px', border: '3px solid', cursor: 'pointer',
+              fontWeight: 700, fontSize: '16px', transition: 'all 0.2s',
+              borderColor: attendance === 'Absent' ? '#742a2a' : '#e2e8f0',
+              background: attendance === 'Absent' ? '#fed7d7' : 'white',
+              color: attendance === 'Absent' ? '#742a2a' : '#718096',
+              boxShadow: attendance === 'Absent' ? '0 4px 12px rgba(116, 42, 42, 0.2)' : 'none',
+            }}>✗ Absent</button>
           </div>
         </div>
       </div>
@@ -343,9 +332,9 @@ const StaffAttendance: React.FC<StaffAttendanceProps> = ({ selectedSchoolId }) =
           <h2>Attendance History</h2>
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <input type="date" value={fromDate} max={toDate || new Date().toISOString().split('T')[0]} onChange={(e) => setFromDate(e.target.value)} style={{ padding: '8px 12px', borderRadius: '8px', border: '2px solid #e2e8f0', fontSize: '14px' }} />
+          <input type="date" value={fromDate} max={toDate || today} onChange={(e) => setFromDate(e.target.value)} style={{ padding: '8px 12px', borderRadius: '8px', border: '2px solid #e2e8f0', fontSize: '14px' }} />
           <span style={{ color: '#718096', fontWeight: 600 }}>to</span>
-          <input type="date" value={toDate} min={fromDate} max={new Date().toISOString().split('T')[0]} onChange={(e) => setToDate(e.target.value)} style={{ padding: '8px 12px', borderRadius: '8px', border: '2px solid #e2e8f0', fontSize: '14px' }} />
+          <input type="date" value={toDate} min={fromDate} max={today} onChange={(e) => setToDate(e.target.value)} style={{ padding: '8px 12px', borderRadius: '8px', border: '2px solid #e2e8f0', fontSize: '14px' }} />
           <button className="btn btn-primary" onClick={fetchHistory} disabled={!fromDate || !toDate || historyLoading}>
             {historyLoading ? 'Loading...' : 'View'}
           </button>
