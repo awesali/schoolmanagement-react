@@ -137,19 +137,8 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
         </button>
       </div>
       {staff.length === 0 ? (
-        <div style={{
-          background: 'white',
-          borderRadius: '8px',
-          padding: '60px 20px',
-          textAlign: 'center',
-          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
-        }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>👨‍💼</div>
-          <h3 style={{ margin: '0 0 8px 0', color: '#2d3748', fontSize: '20px', fontWeight: '600' }}>No Staff Members Found</h3>
-          <p style={{ margin: '0 0 24px 0', color: '#718096', fontSize: '14px' }}>Start by adding your first staff member to the system</p>
-          <button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>
-            + Add First Staff Member
-          </button>
+        <div className="staff-list-loading" style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+          No staff members available. Please add a new staff member.
         </div>
       ) : (
         <div className="staff-table-wrapper">

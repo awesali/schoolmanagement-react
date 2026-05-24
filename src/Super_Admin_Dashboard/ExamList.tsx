@@ -122,16 +122,8 @@ const ExamList: React.FC<ExamListProps> = ({ selectedSchoolId }) => {
       </div>
       
       {exams.length === 0 ? (
-        <div style={{
-          background: 'white',
-          borderRadius: '8px',
-          padding: '60px 20px',
-          textAlign: 'center',
-          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
-        }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>📝</div>
-          <h3 style={{ margin: '0 0 8px 0', color: '#2d3748', fontSize: '20px', fontWeight: '600' }}>No Exams Scheduled</h3>
-          <p style={{ margin: '0', color: '#718096', fontSize: '14px' }}>There are no exam schedules available at the moment</p>
+        <div className="staff-list-loading" style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+          No exam schedules available. Please add a new exam.
         </div>
       ) : (
         <>
@@ -187,18 +179,15 @@ const ExamList: React.FC<ExamListProps> = ({ selectedSchoolId }) => {
               </tbody>
             </table>
           </div>
-
-          {exams.length > 0 && (
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalRecords={totalRecords}
-              pageSize={pageSize}
-              onPageChange={handlePageChange}
-              onPageSizeChange={handlePageSizeChange}
-              pageSizeOptions={[5, 10, 20, 50]}
-            />
-          )}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalRecords={totalRecords}
+            pageSize={pageSize}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            pageSizeOptions={[5, 10, 20, 50]}
+          />
         </>
       )}
 

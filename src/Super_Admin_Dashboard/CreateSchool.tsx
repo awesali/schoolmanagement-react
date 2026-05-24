@@ -18,7 +18,15 @@ const CreateSchool: React.FC<CreateSchoolProps> = ({ isOpen, onClose }) => {
   const [error, setError] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    
+    if (name === 'phone') {
+      // Only allow digits and limit to 10 characters
+      const phoneValue = value.replace(/\D/g, '').slice(0, 10);
+      setFormData({ ...formData, [name]: phoneValue });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -98,6 +106,9 @@ const CreateSchool: React.FC<CreateSchoolProps> = ({ isOpen, onClose }) => {
                 className="input"
                 value={formData.phone}
                 onChange={handleChange}
+                placeholder="Enter 10 digit phone number"
+                maxLength={10}
+                pattern="[0-9]{10}"
                 required
               />
             </div>

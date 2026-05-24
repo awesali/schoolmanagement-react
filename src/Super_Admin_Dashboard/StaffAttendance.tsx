@@ -5,28 +5,11 @@ import './StaffList.css';
 type AttendanceStatus = 'Present' | 'Absent' | null;
 type View = 'select' | 'mark' | 'history';
 
-interface StaffAttendanceRecord {
-  staffName: string;
-  email: string;
-  phone: string;
-  attendanceDate: string;
-  status: string;
+interface StaffAttendanceProps {
+  selectedSchoolId: number | null;
 }
 
-const statusStyle = (status: string) => ({
-  display: 'inline-block', padding: '4px 12px', borderRadius: '12px',
-  fontSize: '12px', fontWeight: 600 as const,
-  background: status === 'Present' ? '#c6f6d5' : status === 'Absent' ? '#fed7d7' : '#fef3c7',
-  color: status === 'Present' ? '#22543d' : status === 'Absent' ? '#742a2a' : '#78350f',
-});
-
-const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number | null }> = ({ userRole, selectedSchoolId }) => {
-  const [adminAttendance, setAdminAttendance] = useState<StaffAttendanceRecord[]>([]);
-  const [adminLoading, setAdminLoading] = useState(false);
-  const today = new Date().toISOString().split('T')[0];
-  const [adminFromDate, setAdminFromDate] = useState(today);
-  const [adminToDate, setAdminToDate] = useState(today);
-  const [isFiltered, setIsFiltered] = useState(false);
+const StaffAttendance: React.FC<StaffAttendanceProps> = ({ selectedSchoolId }) => {
   const [view, setView] = useState<View>('select');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -89,12 +72,12 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
   };
 
   const fetchHistory = async () => {
-    if (!fromDate || !toDate) return;
+    if (!fromDate || !toDate || !selectedSchoolId) return;
     try {
       setHistoryLoading(true);
       setHistory(null);
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/Staff/staff/attendance-history?fromDate=${fromDate}&toDate=${toDate}`, {
+      const response = await fetch(`${API_BASE_URL}/api/Staff/staff/attendance-history?fromDate=${fromDate}&toDate=${toDate}&schoolId=${selectedSchoolId}`, {
         headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
       });
       if (response.ok) {
