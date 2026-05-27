@@ -53,7 +53,7 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
       setAdminLoading(true);
       const token = localStorage.getItem('token');
       const url = from && to
-        ? `${API_BASE_URL}/api/Admin/GetStaffAttendanceHistoryByDate?fromDate=${from}&toDate=${to}`
+        ? `${API_BASE_URL}/api/Admin/GetStaffAttendanceHistoryByDate?schoolId=${selectedSchoolId}&fromDate=${from}&toDate=${to}`
         : `${API_BASE_URL}/api/Admin/GetStaffAttendanceBySchool?schoolId=${selectedSchoolId}`;
       const response = await fetch(url, {
         headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
