@@ -33,7 +33,7 @@ const menuGroups = [
   {
     group: 'Finance',
     items: [
-      { label: 'Fees', children: ['Fees Structure', 'Collect Fees', 'Fees History', 'Pending Fees'] },
+      { label: 'Fees', children: ['Fee Management'] },
     ],
   },
   {

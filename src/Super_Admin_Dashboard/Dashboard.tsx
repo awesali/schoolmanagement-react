@@ -10,6 +10,7 @@ import ClassList from './ClassList';
 import SubjectList from './SubjectList';
 import ExamList from './ExamList';
 import AcademicYear from './AcademicYear';
+import FinanceManagement from './FinanceManagement';
 import Sidebar from './Sidebar';
 import { API_BASE_URL } from '../config';
 import './Dashboard.css';
@@ -204,6 +205,8 @@ const Dashboard: React.FC = () => {
           <SubjectList selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Exam List' ? (
           <ExamList selectedSchoolId={selectedSchoolId} />
+        ) : activePage === 'Fees' || activePage === 'Fee Management' ? (
+          <FinanceManagement selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Attendance' ? (
           attendanceType === 'student' ? (
             <StudentAttendance />
