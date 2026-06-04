@@ -9,6 +9,7 @@ import StaffAttendance from './StaffAttendance';
 import ClassList from './ClassList';
 import SubjectList from './SubjectList';
 import ExamList from './ExamList';
+import ExamManagement from './ExamManagement';
 import AcademicYear from './AcademicYear';
 import FinanceManagement from './FinanceManagement';
 import Sidebar from './Sidebar';
@@ -203,8 +204,8 @@ const Dashboard: React.FC = () => {
           <StudentList selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Subject List' ? (
           <SubjectList selectedSchoolId={selectedSchoolId} />
-        ) : activePage === 'Exam List' ? (
-          <ExamList selectedSchoolId={selectedSchoolId} />
+        ) : activePage === 'Exam List' || activePage === 'Exam Management' ? (
+          <ExamManagement selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Fees' || activePage === 'Fee Management' ? (
           <FinanceManagement selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Attendance' ? (
