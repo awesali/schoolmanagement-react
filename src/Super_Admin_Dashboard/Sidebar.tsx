@@ -34,6 +34,7 @@ const menuGroups = [
     group: 'Finance',
     items: [
       { label: 'Fees', children: ['Fee Management'] },
+      { label: 'Salary', children: ['Salary Management'] },
     ],
   },
   {

@@ -12,6 +12,7 @@ import ExamList from './ExamList';
 import ExamManagement from './ExamManagement';
 import AcademicYear from './AcademicYear';
 import FinanceManagement from './FinanceManagement';
+import SalaryManagement from './SalaryManagement';
 import Sidebar from './Sidebar';
 import { API_BASE_URL } from '../config';
 import './Dashboard.css';
@@ -208,6 +209,8 @@ const Dashboard: React.FC = () => {
           <ExamManagement selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Fees' || activePage === 'Fee Management' ? (
           <FinanceManagement selectedSchoolId={selectedSchoolId} />
+        ) : activePage === 'Salary Management' ? (
+          <SalaryManagement selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Attendance' ? (
           attendanceType === 'student' ? (
             <StudentAttendance />
