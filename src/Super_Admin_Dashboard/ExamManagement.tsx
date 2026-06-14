@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
+import CreateExamSchedule from './CreateExamSchedule';
 import './StaffList.css';
 
-type ExamView = 'examTypes' | 'exams' | 'subjects' | 'marks' | 'results';
+type ExamView = 'examTypes' | 'exams' | 'subjects' | 'schedule' | 'timetable' | 'results';
 
 interface ExamType { id: number; name: string; isActive: boolean; schoolId: number; }
 interface Exam {
@@ -18,10 +19,17 @@ interface ExamSubject {
 interface ClassItem { id: number; name: string; }
 interface SectionItem { id: number; name: string; classId: number; }
 interface SubjectItem { subjectId: number; subjectName: string; }
-interface MarksEntry { studentId: number; studentName: string; rollNumber?: string; obtainedMarks: number | ''; remarks: string; }
 interface ResultItem {
-  studentId: number; studentName: string; totalMarks: number;
-  obtainedMarks: number; percentage: number; grade: string; status: string; rank: number;
+  studentId: number; studentName: string; examName: string; totalMarks: number;
+  obtainedMarks: number; percentage: number; grade: string; resultStatus: string; rank: number;
+  subjects: { subjectId: number; subjectName: string; maxMarks: number; passingMarks: number; obtainedMarks: number; status: string; remarks: string; }[];
+}
+
+interface StudentResultDetail {
+  studentId: number; studentName: string; examName: string;
+  totalMarks: number; obtainedMarks: number; percentage: number;
+  grade: string; resultStatus: string;
+  subjects: { subjectId: number; subjectName: string; maxMarks: number; passingMarks: number; obtainedMarks: number; status: string; remarks: string; }[];
 }
 
 const selectStyle: React.CSSProperties = {
@@ -38,7 +46,7 @@ const badgeStyle = (published: boolean): React.CSSProperties => ({
 
 const TAB_LABELS: Record<ExamView, string> = {
   examTypes: 'Exam Types', exams: 'Exams', subjects: 'Exam Subjects',
-  marks: 'Marks Entry', results: 'Results',
+  schedule: 'Exam Schedule', timetable: 'Timetable', results: 'Results',
 };
 
 const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selectedSchoolId }) => {
@@ -72,15 +80,10 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
   const [savingSubject, setSavingSubject] = useState(false);
   const [subjectMsg, setSubjectMsg] = useState<{ text: string; ok: boolean } | null>(null);
 
-  // Marks Entry
-  const [marksExamId, setMarksExamId] = useState('');
-  const [marksSectionId, setMarksSectionId] = useState('');
-  const [marksSubjectId, setMarksSubjectId] = useState('');
-  const [marksSheet, setMarksSheet] = useState<MarksEntry[]>([]);
-  const [marksLoading, setMarksLoading] = useState(false);
-  const [savingMarks, setSavingMarks] = useState(false);
-  const [marksMsg, setMarksMsg] = useState<{ text: string; ok: boolean } | null>(null);
-  const [lockingMarks, setLockingMarks] = useState(false);
+  // Timetable
+  const [timetableExamId, setTimetableExamId] = useState('');
+  const [timetable, setTimetable] = useState<any[]>([]);
+  const [timetableLoading, setTimetableLoading] = useState(false);
 
   // Results
   const [resultsExamId, setResultsExamId] = useState('');
@@ -89,6 +92,8 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
   const [generatingResults, setGeneratingResults] = useState(false);
   const [publishingResults, setPublishingResults] = useState(false);
   const [resultsMsg, setResultsMsg] = useState<{ text: string; ok: boolean } | null>(null);
+  const [studentDetail, setStudentDetail] = useState<StudentResultDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   const token = () => localStorage.getItem('token');
   const headers = () => ({ 'accept': '*/*', 'Authorization': `Bearer ${token()}` });
@@ -229,44 +234,16 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
     finally { setSavingSubject(false); }
   };
 
-  // ── Marks Entry ──
-  const fetchMarksSheet = async () => {
-    if (!marksExamId || !marksSectionId || !marksSubjectId) return;
+  const fetchTimetable = async (eid: string) => {
+    if (!eid) return;
     try {
-      setMarksLoading(true); setMarksSheet([]);
-      const res = await fetch(`${API_BASE_URL}/api/Exam/GetMarksEntrySheet?schoolId=${selectedSchoolId}&examId=${marksExamId}&sectionId=${marksSectionId}&subjectId=${marksSubjectId}`, { headers: headers() });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setMarksSheet((data.data || []).map((s: any) => ({ ...s, obtainedMarks: s.obtainedMarks ?? '', remarks: s.remarks ?? '' })));
-      } else { setMarksMsg({ text: data.message || 'Failed to load sheet.', ok: false }); }
-    } catch { } finally { setMarksLoading(false); }
-  };
-
-  const handleSaveMarks = async () => {
-    try {
-      setSavingMarks(true); setMarksMsg(null);
-      const res = await fetch(`${API_BASE_URL}/api/Exam/SaveMarks`, {
-        method: 'POST', headers: jsonHeaders(),
-        body: JSON.stringify({
-          schoolId: selectedSchoolId, examId: Number(marksExamId),
-          sectionId: Number(marksSectionId), subjectId: Number(marksSubjectId),
-          marks: marksSheet.map(s => ({ studentId: s.studentId, obtainedMarks: Number(s.obtainedMarks) || 0, remarks: s.remarks })),
-        }),
-      });
-      const result = await res.json();
-      setMarksMsg({ text: result.message || (res.ok ? 'Marks saved!' : 'Failed.'), ok: res.ok && result.success });
-    } catch { setMarksMsg({ text: 'Error saving marks.', ok: false }); }
-    finally { setSavingMarks(false); }
-  };
-
-  const handleLockMarks = async () => {
-    if (!window.confirm('Lock marks for this exam? This cannot be undone.')) return;
-    try {
-      setLockingMarks(true);
-      const res = await fetch(`${API_BASE_URL}/api/Exam/LockMarks?examId=${marksExamId}&schoolId=${selectedSchoolId}`, { method: 'PUT', headers: headers() });
-      const result = await res.json();
-      setMarksMsg({ text: result.message || (res.ok ? 'Marks locked!' : 'Failed.'), ok: res.ok && result.success });
-    } catch { } finally { setLockingMarks(false); }
+      setTimetableLoading(true); setTimetable([]);
+      const res = await fetch(`${API_BASE_URL}/api/Exam/GetExamSubjects?examId=${eid}`, { headers: headers() });
+      if (res.ok) {
+        const data = await res.json();
+        setTimetable(data?.data ?? []);
+      }
+    } catch { } finally { setTimetableLoading(false); }
   };
 
   // ── Results ──
@@ -276,7 +253,9 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
       setResultsLoading(true); setResults([]);
       const res = await fetch(`${API_BASE_URL}/api/Exam/GetResults?examId=${resultsExamId}&schoolId=${selectedSchoolId}`, { headers: headers() });
       const data = await res.json();
-      if (res.ok) setResults(data?.data ?? []);
+      if (res.ok) {
+        setResults(data?.data ?? []);
+      }
     } catch { } finally { setResultsLoading(false); }
   };
 
@@ -302,6 +281,16 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
       setResultsMsg({ text: result.message || (res.ok ? 'Results published!' : 'Failed.'), ok: res.ok && result.success });
     } catch { setResultsMsg({ text: 'Error publishing results.', ok: false }); }
     finally { setPublishingResults(false); }
+  };
+
+  const fetchStudentDetail = async (studentId: number) => {
+    if (!studentId) return;
+    try {
+      setDetailLoading(true); setStudentDetail(null);
+      const res = await fetch(`${API_BASE_URL}/api/Exam/student-result-detail?studentId=${studentId}&examId=${resultsExamId}&schoolId=${selectedSchoolId}`, { headers: headers() });
+      const data = await res.json();
+      if (res.ok && data.success) setStudentDetail(data.data);
+    } catch { } finally { setDetailLoading(false); }
   };
 
   const filteredSections = sections.filter(s => s.classId === Number(subjectForm.classId));
@@ -534,63 +523,77 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
         </>
       )}
 
-      {/* ── MARKS ENTRY ── */}
-      {view === 'marks' && (
-        <>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap' }}>
-            <select style={selectStyle} value={marksExamId} onChange={e => { setMarksExamId(e.target.value); setMarksSheet([]); setMarksMsg(null); }}>
-              <option value="">Select Exam</option>
-              {exams.map(ex => <option key={ex.id} value={ex.id}>{ex.name}</option>)}
-            </select>
-            <select style={selectStyle} value={marksSectionId} onChange={e => { setMarksSectionId(e.target.value); setMarksSheet([]); }}>
-              <option value="">Select Section</option>
-              {sections.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
-            <select style={selectStyle} value={marksSubjectId} onChange={e => { setMarksSubjectId(e.target.value); setMarksSheet([]); }}>
-              <option value="">Select Subject</option>
-              {subjects.map(s => <option key={s.subjectId} value={s.subjectId}>{s.subjectName}</option>)}
-            </select>
-            <button className="btn btn-primary" onClick={fetchMarksSheet} disabled={!marksExamId || !marksSectionId || !marksSubjectId || marksLoading}>
-              {marksLoading ? 'Loading...' : 'Load Sheet'}
-            </button>
-          </div>
-          {msgBanner(marksMsg)}
+      {/* ── EXAM SCHEDULE ── */}
+      {view === 'schedule' && (
+        <CreateExamSchedule selectedSchoolId={selectedSchoolId} exams={exams} />
+      )}
 
-          {marksSheet.length > 0 && (
-            <>
-              <div className="staff-table-wrapper" style={{ marginBottom: '16px' }}>
-                <table className="staff-table">
-                  <thead><tr><th>#</th><th>Roll No.</th><th>Student Name</th><th>Marks Obtained</th><th>Remarks</th></tr></thead>
-                  <tbody>
-                    {marksSheet.map((s, i) => (
-                      <tr key={s.studentId}>
-                        <td>{i + 1}</td>
-                        <td>{s.rollNumber || '-'}</td>
-                        <td style={{ fontWeight: 600 }}>{s.studentName}</td>
-                        <td>
-                          <input type="number" min="0" value={s.obtainedMarks}
-                            onChange={e => setMarksSheet(prev => prev.map((m, idx) => idx === i ? { ...m, obtainedMarks: e.target.value === '' ? '' : Number(e.target.value) } : m))}
-                            style={{ width: '80px', padding: '6px 8px', borderRadius: '6px', border: '1px solid #e2e8f0' }} />
-                        </td>
-                        <td>
-                          <input type="text" value={s.remarks}
-                            onChange={e => setMarksSheet(prev => prev.map((m, idx) => idx === i ? { ...m, remarks: e.target.value } : m))}
-                            style={{ width: '140px', padding: '6px 8px', borderRadius: '6px', border: '1px solid #e2e8f0' }} placeholder="Optional" />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button className="btn btn-primary" onClick={handleSaveMarks} disabled={savingMarks}>{savingMarks ? 'Saving...' : 'Save Marks'}</button>
-                <button className="btn" style={{ border: '1px solid #e2e8f0', color: '#742a2a', background: '#fff5f5' }} onClick={handleLockMarks} disabled={lockingMarks}>{lockingMarks ? 'Locking...' : '🔒 Lock Marks'}</button>
-              </div>
-            </>
+      {/* ── TIMETABLE ── */}
+      {view === 'timetable' && (
+        <>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap' }}>
+            <select style={selectStyle} value={timetableExamId} onChange={e => { setTimetableExamId(e.target.value); fetchTimetable(e.target.value); }}>
+              <option value="">Select Exam</option>
+              {exams.filter(ex => ex.isPublished).map(ex => <option key={ex.id} value={ex.id}>{ex.name}</option>)}
+            </select>
+          </div>
+
+          {timetableLoading && <div style={{ textAlign: 'center', padding: '40px', color: '#718096' }}>Loading...</div>}
+
+          {!timetableLoading && timetableExamId && timetable.length === 0 && (
+            <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>No schedule found for this exam.</p>
           )}
 
-          {!marksLoading && marksSheet.length === 0 && (
-            <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>Select exam, section and subject, then click "Load Sheet".</p>
+          {timetable.length > 0 && (() => {
+            const selectedExam = exams.find(e => String(e.id) === timetableExamId);
+            // Group by className + sectionName
+            const groups: Record<string, any[]> = {};
+            timetable.forEach(t => {
+              const key = `${t.className} - Section ${t.sectionName}`;
+              if (!groups[key]) groups[key] = [];
+              groups[key].push(t);
+            });
+            return (
+              <>
+                {selectedExam && (
+                  <div style={{ display: 'flex', gap: '24px', marginBottom: '20px', background: '#f7fafc', padding: '14px 16px', borderRadius: '10px', fontSize: '14px', color: '#4a5568' }}>
+                    <div><strong>Exam:</strong> {selectedExam.name}</div>
+                    <div><strong>Start:</strong> {fmt(selectedExam.startDate)}</div>
+                    <div><strong>End:</strong> {fmt(selectedExam.endDate)}</div>
+                    <div><span style={badgeStyle(selectedExam.isPublished)}>{selectedExam.isPublished ? 'Published' : 'Draft'}</span></div>
+                  </div>
+                )}
+                {Object.entries(groups).map(([groupKey, items]) => (
+                  <div key={groupKey} style={{ marginBottom: '24px' }}>
+                    <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#1e2a3a', marginBottom: '10px' }}>{groupKey}</h3>
+                    <div className="staff-table-wrapper">
+                      <table className="staff-table">
+                        <thead>
+                          <tr><th>#</th><th>Subject</th><th>Exam Date</th><th>Start Time</th><th>End Time</th><th>Max Marks</th><th>Pass Marks</th></tr>
+                        </thead>
+                        <tbody>
+                          {items.map((t, i) => (
+                            <tr key={i}>
+                              <td>{i + 1}</td>
+                              <td style={{ fontWeight: 600 }}>{t.subjectName}</td>
+                              <td>{t.examDate ? fmt(t.examDate) : '-'}</td>
+                              <td>{t.startTime ? t.startTime.substring(0, 5) : '-'}</td>
+                              <td>{t.endTime ? t.endTime.substring(0, 5) : '-'}</td>
+                              <td>{t.maxMarks ?? '-'}</td>
+                              <td>{t.passingMarks ?? '-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))}
+              </>
+            );
+          })()}
+
+          {!timetableExamId && (
+            <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>Select a published exam to view its timetable.</p>
           )}
         </>
       )}
@@ -614,15 +617,19 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
               <table className="staff-table">
                 <thead><tr><th>Rank</th><th>Student</th><th>Total</th><th>Obtained</th><th>%</th><th>Grade</th><th>Status</th></tr></thead>
                 <tbody>
-                  {results.map(r => (
-                    <tr key={r.studentId}>
+                  {results.map((r, idx) => (
+                    <tr key={idx}>
                       <td style={{ fontWeight: 700 }}>#{r.rank}</td>
-                      <td style={{ fontWeight: 600 }}>{r.studentName}</td>
+                      <td>
+                        <span className="staff-name-link" onClick={() => fetchStudentDetail(r.studentId)}>
+                          {r.studentName}
+                        </span>
+                      </td>
                       <td>{r.totalMarks}</td>
                       <td>{r.obtainedMarks}</td>
                       <td>{r.percentage?.toFixed(1)}%</td>
                       <td><span style={{ fontWeight: 700, color: '#553c9a' }}>{r.grade}</span></td>
-                      <td><span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 600, background: r.status === 'Pass' ? '#c6f6d5' : '#fed7d7', color: r.status === 'Pass' ? '#22543d' : '#742a2a' }}>{r.status}</span></td>
+                      <td><span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 600, background: r.resultStatus === 'PASS' ? '#c6f6d5' : '#fed7d7', color: r.resultStatus === 'PASS' ? '#22543d' : '#742a2a' }}>{r.resultStatus}</span></td>
                     </tr>
                   ))}
                 </tbody>
@@ -632,6 +639,69 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
             !resultsLoading && <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>Select an exam and click "View Results" or "Generate Results".</p>
           )}
         </>
+      )}
+
+      {/* ── STUDENT RESULT DETAIL MODAL ── */}
+      {(detailLoading || studentDetail) && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: 'white', borderRadius: '16px', padding: '32px', width: '100%', maxWidth: '560px', boxShadow: '0 8px 32px rgba(0,0,0,0.18)', maxHeight: '90vh', overflowY: 'auto' }}>
+            {detailLoading ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#718096' }}>Loading...</div>
+            ) : studentDetail && (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                  <h3 style={{ color: '#1e2a3a', margin: 0 }}>Result Detail</h3>
+                  <button onClick={() => setStudentDetail(null)}
+                    style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#718096' }}>✕</button>
+                </div>
+                <div style={{ background: '#f7fafc', borderRadius: '10px', padding: '16px', marginBottom: '20px', fontSize: '14px', color: '#4a5568' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div><strong>Student:</strong> {studentDetail.studentName}</div>
+                    <div><strong>Exam:</strong> {studentDetail.examName}</div>
+                    <div><strong>Total Marks:</strong> {studentDetail.totalMarks}</div>
+                    <div><strong>Obtained:</strong> {studentDetail.obtainedMarks}</div>
+                    <div><strong>Percentage:</strong> {studentDetail.percentage}%</div>
+                    <div><strong>Grade:</strong> <span style={{ fontWeight: 700, color: '#553c9a' }}>{studentDetail.grade}</span></div>
+                  </div>
+                  <div style={{ marginTop: '10px' }}>
+                    <span style={{ display: 'inline-block', padding: '4px 14px', borderRadius: '12px', fontWeight: 700, fontSize: '13px',
+                      background: studentDetail.resultStatus === 'PASS' ? '#c6f6d5' : '#fed7d7',
+                      color: studentDetail.resultStatus === 'PASS' ? '#22543d' : '#742a2a' }}>
+                      {studentDetail.resultStatus}
+                    </span>
+                  </div>
+                </div>
+                <h4 style={{ color: '#1e2a3a', marginBottom: '12px', fontSize: '14px' }}>Subject-wise Breakdown</h4>
+                {(studentDetail.subjects ?? []).length === 0 ? (
+                  <p style={{ color: '#718096', textAlign: 'center', padding: '20px' }}>No subject details available.</p>
+                ) : (
+                <div className="staff-table-wrapper">
+                  <table className="staff-table">
+                    <thead>
+                      <tr><th>Subject</th><th>Max</th><th>Pass</th><th>Obtained</th><th>Status</th><th>Remarks</th></tr>
+                    </thead>
+                    <tbody>
+                      {(studentDetail.subjects ?? []).map(s => (
+                        <tr key={s.subjectId}>
+                          <td style={{ fontWeight: 600 }}>{s.subjectName}</td>
+                          <td>{s.maxMarks}</td>
+                          <td>{s.passingMarks}</td>
+                          <td style={{ fontWeight: 600 }}>{s.obtainedMarks}</td>
+                          <td><span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 600,
+                            background: s.status === 'PASS' ? '#c6f6d5' : '#fed7d7',
+                            color: s.status === 'PASS' ? '#22543d' : '#742a2a' }}>{s.status}</span></td>
+                          <td style={{ color: '#718096', fontSize: '13px' }}>{s.remarks || '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                )}
+                <button className="btn btn-primary" style={{ width: '100%', marginTop: '20px' }} onClick={() => setStudentDetail(null)}>Close</button>
+              </>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

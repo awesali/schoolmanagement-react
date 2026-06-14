@@ -1,511 +1,208 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
-import Modal from './Modal';
-import './AddStaff.css';
+import './StaffList.css';
 
-interface ExamType {
-  id: number;
-  name: string;
-}
+interface ClassItem { id: number; name: string; }
+interface SectionItem { id: number; name: string; classId: number; }
+interface Exam { id: number; name: string; }
+interface ScheduleRow { subjectId: number; subjectName: string; examDate: string; startTime: string; endTime: string; }
 
-interface Subject {
-  subjectId: number;
-  subjectName: string;
-}
+const selectStyle: React.CSSProperties = {
+  padding: '8px 12px', borderRadius: '8px', border: '2px solid #e2e8f0',
+  fontSize: '14px', minWidth: '160px', background: 'white',
+};
 
-interface Section {
-  id: number;
-  sectionName: string;
-  subjects: Subject[];
-}
-
-interface Class {
-  id: number;
-  className: string;
-  sections: Section[];
-}
-
-interface ExamSubject {
-  subjectId: number;
-  examDate: string;
-  startTime: string;
-  endTime: string;
-  selected: boolean;
-}
-
-interface SelectedSection {
-  sectionId: number;
-  subjects: ExamSubject[];
-}
-
-interface SelectedClass {
-  classId: number;
-  sections: SelectedSection[];
-}
+const inputStyle: React.CSSProperties = {
+  padding: '8px 12px', borderRadius: '8px', border: '2px solid #e2e8f0',
+  fontSize: '14px', background: 'white',
+};
 
 interface CreateExamScheduleProps {
-  isOpen: boolean;
-  onClose: () => void;
-  schoolId: number | null;
-  onSuccess: () => void;
+  selectedSchoolId: number | null;
+  exams: Exam[];
 }
 
-const CreateExamSchedule: React.FC<CreateExamScheduleProps> = ({ 
-  isOpen, 
-  onClose, 
-  schoolId, 
-  onSuccess 
-}) => {
-  const [examTypes, setExamTypes] = useState<ExamType[]>([]);
-  const [classes, setClasses] = useState<Class[]>([]);
-  const [examName, setExamName] = useState<string>('');
-  const [startDate, setStartDate] = useState<string>('');
-  const [endDate, setEndDate] = useState<string>('');
-  const [selectedExamTypeId, setSelectedExamTypeId] = useState<number | null>(null);
-  const [selectedClasses, setSelectedClasses] = useState<Set<number>>(new Set());
-  const [selectedSections, setSelectedSections] = useState<Set<number>>(new Set());
-  const [examSchedule, setExamSchedule] = useState<Map<string, ExamSubject>>(new Map());
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string>('');
+const CreateExamSchedule: React.FC<CreateExamScheduleProps> = ({ selectedSchoolId, exams }) => {
+  const [classes, setClasses] = useState<ClassItem[]>([]);
+  const [sections, setSections] = useState<SectionItem[]>([]);
+
+  const [examId, setExamId] = useState('');
+  const [classId, setClassId] = useState('');
+  const [sectionId, setSectionId] = useState('');
+
+  const [rows, setRows] = useState<ScheduleRow[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
+
+  const token = () => localStorage.getItem('token');
+  const headers = () => ({ 'accept': '*/*', 'Authorization': `Bearer ${token()}` });
+  const jsonHeaders = () => ({ ...headers(), 'Content-Type': 'application/json' });
 
   useEffect(() => {
-    if (isOpen && schoolId) {
-      fetchExamTypes();
-      fetchClasses();
-      setError('');
-    }
-  }, [isOpen, schoolId]);
+    if (selectedSchoolId) fetchEnrollmentInfo();
+  }, [selectedSchoolId]); // eslint-disable-line
 
-  const fetchExamTypes = async () => {
+  useEffect(() => {
+    if (examId && sectionId) fetchExamSubjectsForSection();
+    else setRows([]);
+  }, [examId, sectionId]); // eslint-disable-line
+
+  const fetchEnrollmentInfo = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/Exam/exam-type-picklist?schoolId=${schoolId}`, {
-        headers: {
-          'accept': '*/*',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const result = await response.json();
+      const res = await fetch(`${API_BASE_URL}/api/Student/enrollment-info?schoolId=${selectedSchoolId}`, { headers: headers() });
+      if (res.ok) {
+        const result = await res.json();
         if (result.success && result.data) {
-          setExamTypes(result.data);
+          setClasses(result.data.classes || []);
+          setSections(result.data.sections || []);
         }
       }
-    } catch (err) {
-      console.error('Failed to fetch exam types');
-    }
+    } catch { }
   };
 
-  const fetchClasses = async () => {
+  const fetchExamSubjectsForSection = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/Class/calss-list?schoolId=${schoolId}&page=1&pageSize=100`, {
-        headers: {
-          'accept': '*/*',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data) {
-          setClasses(result.data);
-        }
+      const res = await fetch(`${API_BASE_URL}/api/Exam/GetExamSubjects?examId=${examId}`, { headers: headers() });
+      if (res.ok) {
+        const result = await res.json();
+        const filtered = (result?.data ?? []).filter((s: any) => s.sectionId === Number(sectionId));
+        console.log('ExamSubjects response:', filtered);
+        setRows(filtered.map((s: any) => ({
+          subjectId: Number(s.subjectId || s.subject_id || s.id),
+          subjectName: s.subjectName || s.subject_name || s.name,
+          examDate: '',
+          startTime: '09:00',
+          endTime: '12:00',
+        })));
       }
-    } catch (err) {
-      console.error('Failed to fetch classes');
-    }
+    } catch { }
   };
 
-  const handleClassToggle = (classId: number) => {
-    const newSelectedClasses = new Set(selectedClasses);
-    const newSelectedSections = new Set(selectedSections);
-    
-    if (newSelectedClasses.has(classId)) {
-      newSelectedClasses.delete(classId);
-      // Remove all sections of this class
-      const classData = classes.find(c => c.id === classId);
-      classData?.sections.forEach(section => {
-        newSelectedSections.delete(section.id);
-        // Remove exam schedule for this section's subjects
-        section.subjects.forEach(subject => {
-          examSchedule.delete(`${section.id}-${subject.subjectId}`);
-        });
-      });
-    } else {
-      newSelectedClasses.add(classId);
-    }
-    
-    setSelectedClasses(newSelectedClasses);
-    setSelectedSections(newSelectedSections);
-    setExamSchedule(new Map(examSchedule));
+  const filteredSections = sections.filter(s => s.classId === Number(classId));
+
+  const updateRow = (i: number, field: keyof ScheduleRow, value: string) => {
+    setRows(prev => prev.map((r, idx) => idx === i ? { ...r, [field]: value } : r));
   };
 
-  const handleSectionToggle = (sectionId: number) => {
-    const newSelectedSections = new Set(selectedSections);
-    
-    if (newSelectedSections.has(sectionId)) {
-      newSelectedSections.delete(sectionId);
-      // Remove exam schedule for this section's subjects
-      const section = classes.flatMap(c => c.sections).find(s => s.id === sectionId);
-      section?.subjects.forEach(subject => {
-        examSchedule.delete(`${sectionId}-${subject.subjectId}`);
-      });
-    } else {
-      newSelectedSections.add(sectionId);
+  const handleSubmit = async () => {
+    if (!examId || !classId || !sectionId) {
+      setMsg({ text: 'Please select Exam, Class and Section.', ok: false }); return;
     }
-    
-    setSelectedSections(newSelectedSections);
-    setExamSchedule(new Map(examSchedule));
-  };
-
-  const handleSubjectSchedule = (sectionId: number, subjectId: number, field: keyof ExamSubject, value: string | boolean) => {
-    const key = `${sectionId}-${subjectId}`;
-    const currentSchedule = examSchedule.get(key) || {
-      subjectId,
-      examDate: '',
-      startTime: '09:00:00',
-      endTime: '12:00:00',
-      selected: false
-    };
-    
-    const updatedSchedule = { ...currentSchedule, [field]: value };
-    examSchedule.set(key, updatedSchedule);
-    setExamSchedule(new Map(examSchedule));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!examName.trim()) {
-      setError('Please enter exam name');
-      return;
+    const incomplete = rows.find(r => !r.examDate);
+    if (incomplete) {
+      setMsg({ text: `Please set exam date for "${incomplete.subjectName}".`, ok: false }); return;
     }
-    
-    if (!startDate) {
-      setError('Please select start date');
-      return;
-    }
-    
-    if (!endDate) {
-      setError('Please select end date');
-      return;
-    }
-    
-    if (!selectedExamTypeId) {
-      setError('Please select an exam type');
-      return;
-    }
-    
-    if (selectedClasses.size === 0) {
-      setError('Please select at least one class');
-      return;
-    }
-    
-    if (selectedSections.size === 0) {
-      setError('Please select at least one section');
-      return;
-    }
-
-    // Build the payload according to your API structure
-    const classesData: SelectedClass[] = [];
-    
-    selectedClasses.forEach(classId => {
-      const classData = classes.find(c => c.id === classId);
-      if (classData) {
-        const sectionsData: SelectedSection[] = [];
-        
-        classData.sections.forEach(section => {
-          if (selectedSections.has(section.id)) {
-            const subjects: ExamSubject[] = [];
-            
-            section.subjects.forEach(subject => {
-              const scheduleKey = `${section.id}-${subject.subjectId}`;
-              const schedule = examSchedule.get(scheduleKey);
-              
-              if (schedule && schedule.selected && schedule.examDate) {
-                subjects.push({
-                  subjectId: schedule.subjectId,
-                  examDate: new Date(schedule.examDate).toISOString(),
-                  startTime: schedule.startTime,
-                  endTime: schedule.endTime
-                });
-              }
-            });
-            
-            if (subjects.length > 0) {
-              sectionsData.push({
-                sectionId: section.id,
-                subjects
-              });
-            }
-          }
-        });
-        
-        if (sectionsData.length > 0) {
-          classesData.push({
-            classId,
-            sections: sectionsData
-          });
-        }
-      }
-    });
-
-    if (classesData.length === 0) {
-      setError('Please schedule at least one subject');
-      return;
-    }
-
-    setError('');
-    setLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
-      const payload = {
-        name: examName,
-        examTypeId: selectedExamTypeId,
-        schoolId: schoolId,
-        startDate: new Date(startDate).toISOString(),
-        endDate: new Date(endDate).toISOString(),
-        classes: classesData
-      };
+      setSaving(true); setMsg(null);
+      const results = await Promise.all(rows.map(r =>
+        fetch(`${API_BASE_URL}/api/Exam/CreateExamSchedule`, {
+          method: 'POST', headers: jsonHeaders(),
+          body: JSON.stringify({
+            examId: Number(examId),
+            schoolId: selectedSchoolId,
+            classId: Number(classId),
+            sectionId: Number(sectionId),
+            subjectId: r.subjectId,
+            examDate: new Date(r.examDate).toISOString(),
+            startTime: r.startTime + ':00',
+            endTime: r.endTime + ':00',
+          }),
+        }).then(res => res.json())
+      ));
 
-      const response = await fetch(`${API_BASE_URL}/api/Exam/create-schedule`, {
-        method: 'POST',
-        headers: {
-          'accept': '*/*',
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const result = await response.json();
-      
-      if (response.ok && result.success) {
-        handleClear();
-        onSuccess();
-        onClose();
+      const failed = results.filter(r => !r.success);
+      if (failed.length === 0) {
+        setMsg({ text: `${rows.length} schedule(s) created successfully!`, ok: true });
       } else {
-        setError(result.message || 'Failed to create exam schedule');
+        setMsg({ text: failed[0].message || 'Some schedules failed.', ok: false });
       }
-    } catch (err) {
-      console.error('Failed to create exam schedule:', err);
-      setError('Network error. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    } catch { setMsg({ text: 'Error creating schedule.', ok: false }); }
+    finally { setSaving(false); }
   };
 
-  const handleClear = () => {
-    setExamName('');
-    setStartDate('');
-    setEndDate('');
-    setSelectedExamTypeId(null);
-    setSelectedClasses(new Set());
-    setSelectedSections(new Set());
-    setExamSchedule(new Map());
-    setError('');
+  const handleReset = () => {
+    setExamId(''); setClassId(''); setSectionId(''); setRows([]); setMsg(null);
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Create Exam Schedule"
-      submitLabel={loading ? "Creating..." : "Create Schedule"}
-      onCancel={handleClear}
-      formId="create-exam-schedule-form"
-      size="large"
-    >
-      {error && (
-        <div className="error-message">
-          {error}
+    <div>
+      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '20px' }}>
+        <select style={selectStyle} value={examId} onChange={e => { setExamId(e.target.value); setMsg(null); }}>
+          <option value="">Select Exam</option>
+          {exams.map(ex => <option key={ex.id} value={ex.id}>{ex.name}</option>)}
+        </select>
+        <select style={selectStyle} value={classId} onChange={e => { setClassId(e.target.value); setSectionId(''); setRows([]); }}>
+          <option value="">Select Class</option>
+          {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+        <select style={selectStyle} value={sectionId} onChange={e => setSectionId(e.target.value)} disabled={!classId}>
+          <option value="">Select Section</option>
+          {filteredSections.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+        </select>
+      </div>
+
+      {msg && (
+        <div style={{ marginBottom: '16px', padding: '10px 16px', borderRadius: '8px', fontWeight: 600, fontSize: '14px',
+          background: msg.ok ? '#c6f6d5' : '#fed7d7', color: msg.ok ? '#22543d' : '#742a2a' }}>
+          {msg.ok ? '✅' : '⚠️'} {msg.text}
         </div>
       )}
-      
-      <form id="create-exam-schedule-form" onSubmit={handleSubmit}>
-        <div className="form-grid">
-          <div className="form-group">
-            <label>Exam Name *</label>
-            <input
-              type="text"
-              value={examName}
-              onChange={(e) => setExamName(e.target.value)}
-              placeholder="Enter exam name (e.g., First Term)"
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>Exam Type *</label>
-            <select 
-              value={selectedExamTypeId || ''} 
-              onChange={(e) => setSelectedExamTypeId(Number(e.target.value))}
-              required
-            >
-              <option value="">Select Exam Type</option>
-              {examTypes.map(examType => (
-                <option key={examType.id} value={examType.id}>
-                  {examType.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Start Date *</label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>End Date *</label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              min={startDate}
-              required
-            />
-          </div>
-        </div>
 
-        {selectedExamTypeId && (
-          <div className="exam-schedule-content">
-            <h3>Select Classes and Sections</h3>
-            
-            {classes.map(classItem => (
-              <div key={classItem.id} className="class-section-group" style={{ marginBottom: '20px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '16px' }}>
-                <div className="class-header" style={{ marginBottom: '12px' }}>
-                  <label className="checkbox-item" style={{ fontSize: '16px', fontWeight: '600' }}>
-                    <input
-                      type="checkbox"
-                      checked={selectedClasses.has(classItem.id)}
-                      onChange={() => handleClassToggle(classItem.id)}
-                      style={{ marginRight: '8px' }}
-                    />
-                    {classItem.className}
-                  </label>
-                </div>
-                
-                {selectedClasses.has(classItem.id) && classItem.sections.length > 0 && (
-                  <div className="sections-list" style={{ marginLeft: '24px' }}>
-                    <h4 style={{ marginBottom: '8px', color: '#6b7280' }}>Sections:</h4>
-                    {classItem.sections.map(section => (
-                      <div key={section.id} className="section-group" style={{ marginBottom: '16px' }}>
-                        <label className="checkbox-item">
-                          <input
-                            type="checkbox"
-                            checked={selectedSections.has(section.id)}
-                            onChange={() => handleSectionToggle(section.id)}
-                            style={{ marginRight: '8px' }}
-                          />
-                          {section.sectionName}
-                        </label>
-                        
-                        {selectedSections.has(section.id) && section.subjects.length > 0 && (
-                          <div className="subjects-schedule" style={{ marginLeft: '24px', marginTop: '12px' }}>
-                            <h5 style={{ marginBottom: '8px', color: '#6b7280' }}>Schedule Subjects:</h5>
-                            <div className="subjects-table">
-                              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                                <thead>
-                                  <tr style={{ backgroundColor: '#f9fafb' }}>
-                                    <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #e5e7eb', width: '50px' }}>Select</th>
-                                    <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #e5e7eb' }}>Subject</th>
-                                    <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #e5e7eb' }}>Exam Date</th>
-                                    <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #e5e7eb' }}>Start Time</th>
-                                    <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #e5e7eb' }}>End Time</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {section.subjects.map(subject => {
-                                    const scheduleKey = `${section.id}-${subject.subjectId}`;
-                                    const schedule = examSchedule.get(scheduleKey);
-                                    
-                                    return (
-                                      <tr key={subject.subjectId}>
-                                        <td style={{ padding: '8px', border: '1px solid #e5e7eb', textAlign: 'center' }}>
-                                          <input
-                                            type="checkbox"
-                                            checked={schedule?.selected || false}
-                                            onChange={(e) => handleSubjectSchedule(section.id, subject.subjectId, 'selected', e.target.checked)}
-                                            style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                                          />
-                                        </td>
-                                        <td style={{ padding: '8px', border: '1px solid #e5e7eb' }}>
-                                          {subject.subjectName}
-                                        </td>
-                                        <td style={{ padding: '8px', border: '1px solid #e5e7eb' }}>
-                                          <input
-                                            type="date"
-                                            value={schedule?.examDate || ''}
-                                            onChange={(e) => handleSubjectSchedule(section.id, subject.subjectId, 'examDate', e.target.value)}
-                                            min={startDate}
-                                            max={endDate}
-                                            disabled={!schedule?.selected}
-                                            style={{ 
-                                              width: '100%', 
-                                              padding: '4px', 
-                                              border: '1px solid #d1d5db', 
-                                              borderRadius: '4px',
-                                              backgroundColor: schedule?.selected ? 'white' : '#f3f4f6',
-                                              cursor: schedule?.selected ? 'text' : 'not-allowed'
-                                            }}
-                                          />
-                                        </td>
-                                        <td style={{ padding: '8px', border: '1px solid #e5e7eb' }}>
-                                          <input
-                                            type="time"
-                                            value={schedule?.startTime || '09:00:00'}
-                                            onChange={(e) => handleSubjectSchedule(section.id, subject.subjectId, 'startTime', e.target.value + ':00')}
-                                            disabled={!schedule?.selected}
-                                            style={{ 
-                                              width: '100%', 
-                                              padding: '4px', 
-                                              border: '1px solid #d1d5db', 
-                                              borderRadius: '4px',
-                                              backgroundColor: schedule?.selected ? 'white' : '#f3f4f6',
-                                              cursor: schedule?.selected ? 'text' : 'not-allowed'
-                                            }}
-                                          />
-                                        </td>
-                                        <td style={{ padding: '8px', border: '1px solid #e5e7eb' }}>
-                                          <input
-                                            type="time"
-                                            value={schedule?.endTime || '12:00:00'}
-                                            onChange={(e) => handleSubjectSchedule(section.id, subject.subjectId, 'endTime', e.target.value + ':00')}
-                                            disabled={!schedule?.selected}
-                                            style={{ 
-                                              width: '100%', 
-                                              padding: '4px', 
-                                              border: '1px solid #d1d5db', 
-                                              borderRadius: '4px',
-                                              backgroundColor: schedule?.selected ? 'white' : '#f3f4f6',
-                                              cursor: schedule?.selected ? 'text' : 'not-allowed'
-                                            }}
-                                          />
-                                        </td>
-                                      </tr>
-                                    );
-                                  })}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
+      {examId && classId && sectionId && rows.length === 0 && (
+        <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>
+          No subjects configured for this exam and section. Add subjects under "Exam Subjects" first.
+        </p>
+      )}
+
+      {rows.length > 0 && (
+        <>
+          <div className="staff-table-wrapper" style={{ marginBottom: '16px' }}>
+            <table className="staff-table">
+              <thead>
+                <tr><th>#</th><th>Subject</th><th>Exam Date</th><th>Start Time</th><th>End Time</th></tr>
+              </thead>
+              <tbody>
+                {rows.map((row, i) => (
+                  <tr key={row.subjectId}>
+                    <td>{i + 1}</td>
+                    <td style={{ fontWeight: 600 }}>{row.subjectName}</td>
+                    <td>
+                      <input type="date" value={row.examDate}
+                        onChange={e => updateRow(i, 'examDate', e.target.value)}
+                        style={inputStyle} />
+                    </td>
+                    <td>
+                      <input type="time" value={row.startTime}
+                        onChange={e => updateRow(i, 'startTime', e.target.value)}
+                        style={inputStyle} />
+                    </td>
+                    <td>
+                      <input type="time" value={row.endTime}
+                        onChange={e => updateRow(i, 'endTime', e.target.value)}
+                        style={inputStyle} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        )}
-      </form>
-    </Modal>
+
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button className="btn btn-primary" onClick={handleSubmit} disabled={saving}>
+              {saving ? 'Saving...' : 'Save Schedule'}
+            </button>
+            <button className="btn" style={{ border: '1px solid #e2e8f0' }} onClick={handleReset}>Reset</button>
+          </div>
+        </>
+      )}
+
+      {(!examId || !classId || !sectionId) && (
+        <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>
+          Select Exam, Class and Section to create a schedule.
+        </p>
+      )}
+    </div>
   );
 };
 

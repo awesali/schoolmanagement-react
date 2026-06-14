@@ -10,6 +10,7 @@ import ClassList from './ClassList';
 import SubjectList from './SubjectList';
 import ExamList from './ExamList';
 import ExamManagement from './ExamManagement';
+import TeacherExamView from './TeacherExamView';
 import AcademicYear from './AcademicYear';
 import FinanceManagement from './FinanceManagement';
 import SalaryManagement from './SalaryManagement';
@@ -206,7 +207,13 @@ const Dashboard: React.FC = () => {
         ) : activePage === 'Subject List' ? (
           <SubjectList selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Exam List' || activePage === 'Exam Management' ? (
-          <ExamManagement selectedSchoolId={selectedSchoolId} />
+          userRole === '2' ? (
+            <TeacherExamView selectedSchoolId={selectedSchoolId} />
+          ) : (
+            <ExamManagement selectedSchoolId={selectedSchoolId} />
+          )
+        ) : activePage === 'Marks Entry' ? (
+          <TeacherExamView selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Fees' || activePage === 'Fee Management' ? (
           <FinanceManagement selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Salary Management' ? (

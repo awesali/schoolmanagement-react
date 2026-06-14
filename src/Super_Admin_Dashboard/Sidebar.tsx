@@ -16,6 +16,12 @@ const teacherMenuGroups = [
       { label: 'Staff', children: ['Attendance'] },
     ],
   },
+  {
+    group: 'Exams',
+    items: [
+      { label: 'Academic Exam', children: ['Marks Entry'] },
+    ],
+  },
 ];
 
 const menuGroups = [
