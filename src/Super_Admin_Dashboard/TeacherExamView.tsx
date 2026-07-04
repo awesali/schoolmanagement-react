@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
+import { getTeacherSchoolId } from '../utils/auth';
 import './StaffList.css';
 
 type TeacherExamView = 'timetable' | 'marks';
@@ -46,14 +47,7 @@ const TeacherExamView: React.FC<{ selectedSchoolId: number | null }> = ({ select
   const fmt = (d: string) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-';
 
   useEffect(() => {
-    const t = localStorage.getItem('token');
-    if (t) {
-      try {
-        const payload = JSON.parse(atob(t.split('.')[1]));
-        const sid = payload['SchoolId'] || payload['schoolId'] || payload['school_id'];
-        setSchoolId(sid ? Number(sid) : selectedSchoolId);
-      } catch { setSchoolId(selectedSchoolId); }
-    }
+    setSchoolId(getTeacherSchoolId() || selectedSchoolId);
   }, []); // eslint-disable-line
 
   useEffect(() => {

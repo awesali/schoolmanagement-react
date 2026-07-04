@@ -16,6 +16,7 @@ import FinanceManagement from './FinanceManagement';
 import SalaryManagement from './SalaryManagement';
 import Sidebar from './Sidebar';
 import { API_BASE_URL } from '../config';
+import { getAuthTokenPayload } from '../utils/auth';
 import './Dashboard.css';
 
 interface School {
@@ -46,27 +47,28 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        const name = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'];
-        const roleId = payload['RoleId'];
-        if (name) setUserName(name);
+      const payload = getAuthTokenPayload();
+      if (payload) {
+        const roleId = payload.roleId;
+        if (payload.name) setUserName(payload.name);
         if (roleId) {
           setUserRole(roleId);
           console.log('User Role from token:', roleId);
-          // Only check attendance for staff (roleId === '2')
           if (roleId === '2') {
+            if (payload.schoolId) {
+              setSelectedSchoolId(payload.schoolId);
+              localStorage.setItem('schoolId', payload.schoolId.toString());
+            }
             checkAttendance(token);
           } else {
-            // Ensure popup is never shown for non-staff users
             setShowAttendancePopup(false);
+            fetchSchools();
           }
         }
-      } catch (error) {
-        console.error('Error decoding token:', error);
       }
+    } else {
+      fetchSchools();
     }
-    fetchSchools();
   }, []);
 
 

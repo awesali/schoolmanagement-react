@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
+import { getTeacherSchoolId } from '../utils/auth';
 import './StaffList.css';
 
 type AttendanceStatus = 'Present' | 'Absent' | null;
@@ -23,6 +24,7 @@ const statusStyle = (status: string) => ({
 
 const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number | null }> = ({ userRole, selectedSchoolId }) => {
   const today = new Date().toISOString().split('T')[0];
+  const effectiveSchoolId = userRole === '2' ? getTeacherSchoolId() : selectedSchoolId;
 
   // Admin state
   const [adminAttendance, setAdminAttendance] = useState<StaffAttendanceRecord[]>([]);
@@ -47,6 +49,20 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
   };
+
+  const getCurrentLocation = () =>
+    new Promise<GeolocationPosition>((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Location is not supported by this browser.'));
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0,
+      });
+    });
 
   const fetchAdminAttendance = async (from?: string, to?: string) => {
     try {
@@ -91,11 +107,17 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
     }
     try {
       setSubmitting(true);
+      const position = attendance === 'Present' ? await getCurrentLocation() : null;
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_BASE_URL}/api/Staff/staff/mark-attendance`, {
         method: 'POST',
         headers: { 'accept': '*/*', 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ attendanceDate: new Date().toISOString(), status: attendance }),
+        body: JSON.stringify({
+          attendanceDate: new Date().toISOString(),
+          status: attendance,
+          latitude: position?.coords.latitude,
+          longitude: position?.coords.longitude,
+        }),
       });
       const result = await response.json();
       if (response.ok && result?.success) {
@@ -107,7 +129,10 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
         showToast(msg, 'error');
       }
     } catch (err) {
-      showToast('An error occurred while marking attendance', 'error');
+      const message = err && typeof err === 'object' && 'message' in err
+        ? String(err.message)
+        : 'An error occurred while marking attendance';
+      showToast(message || 'Please allow location access to mark attendance', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -115,11 +140,15 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
 
   const fetchHistory = async () => {
     if (!fromDate || !toDate) return;
+    if (!effectiveSchoolId) {
+      showToast('School is missing from your login token', 'error');
+      return;
+    }
     try {
       setHistoryLoading(true);
       setHistory(null);
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/Staff/staff/attendance-history?fromDate=${fromDate}&toDate=${toDate}`, {
+      const response = await fetch(`${API_BASE_URL}/api/Staff/staff/attendance-history?fromDate=${fromDate}&toDate=${toDate}&schoolid=${effectiveSchoolId}`, {
         headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
       });
       if (response.ok) {

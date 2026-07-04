@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../config';
+import { getAuthTokenPayload } from '../utils/auth';
 import './Login.css';
 
 const Login: React.FC = () => {
@@ -28,8 +29,10 @@ const Login: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         localStorage.setItem('token', data.token);
-        if (data.schoolId) {
-          localStorage.setItem('schoolId', data.schoolId.toString());
+        const tokenPayload = getAuthTokenPayload();
+        const schoolId = data.schoolId || tokenPayload?.schoolId;
+        if (schoolId) {
+          localStorage.setItem('schoolId', schoolId.toString());
         }
         navigate('/dashboard');
       } else {
