@@ -1,10 +1,3 @@
-// Live API URL
-export const LIVE_API_BASE_URL = 'https://school.cognerasystems.com';
-
-// Local API URL  
-export const LOCAL_API_BASE_URL = 'https://localhost:7015';
-
-// Automatic selection based on environment
-export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || (process.env.NODE_ENV === 'production' 
-  ? LIVE_API_BASE_URL 
-  : LOCAL_API_BASE_URL);
+export const API_BASE_URL = process.env.NODE_ENV === 'production'
+  ? 'https://school.cognerasystems.com'
+  : (process.env.REACT_APP_API_BASE_URL || 'https://localhost:7015');
