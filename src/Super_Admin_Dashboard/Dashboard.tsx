@@ -182,9 +182,11 @@ const Dashboard: React.FC = () => {
         </div>
         <div className="header-right">
           <span className="welcome-text">Welcome, <strong>{userName}</strong> 👋</span>
-          <button className="btn btn-primary" onClick={() => setIsCreateSchoolOpen(true)}>
-            + Create School
-          </button>
+          {userRole === '1' && (
+            <button className="btn btn-primary" onClick={() => setIsCreateSchoolOpen(true)}>
+              + Create School
+            </button>
+          )}
           <div className="search-box">
             <input type="text" placeholder="Search" className="search-input" />
           </div>
