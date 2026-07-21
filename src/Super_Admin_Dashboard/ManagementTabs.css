@@ -1,3 +1,4 @@
+/* Shared responsive tabs used by Exams, Fees, Salary, Transport and Inventory. */
 .management-tabs {
   display: flex;
   gap: 4px;
