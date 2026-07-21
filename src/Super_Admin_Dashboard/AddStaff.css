@@ -457,3 +457,44 @@ input:checked + .toggle-slider:before {
   box-shadow: 0 0 0 4px rgba(74, 144, 226, 0.1);
   transform: translateY(-2px);
 }
+
+/* ── Mobile ── */
+@media (max-width: 640px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+    padding: 16px;
+    gap: 14px;
+  }
+
+  .form-group.full-width {
+    grid-column: 1;
+  }
+
+  .documents-section {
+    padding: 0 16px 16px;
+  }
+
+  .new-document-row {
+    grid-template-columns: 1fr;
+  }
+
+  .existing-doc-row-edit {
+    grid-template-columns: 1fr;
+  }
+
+  .document-row {
+    grid-template-columns: 1fr;
+  }
+
+  .error-message {
+    margin: 0 16px 16px;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus,
+  .form-control:focus,
+  .form-select:focus {
+    transform: none;
+  }
+}

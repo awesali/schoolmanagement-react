@@ -1,0 +1,7 @@
+@media (max-width:640px){
+ .permission-heading{flex-direction:column}.permission-heading .btn{width:100%}
+ .permission-stats{grid-template-columns:1fr 1fr;gap:8px;margin:14px 0}.permission-stat{padding:13px}.permission-stat strong{font-size:21px}
+ .permission-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;border:0}.permission-tabs button{padding:10px 5px;border:1px solid #e2e8f0;border-radius:6px;font-size:12px}
+ .permission-toolbar>*{width:100%}.permission-table-wrap{max-width:calc(100vw - 20px);max-height:60vh}.permission-table th,.permission-table td{padding:8px}
+ .permission-card{padding:14px}.audit-line{align-items:flex-start;flex-direction:column}.permission-message{font-size:13px;overflow-wrap:anywhere}
+}

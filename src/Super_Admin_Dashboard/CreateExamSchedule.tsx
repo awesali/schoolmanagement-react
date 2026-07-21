@@ -70,9 +70,9 @@ const CreateExamSchedule: React.FC<CreateExamScheduleProps> = ({ selectedSchoolI
         setRows(filtered.map((s: any) => ({
           subjectId: Number(s.subjectId || s.subject_id || s.id),
           subjectName: s.subjectName || s.subject_name || s.name,
-          examDate: '',
-          startTime: '09:00',
-          endTime: '12:00',
+          examDate: s.examDate ? String(s.examDate).substring(0, 10) : '',
+          startTime: s.startTime ? String(s.startTime).substring(0, 5) : '09:00',
+          endTime: s.endTime ? String(s.endTime).substring(0, 5) : '12:00',
         })));
       }
     } catch { }

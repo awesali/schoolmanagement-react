@@ -1,0 +1,115 @@
+.management-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  overflow-x: auto;
+  border-bottom: 1px solid #e2e8f0;
+  scrollbar-width: thin;
+}
+
+.transport-tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+  width: 100%;
+  gap: 6px;
+  padding: 8px;
+  overflow: visible;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  box-sizing: border-box;
+}
+
+.transport-tabs .management-tab {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  background: white;
+  white-space: normal;
+  text-align: center;
+}
+
+.transport-tabs .management-tab.active {
+  background: #eff6ff;
+}
+
+.transport-tabs .management-tab.active::after {
+  right: 10px;
+  bottom: 3px;
+  left: 10px;
+}
+
+.inventory-tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+  width: 100%;
+  gap: 6px;
+  padding: 8px;
+  overflow: visible;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  box-sizing: border-box;
+}
+
+.inventory-tabs .management-tab { width: 100%; min-height: 42px; padding: 8px 10px; border-radius: 7px; background: white; white-space: normal; text-align: center; }
+.inventory-tabs .management-tab.active { background: #eff6ff; }
+.inventory-tabs .management-tab.active::after { right: 10px; bottom: 3px; left: 10px; }
+
+.management-tab {
+  position: relative;
+  flex: 0 0 auto;
+  padding: 11px 16px;
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.management-tab:hover {
+  background: #f8fafc;
+  color: var(--primary-color, #2563eb);
+}
+
+.management-tab.active {
+  color: var(--primary-color, #2563eb);
+}
+
+.management-tab.active::after {
+  position: absolute;
+  right: 12px;
+  bottom: -1px;
+  left: 12px;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: var(--primary-color, #2563eb);
+  content: '';
+}
+
+.management-tab:focus-visible {
+  outline: 2px solid var(--primary-color, #2563eb);
+  outline-offset: -2px;
+  border-radius: 6px 6px 0 0;
+}
+
+@media (max-width: 640px) {
+  .management-tabs { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); margin-right: 0; margin-left: 0; padding: 6px; gap: 5px; overflow: visible; border: 1px solid #e2e8f0; border-radius: 9px; }
+  .management-tab { width: 100%; min-width: 0; padding: 9px 6px; white-space: normal; font-size: 12px; background: #fff; border-radius: 6px; }
+  .management-tab.active { background: #eff6ff; }
+  .management-tab.active::after { right: 8px; bottom: 2px; left: 8px; }
+
+  .transport-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-right: 0;
+    margin-left: 0;
+    padding: 6px;
+  }
+
+  .inventory-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-right: 0; margin-left: 0; padding: 6px; }
+}

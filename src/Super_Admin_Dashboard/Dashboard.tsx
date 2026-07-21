@@ -4,6 +4,7 @@ import CreateSchool from './CreateSchool';
 import SchoolList from './SchoolList';
 import StaffList from './StaffList';
 import StudentList from './StudentList';
+import ParentList from './ParentList';
 import StudentAttendance from './StudentAttendance';
 import StaffAttendance from './StaffAttendance';
 import ClassList from './ClassList';
@@ -14,6 +15,9 @@ import TeacherExamView from './TeacherExamView';
 import AcademicYear from './AcademicYear';
 import FinanceManagement from './FinanceManagement';
 import SalaryManagement from './SalaryManagement';
+import TransportManagement from './TransportManagement';
+import InventoryManagement from './InventoryManagement';
+import PermissionManagement from './PermissionManagement';
 import Sidebar from './Sidebar';
 import { API_BASE_URL } from '../config';
 import './Dashboard.css';
@@ -24,6 +28,22 @@ interface School {
   address: string;
   email: string;
   phone: string;
+}
+
+interface DashboardExam {
+  id: number;
+  name: string;
+  resultPublished: boolean;
+}
+
+interface DashboardExamEvent {
+  id: string;
+  examName: string;
+  subjectName: string;
+  className: string;
+  sectionName: string;
+  examDate: string;
+  startTime?: string;
 }
 
 const Dashboard: React.FC = () => {
@@ -43,6 +63,8 @@ const Dashboard: React.FC = () => {
   });
   const [attendanceType, setAttendanceType] = useState<'student' | 'staff' | null>(null);
   const [showAttendancePopup, setShowAttendancePopup] = useState(false);
+  const [publishedResults, setPublishedResults] = useState<DashboardExam[]>([]);
+  const [upcomingExamEvents, setUpcomingExamEvents] = useState<DashboardExamEvent[]>([]);
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -89,6 +111,7 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     if (selectedSchoolId) {
       fetchDashboardData();
+      fetchDashboardExamUpdates();
     }
   }, [selectedSchoolId]);
 
@@ -144,6 +167,49 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const fetchDashboardExamUpdates = async () => {
+    if (!selectedSchoolId) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const requestHeaders = { accept: 'application/json', Authorization: `Bearer ${token}` };
+      const examsResponse = await fetch(`${API_BASE_URL}/api/Exam/GetExams?schoolId=${selectedSchoolId}`, {
+        cache: 'no-store', headers: requestHeaders,
+      });
+      if (!examsResponse.ok) return;
+
+      const examsResult = await examsResponse.json();
+      const exams: DashboardExam[] = examsResult?.data ?? [];
+      setPublishedResults(exams.filter(exam => exam.resultPublished).slice(0, 5));
+
+      const schedules = await Promise.all(exams.map(async exam => {
+        const response = await fetch(`${API_BASE_URL}/api/Exam/GetExamSubjects?examId=${exam.id}`, {
+          cache: 'no-store', headers: requestHeaders,
+        });
+        if (!response.ok) return [];
+        const result = await response.json();
+        return (result?.data ?? []).map((item: any) => ({
+          id: `${exam.id}-${item.id}-${item.examDate}`,
+          examName: exam.name,
+          subjectName: item.subjectName,
+          className: item.className,
+          sectionName: item.sectionName,
+          examDate: item.examDate,
+          startTime: item.startTime,
+        }));
+      }));
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      setUpcomingExamEvents(schedules.flat()
+        .filter(event => event.examDate && new Date(event.examDate) >= today)
+        .sort((a, b) => new Date(a.examDate).getTime() - new Date(b.examDate).getTime())
+        .slice(0, 5));
+    } catch (error) {
+      console.error('Failed to fetch dashboard exam updates:', error);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     navigate('/login');
@@ -151,6 +217,7 @@ const Dashboard: React.FC = () => {
 
   const handleNavigate = (page: string, type?: 'student' | 'staff') => {
     setActivePage(page);
+    if (window.innerWidth <= 768) setIsCollapsed(true);
     if (page === 'Attendance' && type) {
       setAttendanceType(type);
     } else {
@@ -160,6 +227,9 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="dashboard-wrapper">
+      {!isCollapsed && window.innerWidth <= 768 && (
+        <div className="sidebar-overlay" onClick={() => setIsCollapsed(true)} />
+      )}
       <Sidebar activePage={activePage} onNavigate={handleNavigate} isCollapsed={isCollapsed} userRole={userRole} />
       <div className={`dashboard-main ${isCollapsed ? 'sidebar-collapsed' : ''}`}>
       <header className="dashboard-header">
@@ -206,6 +276,8 @@ const Dashboard: React.FC = () => {
           <StaffList selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Student List' ? (
           <StudentList selectedSchoolId={selectedSchoolId} />
+        ) : activePage === 'Parent List' ? (
+          <ParentList selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Subject List' ? (
           <SubjectList selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Exam List' || activePage === 'Exam Management' ? (
@@ -220,6 +292,14 @@ const Dashboard: React.FC = () => {
           <FinanceManagement selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Salary Management' ? (
           <SalaryManagement selectedSchoolId={selectedSchoolId} />
+        ) : activePage === 'Transport Management' ? (
+          <TransportManagement selectedSchoolId={selectedSchoolId} />
+        ) : activePage === 'Inventory Management' ? (
+          <InventoryManagement selectedSchoolId={selectedSchoolId} mode="inventory" />
+        ) : activePage === 'Study Materials' ? (
+          <InventoryManagement selectedSchoolId={selectedSchoolId} mode="studyMaterials" />
+        ) : activePage === 'Role & Permissions' ? (
+          <PermissionManagement />
         ) : activePage === 'Attendance' ? (
           attendanceType === 'student' ? (
             <StudentAttendance />
@@ -294,59 +374,39 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
 
-            <div className="pie-charts">
-              <div className="pie-card">
-                <h3>Income June 2024</h3>
-                <div className="pie-placeholder"></div>
-              </div>
-              <div className="pie-card">
-                <h3>Expense June 2024</h3>
-                <div className="pie-placeholder"></div>
-              </div>
-            </div>
           </div>
 
           <div className="sidebar-section">
             <div className="notice-board">
               <h3>Notice Board</h3>
               <div className="notice-list">
-                <div className="notice-item">
-                  <div className="notice-title">Result for Class IX is out Now!!!</div>
-                  <div className="notice-time">Today, 11:00 am</div>
-                </div>
-                <div className="notice-item">
-                  <div className="notice-title">Result for Class VIII is out Now!!!</div>
-                  <div className="notice-time">Today, 11:00 am</div>
-                </div>
-                <div className="notice-item">
-                  <div className="notice-title">Result for Class VII is out Now!!!</div>
-                  <div className="notice-time">Today, 11:00 am</div>
-                </div>
-                <div className="notice-item">
-                  <div className="notice-title">Result for Class VI is out Now!!!</div>
-                  <div className="notice-time">Today, 11:00 am</div>
-                </div>
+                {publishedResults.length === 0 ? (
+                  <div className="notice-item"><div className="notice-title">No published results.</div></div>
+                ) : publishedResults.map(exam => (
+                  <div className="notice-item" key={exam.id}>
+                    <div className="notice-title">Result for {exam.name} is published.</div>
+                    <div className="notice-time">Result available now</div>
+                  </div>
+                ))}
               </div>
-              <button className="add-btn">+ Add New Notice</button>
             </div>
 
             <div className="events-board">
               <h3>Upcoming Events</h3>
               <div className="event-list">
-                <div className="event-item">
-                  <div className="event-title">Webinar on Career Trends for Class-X</div>
-                  <div className="event-time">📅 23, Jun ⏰ 11:00 Am</div>
-                </div>
-                <div className="event-item">
-                  <div className="event-title">Webinar on Career Trends for Class-X</div>
-                  <div className="event-time">📅 23, Jun ⏰ 11:00 Am</div>
-                </div>
-                <div className="event-item">
-                  <div className="event-title">Webinar on Career Trends for Class-X</div>
-                  <div className="event-time">📅 23, Jun ⏰ 11:00 Am</div>
-                </div>
+                {upcomingExamEvents.length === 0 ? (
+                  <div className="event-item"><div className="event-title">No upcoming scheduled exams.</div></div>
+                ) : upcomingExamEvents.map(event => (
+                  <div className="event-item" key={event.id}>
+                    <div className="event-title">{event.examName}: {event.subjectName}</div>
+                    <div className="event-time">
+                      {event.className} - {event.sectionName} · {new Date(event.examDate).toLocaleDateString('en-GB', {
+                        day: '2-digit', month: 'short', year: 'numeric'
+                      })}{event.startTime ? ` · ${event.startTime.substring(0, 5)}` : ''}
+                    </div>
+                  </div>
+                ))}
               </div>
-              <button className="add-btn">+ Add New Event</button>
             </div>
 
 

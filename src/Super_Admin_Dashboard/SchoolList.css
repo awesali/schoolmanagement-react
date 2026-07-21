@@ -21,6 +21,11 @@
   gap: 20px;
 }
 
+@media (max-width: 640px) {
+  .school-list-container { padding: 10px; }
+  .school-cards { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+}
+
 .school-card {
   background: white;
   border-radius: 8px;

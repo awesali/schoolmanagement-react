@@ -261,3 +261,18 @@
   max-height: calc(90vh - 120px);
   overflow-y: auto;
 }
+
+@media (max-width: 768px) {
+  .timetable-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .period-row {
+    flex-wrap: wrap;
+  }
+
+  .period-row input[type="time"] {
+    width: 100%;
+  }
+}

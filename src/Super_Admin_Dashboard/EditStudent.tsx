@@ -84,7 +84,7 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
         fetch(`${API_BASE_URL}/api/Student/student-by-id?studentId=${studentId}`, {
           headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
         }),
-        fetch(`${API_BASE_URL}/api/Admin/enrollment-info?schoolId=${sId}`, {
+        fetch(`${API_BASE_URL}/api/Student/enrollment-info?schoolId=${sId}`, {
           headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
         }),
       ]);

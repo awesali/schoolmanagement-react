@@ -176,3 +176,12 @@
   border-left: 3px solid var(--primary-color);
   padding-left: 57px;
 }
+
+@media (max-width: 768px) {
+  .sidebar { width: min(82vw, 290px); z-index: 200; box-shadow: 8px 0 24px rgba(15,23,42,.24); transition: transform .25s ease; }
+  .sidebar.collapsed { width: min(82vw, 290px); transform: translateX(-105%); box-shadow: none; }
+  .sidebar-logo { padding: 18px 16px; }
+  .sidebar-nav { padding-bottom: 80px; }
+  .nav-item, .nav-group-header { min-height: 44px; }
+  .nav-sub-item, .nav-leaf-item { min-height: 42px; }
+}

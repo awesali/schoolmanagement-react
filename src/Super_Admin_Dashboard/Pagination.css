@@ -88,19 +88,34 @@
 @media (max-width: 768px) {
   .pagination-container {
     justify-content: center;
-    gap: 6px;
+    gap: 4px;
+    padding: 10px 0;
+    flex-wrap: wrap;
   }
-  
+
   .pagination-btn {
-    min-width: 50px;
+    min-width: 40px;
+    height: 34px;
+    font-size: 12px;
+    padding: 0 6px;
+  }
+
+  .page-size-select {
+    margin-left: 4px;
     font-size: 12px;
   }
-  
-  .page-size-select {
-    margin-left: 6px;
-  }
-  
+
   .page-label {
-    margin-left: 6px;
+    margin-left: 4px;
+    font-size: 12px;
+  }
+
+  .page-input {
+    width: 42px;
+    font-size: 12px;
+  }
+
+  .page-total {
+    font-size: 12px;
   }
 }

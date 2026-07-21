@@ -22,7 +22,7 @@ const Login: React.FC = () => {
           'accept': '*/*',
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: email.trim(), password }),
       });
 
       if (response.ok) {
@@ -33,7 +33,8 @@ const Login: React.FC = () => {
         }
         navigate('/dashboard');
       } else {
-        setError('Invalid email or password');
+        const message = await response.text();
+        setError(message || `Login failed (${response.status})`);
       }
     } catch (err) {
       setError('Login failed. Please try again.');

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import CreateExamSchedule from './CreateExamSchedule';
 import './StaffList.css';
+import './ManagementTabs.css';
 
 type ExamView = 'examTypes' | 'exams' | 'subjects' | 'schedule' | 'timetable' | 'results';
 
@@ -310,15 +311,21 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
       {/* Header + Tabs */}
       <div className="staff-list-header">
         <h2>Exam Management</h2>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {(Object.keys(TAB_LABELS) as ExamView[]).map(v => (
-            <button key={v} className={`btn ${view === v ? 'btn-primary' : ''}`}
-              style={{ border: view !== v ? '1px solid #e2e8f0' : undefined }}
-              onClick={() => setView(v)}>
-              {TAB_LABELS[v]}
-            </button>
-          ))}
-        </div>
+      </div>
+
+      <div className="management-tabs" role="tablist" aria-label="Exam management sections">
+        {(Object.keys(TAB_LABELS) as ExamView[]).map(v => (
+          <button
+            key={v}
+            type="button"
+            role="tab"
+            aria-selected={view === v}
+            className={`management-tab ${view === v ? 'active' : ''}`}
+            onClick={() => setView(v)}
+          >
+            {TAB_LABELS[v]}
+          </button>
+        ))}
       </div>
 
       {/* ── EXAM TYPES ── */}

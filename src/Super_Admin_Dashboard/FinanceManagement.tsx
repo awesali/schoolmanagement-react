@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import './StaffList.css';
+import './ManagementTabs.css';
 
 type FinanceView = 'feeTypes' | 'assign' | 'pending' | 'history';
 
@@ -321,15 +322,21 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
       {/* Header + Tabs */}
       <div className="staff-list-header">
         <h2>Finance Management</h2>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {(['feeTypes', 'assign', 'pending', 'history'] as FinanceView[]).map(v => (
-            <button key={v} className={`btn ${view === v ? 'btn-primary' : ''}`}
-              style={{ border: view !== v ? '1px solid #e2e8f0' : undefined }}
-              onClick={() => setView(v)}>
-              {TAB_LABELS[v]}
-            </button>
-          ))}
-        </div>
+      </div>
+
+      <div className="management-tabs" role="tablist" aria-label="Finance management sections">
+        {(['feeTypes', 'assign', 'pending', 'history'] as FinanceView[]).map(v => (
+          <button
+            key={v}
+            type="button"
+            role="tab"
+            aria-selected={view === v}
+            className={`management-tab ${view === v ? 'active' : ''}`}
+            onClick={() => setView(v)}
+          >
+            {TAB_LABELS[v]}
+          </button>
+        ))}
       </div>
 
       {/* ── FEE TYPES ── */}

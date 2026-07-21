@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import './StaffList.css';
+import './ManagementTabs.css';
 
 type SalaryTab = 'dashboard' | 'assign' | 'generate' | 'pay' | 'history' | 'pending';
 
@@ -277,21 +278,24 @@ const SalaryManagement: React.FC<SalaryManagementProps> = ({ selectedSchoolId })
     <div className="staff-list-container">
       <div className="staff-list-header">
         <h2>Salary Management</h2>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {(Object.keys(TAB_LABELS) as SalaryTab[]).map(tab => (
-            <button
-              key={tab}
-              className={`btn ${activeTab === tab ? 'btn-primary' : ''}`}
-              style={{ border: activeTab !== tab ? '1px solid #e2e8f0' : undefined }}
-              onClick={() => {
-                setActiveTab(tab);
-                setActionMsg(null);
-              }}
-            >
-              {TAB_LABELS[tab]}
-            </button>
-          ))}
-        </div>
+      </div>
+
+      <div className="management-tabs" role="tablist" aria-label="Salary management sections">
+        {(Object.keys(TAB_LABELS) as SalaryTab[]).map(tab => (
+          <button
+            key={tab}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab}
+            className={`management-tab ${activeTab === tab ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab(tab);
+              setActionMsg(null);
+            }}
+          >
+            {TAB_LABELS[tab]}
+          </button>
+        ))}
       </div>
 
       {actionMsg && (

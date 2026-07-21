@@ -24,6 +24,23 @@ body {
   color: var(--text-primary);
 }
 
+html, body, #root { width: 100%; min-height: 100%; overflow-x: hidden; }
+img, video, canvas, svg { max-width: 100%; }
+input, select, textarea, button { max-width: 100%; }
+
+@media (max-width: 768px) {
+  .card { padding: 16px; }
+  .btn { padding: 10px 14px; font-size: 14px; }
+  table { font-size: 13px; }
+  .staff-table-wrapper, .class-table-container, .table-container, .table-wrapper { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+  .staff-table, .class-table { min-width: 680px; }
+  .staff-list-container, .class-list-container { padding: 12px; }
+  .staff-list-header, .class-list-header { align-items: stretch; flex-direction: column; gap: 12px; }
+  .header-buttons { width: 100%; flex-wrap: wrap; }
+  .header-buttons .btn { flex: 1 1 140px; }
+  .form-row, .form-grid { grid-template-columns: 1fr !important; }
+}
+
 .btn {
   padding: 12px 24px;
   border: none;

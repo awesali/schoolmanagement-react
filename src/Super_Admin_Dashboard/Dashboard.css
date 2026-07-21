@@ -255,25 +255,6 @@
   color: var(--text-secondary);
 }
 
-.pie-charts {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.pie-card h3 {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 16px;
-}
-
-.pie-placeholder {
-  width: 100%;
-  height: 200px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-  border-radius: 50%;
-}
-
 .sidebar-section {
   display: flex;
   flex-direction: column;
@@ -389,5 +370,64 @@
   
   .main-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-main, .dashboard-main.sidebar-collapsed { margin-left: 0; width: 100%; min-width: 0; }
+  .dashboard-header { padding: 12px 14px; align-items: flex-start; gap: 10px; flex-wrap: wrap; position: sticky; top: 0; z-index: 80; }
+  .header-left { width: 100%; gap: 8px; flex-wrap: wrap; }
+  .dashboard-header h1 { font-size: 18px; flex: 1; min-width: 130px; }
+  .school-picker { width: 100%; min-width: 0; order: 3; }
+  .header-right { width: 100%; gap: 8px; justify-content: flex-end; }
+  .welcome-text, .search-box, .icon-btn, .user-avatar { display: none; }
+  .header-right .btn { padding: 8px 10px; font-size: 12px; }
+  .dashboard-content { padding: 14px 10px 80px; min-width: 0; overflow: hidden; }
+  .stats-grid { grid-template-columns: 1fr; gap: 10px; }
+  .stat-card { padding: 15px; }
+  .stat-value { font-size: 23px; }
+  .main-grid { grid-template-columns: minmax(0,1fr); gap: 14px; }
+  .chart-section, .notice-board, .events-board, .faculty-leave { padding: 14px; }
+  .section-header, .filters { align-items: stretch; flex-direction: column; }
+  .logout-btn { right: 12px; bottom: 12px; padding: 10px 16px; z-index: 90; }
+}
+
+@media (max-width: 420px) {
+  .dashboard-content { padding-right: 8px; padding-left: 8px; }
+  .dashboard-header { padding: 10px; }
+}
+
+.sidebar-overlay {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 150;
+  }
+}
+
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .bar-chart {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    min-width: 480px;
+  }
+
+  .chart-section {
+    overflow-x: hidden;
+  }
+
+  .chart-placeholder {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }

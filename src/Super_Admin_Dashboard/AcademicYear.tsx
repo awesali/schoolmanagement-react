@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { API_BASE_URL } from '../config';
 import Modal from './Modal';
 import './ClassList.css';
@@ -7,16 +7,69 @@ interface AcademicYearProps {
   selectedSchoolId: number | null;
 }
 
+interface AcademicSession {
+  id: number;
+  yearStart: string;
+  yearEnd: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
 const AcademicYear: React.FC<AcademicYearProps> = ({ selectedSchoolId }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
   const [formLoading, setFormLoading] = useState(false);
+  const [sessions, setSessions] = useState<AcademicSession[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     yearStart: '',
     yearEnd: '',
     isActive: true,
   });
+
+  useEffect(() => {
+    if (selectedSchoolId) {
+      fetchSessions();
+    } else {
+      setSessions([]);
+    }
+  }, [selectedSchoolId]);
+
+  const fetchSessions = async () => {
+    if (!selectedSchoolId) return;
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        `${API_BASE_URL}/api/Admin/academic-sessions?schoolId=${selectedSchoolId}`,
+        {
+          headers: {
+            accept: '*/*',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setSessions(result.data || []);
+      } else {
+        setError(result.message || 'Failed to fetch academic sessions');
+      }
+    } catch (err) {
+      setError('Network error. Please try again.');
+      console.error('Failed to fetch academic sessions:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (date: string) => new Date(date).toLocaleDateString();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -76,6 +129,7 @@ const AcademicYear: React.FC<AcademicYearProps> = ({ selectedSchoolId }) => {
 
       if (result.success) {
         setFormSuccess('Academic session created successfully!');
+        await fetchSessions();
         handleClear();
         setTimeout(() => {
           setIsModalOpen(false);
@@ -111,9 +165,38 @@ const AcademicYear: React.FC<AcademicYearProps> = ({ selectedSchoolId }) => {
       </div>
       
       <div className="class-table-container">
-        <div style={{ padding: '40px', textAlign: 'center', color: '#718096' }}>
-          <p>Click the "Create Session" button to add a new academic session for your school.</p>
-        </div>
+        {loading ? (
+          <div className="loading">Loading academic sessions...</div>
+        ) : error ? (
+          <div className="error">{error}</div>
+        ) : sessions.length === 0 ? (
+          <div className="loading">No academic sessions available. Create a session to get started.</div>
+        ) : (
+          <table className="class-table">
+            <thead>
+              <tr>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Status</th>
+                <th>Created Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sessions.map(session => (
+                <tr key={session.id}>
+                  <td>{formatDate(session.yearStart)}</td>
+                  <td>{formatDate(session.yearEnd)}</td>
+                  <td>
+                    <span className={`status ${session.isActive ? 'active' : 'inactive'}`}>
+                      {session.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td className="created-date">{formatDate(session.createdAt)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       <Modal
