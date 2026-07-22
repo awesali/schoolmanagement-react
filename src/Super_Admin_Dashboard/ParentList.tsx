@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { PARENT_API_BASE_URL } from '../config';
+import { API_BASE_URL } from '../config';
 import Modal from './Modal';
 import Pagination from './Pagination';
 import './StaffList.css';
@@ -53,7 +53,7 @@ const ParentList: React.FC<{ selectedSchoolId: number | null }> = ({ selectedSch
       });
       if (term) params.set('search', term);
 
-      const response = await fetch(`${PARENT_API_BASE_URL}/api/Admin/parents-by-school?${params}`, {
+      const response = await fetch(`${API_BASE_URL}/api/Admin/parents-by-school?${params}`, {
         cache: 'no-store',
         headers: { accept: 'application/json', Authorization: `Bearer ${token}` },
       });

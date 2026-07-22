@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { TRANSPORT_API_BASE_URL } from '../config';
+import { API_BASE_URL } from '../config';
 import './StaffList.css';
 import './ManagementTabs.css';
 
@@ -93,7 +93,7 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({ se
   useEffect(() => { if (selectedSchoolId) load(); }, [selectedSchoolId, tab]); // eslint-disable-line
   useEffect(() => {
     if (!selectedSchoolId || !config.fields) return;
-    const get = (path: string) => fetch(`${TRANSPORT_API_BASE_URL}${path}`, { cache: 'no-store', headers: headers() })
+    const get = (path: string) => fetch(`${API_BASE_URL}${path}`, { cache: 'no-store', headers: headers() })
       .then(async response => { const json = await response.json(); if (!response.ok) throw new Error(json.message || 'Unable to load form options.'); return json.data ?? []; });
     Promise.all([
       get(`/api/Transport/vehicle-types?schoolId=${selectedSchoolId}`),
@@ -126,7 +126,7 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({ se
     if (!endpoint) { setRows([]); return; }
     try {
       setLoading(true); setMessage('');
-      const response = await fetch(`${TRANSPORT_API_BASE_URL}/api/Transport/${endpoint}?schoolId=${selectedSchoolId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/Transport/${endpoint}?schoolId=${selectedSchoolId}`, {
         cache: 'no-store', headers: headers()
       });
       const contentType = response.headers.get('content-type') || '';
@@ -155,7 +155,7 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({ se
     });
     try {
       const endpoint = config.postEndpoint || config.endpoint;
-      const response = await fetch(`${TRANSPORT_API_BASE_URL}/api/Transport/${endpoint}`, { method: 'POST', headers: headers(), body: JSON.stringify(body) });
+      const response = await fetch(`${API_BASE_URL}/api/Transport/${endpoint}`, { method: 'POST', headers: headers(), body: JSON.stringify(body) });
       const contentType = response.headers.get('content-type') || '';
       if (!contentType.toLowerCase().includes('json'))
         throw new Error(`Transport API returned HTML instead of JSON: ${response.url}`);

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { INVENTORY_API_BASE_URL } from '../config';
+import { API_BASE_URL } from '../config';
 import './StaffList.css';
 import './ManagementTabs.css';
 
@@ -38,12 +38,12 @@ const InventoryManagement:React.FC<{selectedSchoolId:number|null; mode?:'invento
  useEffect(()=>{setTab('dashboard');setOpen(false);setMessage('');},[mode]);
  useEffect(()=>{if(selectedSchoolId)loadLookups();},[selectedSchoolId]); // eslint-disable-line
  useEffect(()=>{if(selectedSchoolId)load();},[selectedSchoolId,tab]); // eslint-disable-line
- const load=async()=>{if(!selectedSchoolId)return;const endpoint=tab==='dashboard'?'dashboard':cfg.endpoint;if(!endpoint){setRows([]);return;}try{setLoading(true);setMessage('');const r=await fetch(`${INVENTORY_API_BASE_URL}/api/Inventory/${endpoint}?schoolId=${selectedSchoolId}`,{cache:'no-store',headers:headers()});const ct=r.headers.get('content-type')||'';if(!ct.includes('application/json'))throw new Error(`Inventory API returned a non-JSON response (${r.status}).`);const j=await r.json();if(!r.ok)throw new Error(j.message||'Unable to load inventory.');if(tab==='dashboard'||tab==='reports')setSummary(j.data||{});else setRows(j.data||[]);}catch(e){setMessage(e instanceof Error?e.message:'Unable to load inventory.');}finally{setLoading(false);}};
+ const load=async()=>{if(!selectedSchoolId)return;const endpoint=tab==='dashboard'?'dashboard':cfg.endpoint;if(!endpoint){setRows([]);return;}try{setLoading(true);setMessage('');const r=await fetch(`${API_BASE_URL}/api/Inventory/${endpoint}?schoolId=${selectedSchoolId}`,{cache:'no-store',headers:headers()});const ct=r.headers.get('content-type')||'';if(!ct.includes('application/json'))throw new Error(`Inventory API returned a non-JSON response (${r.status}).`);const j=await r.json();if(!r.ok)throw new Error(j.message||'Unable to load inventory.');if(tab==='dashboard'||tab==='reports')setSummary(j.data||{});else setRows(j.data||[]);}catch(e){setMessage(e instanceof Error?e.message:'Unable to load inventory.');}finally{setLoading(false);}};
  const loadLookups=async()=>{if(!selectedSchoolId)return;try{const [productRes,categoryRes,enrollmentRes,subjectRes]=await Promise.all([
-  fetch(`${INVENTORY_API_BASE_URL}/api/Inventory/products?schoolId=${selectedSchoolId}`,{headers:headers()}),
-  fetch(`${INVENTORY_API_BASE_URL}/api/Inventory/categories?schoolId=${selectedSchoolId}`,{headers:headers()}),
-  fetch(`${INVENTORY_API_BASE_URL}/api/Student/enrollment-info?schoolId=${selectedSchoolId}`,{headers:headers()}),
-  fetch(`${INVENTORY_API_BASE_URL}/api/Subject/subjects-by-school?schoolId=${selectedSchoolId}&page=1&pageSize=1000`,{headers:headers()})]);
+   fetch(`${API_BASE_URL}/api/Inventory/products?schoolId=${selectedSchoolId}`,{headers:headers()}),
+   fetch(`${API_BASE_URL}/api/Inventory/categories?schoolId=${selectedSchoolId}`,{headers:headers()}),
+   fetch(`${API_BASE_URL}/api/Student/enrollment-info?schoolId=${selectedSchoolId}`,{headers:headers()}),
+   fetch(`${API_BASE_URL}/api/Subject/subjects-by-school?schoolId=${selectedSchoolId}&page=1&pageSize=1000`,{headers:headers()})]);
   const [products,categories,enrollment,subjects]=await Promise.all([productRes.json(),categoryRes.json(),enrollmentRes.json(),subjectRes.json()]);
   setLookups({products:products.data||[],categories:categories.data||[],classes:enrollment.data?.classes||[],sections:enrollment.data?.sections||[],sessions:enrollment.data?.sessions||[],subjects:subjects.data||[]});
  }catch(e){console.error('Failed to load inventory form options',e);}};
@@ -56,7 +56,7 @@ const InventoryManagement:React.FC<{selectedSchoolId:number|null; mode?:'invento
   if(key==='subjectId')return lookups.subjects.map(x=>({value:String(x.id),label:x.subjectName}));
   return [];
  };
- const save=async(e:React.FormEvent)=>{e.preventDefault();if(!selectedSchoolId||!cfg.fields||!cfg.endpoint)return;const body:any={schoolId:selectedSchoolId,isActive:true};cfg.fields.forEach(f=>body[f.key]=f.type==='number'?Number(form[f.key]||0):(form[f.key]||null));if(tab==='bookKits')body.kitType='Book';if(tab==='uniformKits')body.kitType='Uniform';try{const r=await fetch(`${INVENTORY_API_BASE_URL}/api/Inventory/${cfg.endpoint}`,{method:'POST',headers:headers(),body:JSON.stringify(body)});const j=await r.json();if(!r.ok)throw new Error(j.message||'Unable to save.');setMessage(j.message);setForm({});setOpen(false);await load();}catch(e){setMessage(e instanceof Error?e.message:'Unable to save.');}};
+ const save=async(e:React.FormEvent)=>{e.preventDefault();if(!selectedSchoolId||!cfg.fields||!cfg.endpoint)return;const body:any={schoolId:selectedSchoolId,isActive:true};cfg.fields.forEach(f=>body[f.key]=f.type==='number'?Number(form[f.key]||0):(form[f.key]||null));if(tab==='bookKits')body.kitType='Book';if(tab==='uniformKits')body.kitType='Uniform';try{const r=await fetch(`${API_BASE_URL}/api/Inventory/${cfg.endpoint}`,{method:'POST',headers:headers(),body:JSON.stringify(body)});const j=await r.json();if(!r.ok)throw new Error(j.message||'Unable to save.');setMessage(j.message);setForm({});setOpen(false);await load();}catch(e){setMessage(e instanceof Error?e.message:'Unable to save.');}};
  const cols=useMemo(()=>rows.length?Object.keys(rows[0]).filter(x=>!['id','schoolId'].includes(x)).slice(0,9):[],[rows]);
  if(!selectedSchoolId)return <div className="staff-list-loading">Please select a school</div>;
  const cards=[['Total Products',summary.totalProducts],['Books',summary.totalBooks],['Uniforms',summary.totalUniforms],['Study Materials',summary.totalStudyMaterials],['Low Stock',summary.lowStockItems],['Today Sales',`Rs. ${Number(summary.todaySales||0).toLocaleString()}`],['Pending Payments',`Rs. ${Number(summary.pendingPayments||0).toLocaleString()}`],['Monthly Revenue',`Rs. ${Number(summary.monthlyRevenue||0).toLocaleString()}`]];
