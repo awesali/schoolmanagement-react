@@ -26,13 +26,22 @@ const teacherMenuGroups = [
 
 const menuGroups = [
   {
+    group: 'Academics',
+    items: [
+      { label: 'Academic Sessions', children: ['Academic Year'] },
+      { label: 'Student Enrollment', children: ['Student Enrollment'] },
+      { label: 'Student Promotion', children: ['Student Promotion'] },
+      { label: 'Promotion History', children: ['Promotion History'] },
+    ],
+  },
+  {
     group: 'Management',
     items: [
-      { label: 'School', children: ['School List', 'Academic Year'] },
+      { label: 'School', children: ['School List'] },
       { label: 'Classes', children: ['Class List', 'Class Schedule'] },
       { label: 'Staff', children: ['Staff List', 'Attendance', 'Payroll'] },
       { label: 'Security', children: ['Role & Permissions'] },
-      { label: 'Students', children: ['Student List', 'Attendance', 'Promote Student'] },
+      { label: 'Students', children: ['Student List', 'Attendance'] },
       { label: 'Parents', children: ['Parent List'] },
       { label: 'Transport', children: ['Transport Management'] },
       { label: 'Inventory', children: ['Inventory Management'] },

@@ -32,6 +32,11 @@ interface FeeRecord {
   status: string;
 }
 
+interface StudentPendingFees {
+  studentId: number; studentName: string; className: string; sectionName: string;
+  items: FeeRecord[]; amount: number; paid: number; balance: number; status: string;
+}
+
 interface PaymentRecord {
   paymentId: number;
   studentName: string;
@@ -100,6 +105,17 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
   // Pending fees
   const [pendingFees, setPendingFees] = useState<FeeRecord[]>([]);
   const [pendingLoading, setPendingLoading] = useState(false);
+  const pendingStudents = React.useMemo<StudentPendingFees[]>(() => {
+    const grouped = new Map<number, StudentPendingFees>();
+    pendingFees.forEach(f => {
+      const row = grouped.get(f.studentId) || { studentId:f.studentId, studentName:f.studentName,
+        className:f.className, sectionName:f.sectionName, items:[], amount:0, paid:0, balance:0, status:'Pending' };
+      row.items.push(f); row.amount += Number(f.amount || 0); row.paid += Number(f.paid || 0); row.balance += Number(f.balance || 0);
+      row.status = row.balance <= 0 ? 'Paid' : row.paid > 0 ? 'Partial' : 'Pending';
+      grouped.set(f.studentId, row);
+    });
+    return Array.from(grouped.values());
+  }, [pendingFees]);
 
   // History
   const [historyStudentId, setHistoryStudentId] = useState('');
@@ -225,12 +241,12 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
   };
 
   const loadPendingFees = async () => {
-    if (!selectedClass || !selectedSection) return;
+    if (!selectedSession || !selectedClass || !selectedSection) return;
     try {
       setPendingLoading(true);
       setPendingFees([]);
       const res = await fetch(
-        `${API_BASE_URL}/api/Student/GetPendingFees?schoolId=${selectedSchoolId}&classId=${selectedClass}&sectionId=${selectedSection}`,
+        `${API_BASE_URL}/api/Student/GetPendingFees?schoolId=${selectedSchoolId}&classId=${selectedClass}&sectionId=${selectedSection}&sessionId=${selectedSession}`,
         { headers: headers() }
       );
       if (res.ok) {
@@ -493,36 +509,36 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
         <>
           {filterBar}
           <div style={{ marginBottom: '16px' }}>
-            <button className="btn btn-primary" onClick={loadPendingFees} disabled={!selectedClass || !selectedSection || pendingLoading}>
+            <button className="btn btn-primary" onClick={loadPendingFees} disabled={!selectedSession || !selectedClass || !selectedSection || pendingLoading}>
               {pendingLoading ? 'Loading...' : 'Load Pending Fees'}
             </button>
           </div>
 
-          {pendingFees.length > 0 ? (
+          {pendingStudents.length > 0 ? (
             <div className="staff-table-wrapper">
               <table className="staff-table">
                 <thead>
                   <tr><th>#</th><th>Student</th><th>Class</th><th>Section</th><th>Fee Type</th><th>Amount</th><th>Paid</th><th>Balance</th><th>Status</th><th>Action</th></tr>
                 </thead>
                 <tbody>
-                  {pendingFees.map((f, i) => (
-                    <tr key={f.studentFeeId}>
+                  {pendingStudents.map((student, i) => (
+                    <tr key={student.studentId}>
                       <td>{i + 1}</td>
-                      <td>{f.studentName}</td>
-                      <td>{f.className}</td>
-                      <td>{f.sectionName}</td>
-                      <td>{feeTypes.find(ft => ft.id === f.feeTypeId)?.name || `Type #${f.feeTypeId}`}</td>
-                      <td>₹{f.amount?.toLocaleString()}</td>
-                      <td>₹{f.paid?.toLocaleString()}</td>
-                      <td>₹{f.balance?.toLocaleString()}</td>
-                      <td><span style={statusStyle(f.status)}>{f.status}</span></td>
+                      <td>{student.studentName}</td>
+                      <td>{student.className}</td>
+                      <td>{student.sectionName}</td>
+                      <td>{student.items.map(item => <div key={item.studentFeeId} style={{padding:'5px 0'}}>{feeTypes.find(ft => ft.id === item.feeTypeId)?.name || `Type #${item.feeTypeId}`}</div>)}</td>
+                      <td>{student.items.map(item => <div key={item.studentFeeId} style={{padding:'5px 0'}}>₹{item.amount?.toLocaleString()}</div>)}<strong>Total: ₹{student.amount.toLocaleString()}</strong></td>
+                      <td>{student.items.map(item => <div key={item.studentFeeId} style={{padding:'5px 0'}}>₹{item.paid?.toLocaleString()}</div>)}<strong>Total: ₹{student.paid.toLocaleString()}</strong></td>
+                      <td>{student.items.map(item => <div key={item.studentFeeId} style={{padding:'5px 0'}}>₹{item.balance?.toLocaleString()}</div>)}<strong>Total: ₹{student.balance.toLocaleString()}</strong></td>
+                      <td><span style={statusStyle(student.status)}>{student.status}</span></td>
                       <td>
-                        {f.status !== 'Paid' && (
-                          <button className="btn btn-primary" style={{ padding: '6px 14px', fontSize: '13px' }}
-                            onClick={() => { setPayModal(f); setAmountPaid(f.balance?.toString()); }}>
-                            Collect
-                          </button>
-                        )}
+                        <details>
+                          <summary className="btn btn-primary" style={{padding:'6px 12px',fontSize:'13px',cursor:'pointer'}}>Manage ({student.items.length})</summary>
+                          <div style={{display:'grid',gap:'8px',marginTop:'8px',minWidth:'170px'}}>
+                            {student.items.filter(item=>item.balance>0).map(item=><button key={item.studentFeeId} className="btn" style={{padding:'6px 8px',fontSize:'12px',border:'1px solid #cbd5e1'}} onClick={()=>{setPayModal(item);setAmountPaid(item.balance.toString())}}>Collect {feeTypes.find(ft=>ft.id===item.feeTypeId)?.name||`Type #${item.feeTypeId}`}</button>)}
+                          </div>
+                        </details>
                       </td>
                     </tr>
                   ))}

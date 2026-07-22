@@ -18,6 +18,7 @@ import SalaryManagement from './SalaryManagement';
 import TransportManagement from './TransportManagement';
 import InventoryManagement from './InventoryManagement';
 import PermissionManagement from './PermissionManagement';
+import StudentPromotion from './StudentPromotion';
 import Sidebar from './Sidebar';
 import { API_BASE_URL } from '../config';
 import './Dashboard.css';
@@ -274,8 +275,12 @@ const Dashboard: React.FC = () => {
           <ClassList selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Staff List' ? (
           <StaffList selectedSchoolId={selectedSchoolId} />
-        ) : activePage === 'Student List' ? (
+        ) : activePage === 'Student List' || activePage === 'Student Enrollment' ? (
           <StudentList selectedSchoolId={selectedSchoolId} />
+        ) : activePage === 'Student Promotion' ? (
+          <StudentPromotion selectedSchoolId={selectedSchoolId} initialView="promotion" />
+        ) : activePage === 'Promotion History' ? (
+          <StudentPromotion selectedSchoolId={selectedSchoolId} initialView="history" />
         ) : activePage === 'Parent List' ? (
           <ParentList selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Subject List' ? (

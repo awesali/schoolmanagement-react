@@ -7,7 +7,7 @@ type TeacherExamView = 'timetable' | 'marks';
 interface Exam { id: number; name: string; startDate: string; endDate: string; isPublished: boolean; }
 interface SectionItem { id: number; name: string; classId: number; }
 interface SubjectItem { subjectId: number; subjectName: string; }
-interface MarksEntry { studentId: number; studentName: string; rollNumber?: string; obtainedMarks: number | ''; remarks: string; }
+interface MarksEntry { studentId: number; enrollmentId: number; studentName: string; rollNumber?: string; obtainedMarks: number | ''; remarks: string; }
 
 const selectStyle: React.CSSProperties = {
   padding: '8px 12px', borderRadius: '8px', border: '2px solid #e2e8f0',
@@ -136,7 +136,7 @@ const TeacherExamView: React.FC<{ selectedSchoolId: number | null }> = ({ select
         body: JSON.stringify({
           schoolId, examId: Number(marksExamId),
           sectionId: Number(marksSectionId), subjectId: Number(marksSubjectId),
-          marks: marksSheet.map(s => ({ studentId: s.studentId, obtainedMarks: Number(s.obtainedMarks) || 0, remarks: s.remarks })),
+          marks: marksSheet.map(s => ({ studentId: s.studentId, enrollmentId: s.enrollmentId, obtainedMarks: Number(s.obtainedMarks) || 0, remarks: s.remarks })),
         }),
       });
       const result = await res.json();

@@ -19,6 +19,7 @@ interface ExamSubject {
 }
 interface ClassItem { id: number; name: string; }
 interface SectionItem { id: number; name: string; classId: number; }
+interface SessionItem { id: number; yearStart: string; yearEnd: string; }
 interface SubjectItem { subjectId: number; subjectName: string; }
 interface ResultItem {
   studentId: number; studentName: string; examName: string; totalMarks: number;
@@ -65,7 +66,7 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
   const [exams, setExams] = useState<Exam[]>([]);
   const [examsLoading, setExamsLoading] = useState(false);
   const [showAddExam, setShowAddExam] = useState(false);
-  const [examForm, setExamForm] = useState({ name: '', examTypeId: '', startDate: '', endDate: '' });
+  const [examForm, setExamForm] = useState({ name: '', examTypeId: '', academicSessionId: '', startDate: '', endDate: '' });
   const [savingExam, setSavingExam] = useState(false);
   const [examMsg, setExamMsg] = useState<{ text: string; ok: boolean } | null>(null);
 
@@ -76,6 +77,7 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
   const [showAddSubject, setShowAddSubject] = useState(false);
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [sections, setSections] = useState<SectionItem[]>([]);
+  const [sessions, setSessions] = useState<SessionItem[]>([]);
   const [subjects, setSubjects] = useState<SubjectItem[]>([]);
   const [subjectForm, setSubjectForm] = useState({ classId: '', sectionId: '', subjectId: '', maxMarks: '', passingMarks: '' });
   const [savingSubject, setSavingSubject] = useState(false);
@@ -151,20 +153,20 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
   };
 
   const handleAddExam = async () => {
-    const { name, examTypeId, startDate, endDate } = examForm;
-    if (!name.trim() || !examTypeId || !startDate || !endDate) {
-      setExamMsg({ text: 'All fields are required.', ok: false }); return;
+    const { name, examTypeId, academicSessionId, startDate, endDate } = examForm;
+    if (!name.trim() || !examTypeId || !academicSessionId || !startDate || !endDate) {
+      setExamMsg({ text: 'All fields, including academic session, are required.', ok: false }); return;
     }
     try {
       setSavingExam(true); setExamMsg(null);
       const res = await fetch(`${API_BASE_URL}/api/Exam/CreateExam`, {
         method: 'POST', headers: jsonHeaders(),
-        body: JSON.stringify({ name: name.trim(), examTypeId: Number(examTypeId), schoolId: selectedSchoolId, startDate: new Date(startDate).toISOString(), endDate: new Date(endDate).toISOString() }),
+        body: JSON.stringify({ name: name.trim(), examTypeId: Number(examTypeId), academicSessionId: Number(academicSessionId), schoolId: selectedSchoolId, startDate: new Date(startDate).toISOString(), endDate: new Date(endDate).toISOString() }),
       });
       const result = await res.json();
       if (res.ok && result.success) {
         setExamMsg({ text: result.message || 'Exam created!', ok: true });
-        setExamForm({ name: '', examTypeId: '', startDate: '', endDate: '' });
+        setExamForm({ name: '', examTypeId: '', academicSessionId: '', startDate: '', endDate: '' });
         setShowAddExam(false); fetchExams();
       } else { setExamMsg({ text: result.message || 'Failed.', ok: false }); }
     } catch { setExamMsg({ text: 'Error creating exam.', ok: false }); }
@@ -187,6 +189,7 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
         if (result.success && result.data) {
           setClasses(result.data.classes || []);
           setSections(result.data.sections || []);
+          setSessions(result.data.sessions || []);
         }
       }
     } catch { }
@@ -434,12 +437,19 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
                     {examTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                   </select>
                 </div>
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: 600, color: '#4a5568', display: 'block', marginBottom: '6px' }}>Academic Session *</label>
+                  <select value={examForm.academicSessionId} onChange={e => setExamForm(f => ({ ...f, academicSessionId: e.target.value }))} style={{ ...selectStyle, width: '100%' }}>
+                    <option value="">Select Academic Session</option>
+                    {sessions.map(s => <option key={s.id} value={s.id}>{new Date(s.yearStart).getFullYear()}-{new Date(s.yearEnd).getFullYear()}</option>)}
+                  </select>
+                </div>
                 {examMsg && !examMsg.ok && (
                   <div style={{ marginBottom: '12px', padding: '8px 14px', borderRadius: '8px', fontSize: '13px', background: '#fed7d7', color: '#742a2a', fontWeight: 600 }}>⚠️ {examMsg.text}</div>
                 )}
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleAddExam} disabled={savingExam}>{savingExam ? 'Creating...' : 'Create'}</button>
-                  <button className="btn" style={{ flex: 1, border: '1px solid #e2e8f0' }} onClick={() => { setShowAddExam(false); setExamForm({ name: '', examTypeId: '', startDate: '', endDate: '' }); setExamMsg(null); }}>Cancel</button>
+                  <button className="btn" style={{ flex: 1, border: '1px solid #e2e8f0' }} onClick={() => { setShowAddExam(false); setExamForm({ name: '', examTypeId: '', academicSessionId: '', startDate: '', endDate: '' }); setExamMsg(null); }}>Cancel</button>
                 </div>
               </div>
             </div>

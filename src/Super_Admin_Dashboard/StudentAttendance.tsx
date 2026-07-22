@@ -5,6 +5,7 @@ import './StaffList.css';
 
 interface Student {
   id: number;
+  enrollmentId: number;
   studentName: string;
   className: string;
   sectionName: string;
@@ -119,7 +120,7 @@ const StudentAttendance: React.FC = () => {
       const payload = {
         sectionId: students[0]?.sectionId,
         attendanceDate: new Date().toISOString().split('T')[0],
-        students: students.map(s => ({ studentId: s.id, status: attendance[s.id] })),
+        students: students.map(s => ({ studentId: s.id, enrollmentId: s.enrollmentId, status: attendance[s.id] })),
       };
       const response = await fetch(`${API_BASE_URL}/api/Student/StudentsAttendance`, {
         method: 'POST',
