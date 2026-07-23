@@ -4,6 +4,8 @@ import AddStudent from './AddStudent';
 import EditStudent from './EditStudent';
 import Modal from './Modal';
 import Pagination from './Pagination';
+import { downloadCsv, parseCsv } from '../utils/csv';
+import BulkImportPreview, { ImportPreviewRow } from './BulkImportPreview';
 import './StudentList.css';
 
 interface Document {
@@ -43,6 +45,8 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [showDocuments, setShowDocuments] = useState(false);
+  const [transferring, setTransferring] = useState(false);
+  const [importPreview, setImportPreview] = useState<ImportPreviewRow[]>([]);
 
   useEffect(() => {
     if (selectedSchoolId) {
@@ -110,6 +114,98 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
     }
   };
 
+  const authHeaders = () => ({ 'accept': '*/*', 'Authorization': `Bearer ${localStorage.getItem('token')}` });
+
+  const exportStudents = async () => {
+    if (!selectedSchoolId) return;
+    setTransferring(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/Student/students-by-school?schoolId=${selectedSchoolId}&page=1&pageSize=100000`, { headers: authHeaders() });
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.message || 'Export failed');
+      downloadCsv('students.csv',
+        ['StudentName', 'RollNumber', 'DOB', 'Email', 'PhoneNumber', 'Class', 'Section', 'Session', 'Status'],
+        (result.data || []).map((s: any) => [s.studentName, s.rollNumber, s.dob?.split('T')[0], s.email, s.phoneNumber, s.className, s.sectionName, s.academicSession?.split('T')[0], s.isActive ? 'Active' : 'Inactive']));
+    } catch (error: any) { alert(error.message || 'Unable to export students.'); }
+    finally { setTransferring(false); }
+  };
+
+  const downloadStudentTemplate = () => downloadCsv('student-import-template.csv',
+    ['StudentName', 'RollNumber', 'DOB', 'Email', 'PhoneNumber', 'Class', 'Section', 'ParentName', 'ParentEmail', 'ParentPhone', 'ParentAddress', 'ParentRelationship'],
+    [['Example Student', '1', '2015-01-31', 'student@example.com', '9876543210', '1', 'A', 'Parent Name', 'parent@example.com', '9876543211', 'Address', 'Father']]);
+
+  const prepareStudentImport = async (file: File) => {
+    if (!selectedSchoolId) return;
+    setTransferring(true);
+    try {
+      const rows = parseCsv(await file.text());
+      if (!rows.length) throw new Error('The CSV has no data rows.');
+      const [infoResponse, existingResponse] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/Student/enrollment-info?schoolId=${selectedSchoolId}`, { headers: authHeaders() }),
+        fetch(`${API_BASE_URL}/api/Student/students-by-school?schoolId=${selectedSchoolId}&page=1&pageSize=100000`, { headers: authHeaders() })
+      ]);
+      const infoResult = await infoResponse.json();
+      const existingResult = await existingResponse.json();
+      const info = infoResult.data;
+      const activeSessions = (info?.sessions || []).filter((s: any) => s.isActive);
+      if (activeSessions.length !== 1) throw new Error('Exactly one active academic session is required.');
+      const existingEmails = new Set((existingResult.data || []).map((s: any) => String(s.email).trim().toLowerCase()));
+      const fileEmails = new Set<string>();
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const preview = rows.map((row, index): ImportPreviewRow => {
+        const errors: string[] = [], warnings: string[] = [];
+        const required = ['StudentName', 'RollNumber', 'DOB', 'Email', 'PhoneNumber', 'Class', 'Section', 'ParentName', 'ParentEmail', 'ParentPhone', 'ParentAddress', 'ParentRelationship'];
+        required.forEach(field => { if (!row[field]?.trim()) errors.push(`${field} is required.`); });
+        const studentEmail = row.Email?.trim().toLowerCase();
+        const parentEmail = row.ParentEmail?.trim().toLowerCase();
+        if (studentEmail && !emailPattern.test(studentEmail)) errors.push('Student email is invalid.');
+        if (parentEmail && !emailPattern.test(parentEmail)) errors.push('Parent email is invalid.');
+        if (studentEmail === parentEmail && studentEmail) errors.push('Student and parent emails must differ.');
+        if (row.PhoneNumber && !/^\d{10}$/.test(row.PhoneNumber)) errors.push('Student phone must contain 10 digits.');
+        if (row.ParentPhone && !/^\d{10}$/.test(row.ParentPhone)) errors.push('Parent phone must contain 10 digits.');
+        if (row.DOB && Number.isNaN(Date.parse(row.DOB))) errors.push('DOB must be a valid date.');
+        if (studentEmail && existingEmails.has(studentEmail)) errors.push('Student email already exists.');
+        if (studentEmail && fileEmails.has(studentEmail)) errors.push('Duplicate student email in this file.');
+        if (studentEmail) fileEmails.add(studentEmail);
+        const classItem = (info.classes || []).find((c: any) => c.name.trim().toLowerCase() === row.Class?.trim().toLowerCase());
+        const sectionItem = (info.sections || []).find((s: any) => s.classId === classItem?.id && s.name.trim().toLowerCase() === row.Section?.trim().toLowerCase());
+        if (!classItem) errors.push('Class was not found.');
+        else if (!sectionItem) errors.push('Section was not found in the selected class.');
+        if (parentEmail) warnings.push('If this parent login already exists in the school, it will be reused.');
+        const values: Record<string, string> = {
+          StudentName: row.StudentName, RollNumber: row.RollNumber, DOB: row.DOB, Email: row.Email,
+          PhoneNumber: row.PhoneNumber, SchoolId: String(selectedSchoolId), ClassId: String(classItem?.id || ''),
+          SectionId: String(sectionItem?.id || ''), SessionId: String(activeSessions[0].id), 'Parent.Name': row.ParentName,
+          'Parent.Email': row.ParentEmail, 'Parent.PhoneNumber': row.ParentPhone, 'Parent.Address': row.ParentAddress,
+          'Parent.Relationship': row.ParentRelationship
+        };
+        return { rowNumber: index + 2, values: row, errors, warnings, payload: values };
+      });
+      setImportPreview(preview);
+    } catch (error: any) { alert(error.message || 'Unable to validate students.'); }
+    finally { setTransferring(false); }
+  };
+
+  const confirmStudentImport = async () => {
+    const validRows = importPreview.filter(row => row.errors.length === 0);
+    setTransferring(true);
+    const errors: string[] = [];
+    let imported = 0;
+    try {
+      for (const previewRow of validRows) {
+        const body = new FormData();
+        Object.entries(previewRow.payload as Record<string, string>).forEach(([key, value]) => body.append(key, value || ''));
+        const response = await fetch(`${API_BASE_URL}/api/Student/add-student`, { method: 'POST', headers: authHeaders(), body });
+        const result = await response.json();
+        if (response.ok && result.success) imported++; else errors.push(`Row ${previewRow.rowNumber}: ${result.message || 'Import failed'}`);
+      }
+      await fetchStudents(1, pageSize);
+      setImportPreview([]);
+      alert(`Imported ${imported} of ${validRows.length} valid students.${errors.length ? `\n\n${errors.join('\n')}` : ''}`);
+    } catch (error: any) { alert(error.message || 'Unable to import students.'); }
+    finally { setTransferring(false); }
+  };
+
   if (loading) return <div className="staff-list-loading">Loading...</div>;
   if (!selectedSchoolId) return <div className="staff-list-loading">Please select a school</div>;
 
@@ -117,9 +213,14 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
     <div className="staff-list-container">
       <div className="staff-list-header">
         <h2>Student List</h2>
-        <button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>
-          + Add Student
-        </button>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <button className="btn" disabled={transferring} onClick={downloadStudentTemplate}>Template</button>
+          <label className="btn" style={{ cursor: transferring ? 'not-allowed' : 'pointer' }}>
+            Import CSV<input type="file" accept=".csv,text/csv" hidden disabled={transferring} onChange={e => { const file = e.target.files?.[0]; if (file) prepareStudentImport(file); e.target.value = ''; }} />
+          </label>
+          <button className="btn" disabled={transferring} onClick={exportStudents}>Export CSV</button>
+          <button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>+ Add Student</button>
+        </div>
       </div>
       {students.length === 0 ? (
         <div className="staff-list-loading" style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
@@ -206,6 +307,15 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
         student={selectedStudent}
         schoolId={selectedSchoolId}
         onSuccess={() => fetchStudents(currentPage, pageSize)}
+      />
+
+      <BulkImportPreview
+        title="Preview Student Import"
+        columns={['StudentName', 'RollNumber', 'DOB', 'Email', 'PhoneNumber', 'Class', 'Section', 'ParentName', 'ParentEmail']}
+        rows={importPreview}
+        importing={transferring}
+        onClose={() => setImportPreview([])}
+        onConfirm={confirmStudentImport}
       />
 
       <Modal

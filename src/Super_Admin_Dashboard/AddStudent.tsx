@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { API_BASE_URL } from '../config';
 import Modal from './Modal';
 import './AddStaff.css';
@@ -12,7 +12,7 @@ interface AddStudentProps {
 
 interface ClassItem { id: number; name: string; }
 interface SectionItem { id: number; name: string; classId: number; }
-interface SessionItem { id: number; yearStart: string; yearEnd: string; }
+interface SessionItem { id: number; yearStart: string; yearEnd: string; isActive: boolean; }
 
 interface EnrollmentData {
   classes: ClassItem[];
@@ -40,30 +40,47 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
   const [formData, setFormData] = useState(initialForm);
   const [enrollment, setEnrollment] = useState<EnrollmentData>({ classes: [], sections: [], sessions: [] });
   const [documents, setDocuments] = useState<Array<{ name: string; file: File }>>([]);
+  const [formError, setFormError] = useState('');
+  const [enrollmentLoading, setEnrollmentLoading] = useState(false);
 
-  useEffect(() => {
-    if (isOpen && schoolId) fetchEnrollmentInfo();
-  }, [isOpen]);
-
-  const fetchEnrollmentInfo = async () => {
+  const fetchEnrollmentInfo = useCallback(async () => {
+    setEnrollmentLoading(true);
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_BASE_URL}/api/Student/enrollment-info?schoolId=${schoolId}`, {
         headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
       });
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data) {
-          setEnrollment(result.data);
-          if (result.data.sessions?.length === 1) {
-            setFormData(prev => ({ ...prev, sessionId: result.data.sessions[0].id.toString() }));
-          }
+      const result = await response.json();
+      if (response.ok && result.success && result.data) {
+        setEnrollment(result.data);
+        const activeSessions = (result.data.sessions || []).filter((session: SessionItem) => session.isActive);
+        if (activeSessions.length === 1) {
+          setFormData(prev => ({ ...prev, sessionId: activeSessions[0].id.toString() }));
+        } else if (activeSessions.length === 0) {
+          setFormError('No active academic session is configured for this school.');
+        } else {
+          setFormError('Multiple active academic sessions were found. Please correct the academic-session setup.');
         }
+      } else {
+        setEnrollment({ classes: [], sections: [], sessions: [] });
+        setFormError(result.message || 'Unable to load enrollment information.');
       }
     } catch (err) {
-      console.error('Failed to fetch enrollment info');
+      setEnrollment({ classes: [], sections: [], sessions: [] });
+      setFormError('Unable to load enrollment information.');
+      console.error('Failed to fetch enrollment info', err);
+    } finally {
+      setEnrollmentLoading(false);
     }
-  };
+  }, [schoolId]);
+
+  useEffect(() => {
+    if (isOpen && schoolId) {
+      setFormData(prev => ({ ...prev, sessionId: '' }));
+      setFormError('');
+      fetchEnrollmentInfo();
+    }
+  }, [isOpen, schoolId, fetchEnrollmentInfo]);
 
   const filteredSections = enrollment.sections.filter(s => s.classId === Number(formData.classId));
 
@@ -78,6 +95,12 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.sessionId) {
+      setFormError('An active academic session is required before a student can be added.');
+      return;
+    }
+
+    setFormError('');
     try {
       const token = localStorage.getItem('token');
       const formDataToSend = new FormData();
@@ -108,14 +131,21 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
         headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
         body: formDataToSend,
       });
+      const result = await response.json();
       if (response.ok) {
         setFormData(initialForm);
         setDocuments([]);
         onSuccess();
         onClose();
+      } else {
+        const validationMessage = result.errors
+          ? Object.values(result.errors).flat().join(' ')
+          : '';
+        setFormError(result.message || validationMessage || 'Failed to add student.');
       }
     } catch (err) {
-      console.error('Failed to add student');
+      setFormError('Unable to add the student. Please try again.');
+      console.error('Failed to add student', err);
     }
   };
 
@@ -123,6 +153,7 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
     setFormData(initialForm);
     setDocuments([]);
     setEnrollment({ classes: [], sections: [], sessions: [] });
+    setFormError('');
   };
 
   const handleAddDocument = () => setDocuments([...documents, { name: '', file: null as any }]);
@@ -150,6 +181,7 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
       formId="add-student-form"
     >
       <form id="add-student-form" onSubmit={handleSubmit}>
+        {formError && <div className="error-message">{formError}</div>}
         <div className="form-grid">
           <div className="form-group full-width">
             <label>— Student Details —</label>
@@ -207,10 +239,10 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
           <div className="form-group">
             <label>Session *</label>
             <select name="sessionId" required value={formData.sessionId} onChange={handleChange} disabled>
-              <option value="">Auto Selected</option>
+              <option value="">{enrollmentLoading ? 'Loading session...' : 'No active session'}</option>
               {enrollment.sessions.map(s => (
                 <option key={s.id} value={s.id}>
-                  {s.yearStart.split('-')[0]}
+                  {s.yearStart.split('-')[0]}-{s.yearEnd.split('-')[0]}{s.isActive ? ' (Active)' : ''}
                 </option>
               ))}
             </select>
