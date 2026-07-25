@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import Modal from './Modal';
 import './AddStaff.css';
+import { GENDER_OPTIONS } from '../utils/gender';
 
 interface AddStaffProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
   const [formData, setFormData] = useState({
     name: '',
     dob: '',
+    genderCode: '',
     doj: '',
     roleId: 0,
     email: '',
@@ -69,6 +71,7 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
       formDataToSend.append('Phone', formData.phone);
       formDataToSend.append('Address', formData.address);
       formDataToSend.append('DOB', formData.dob);
+      formDataToSend.append('GenderCode', formData.genderCode);
       formDataToSend.append('DOJ', formData.doj);
       formDataToSend.append('RoleId', formData.roleId.toString());
       formDataToSend.append('SchoolId', schoolId?.toString() || '0');
@@ -118,6 +121,7 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
     setFormData({
       name: '',
       dob: '',
+      genderCode: '',
       doj: '',
       roleId: roles.length > 0 ? roles[0].id : 2,
       email: '',
@@ -208,6 +212,19 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
                 value={formData.dob}
                 onChange={(e) => setFormData({...formData, dob: e.target.value})}
               />
+            </div>
+            <div className="form-group">
+              <label>Gender *</label>
+              <select
+                required
+                value={formData.genderCode}
+                onChange={(e) => setFormData({...formData, genderCode: e.target.value})}
+              >
+                <option value="">Select Gender</option>
+                {GENDER_OPTIONS.map(option => (
+                  <option key={option.code} value={option.code}>{option.label}</option>
+                ))}
+              </select>
             </div>
             <div className="form-group">
               <label>Date of Joining *</label>

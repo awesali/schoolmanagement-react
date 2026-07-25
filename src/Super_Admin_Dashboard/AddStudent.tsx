@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { API_BASE_URL } from '../config';
 import Modal from './Modal';
 import './AddStaff.css';
+import { GENDER_OPTIONS } from '../utils/gender';
 
 interface AddStudentProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ const initialForm = {
   studentName: '',
   rollNumber: '',
   dob: '',
+  genderCode: '',
   email: '',
   phoneNumber: '',
   classId: '',
@@ -108,6 +110,7 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
       formDataToSend.append('StudentName', formData.studentName);
       formDataToSend.append('RollNumber', formData.rollNumber);
       formDataToSend.append('DOB', formData.dob);
+      formDataToSend.append('GenderCode', formData.genderCode);
       formDataToSend.append('Email', formData.email);
       formDataToSend.append('PhoneNumber', formData.phoneNumber);
       formDataToSend.append('SchoolId', schoolId?.toString() || '0');
@@ -217,6 +220,15 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
           <div className="form-group">
             <label>Date of Birth *</label>
             <input type="date" name="dob" required value={formData.dob} onChange={handleChange} />
+          </div>
+          <div className="form-group">
+            <label>Gender *</label>
+            <select name="genderCode" required value={formData.genderCode} onChange={handleChange}>
+              <option value="">Select Gender</option>
+              {GENDER_OPTIONS.map(option => (
+                <option key={option.code} value={option.code}>{option.label}</option>
+              ))}
+            </select>
           </div>
           <div className="form-group">
             <label>Class *</label>

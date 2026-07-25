@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import Modal from './Modal';
 import './AddStaff.css';
+import { GENDER_OPTIONS } from '../utils/gender';
 
 interface Document {
   documentId: number;
@@ -14,6 +15,7 @@ interface Student {
   studentName: string;
   rollNumber?: string;
   dob: string;
+  genderCode?: string | null;
   email: string;
   phoneNumber: string;
   schoolId: number;
@@ -47,6 +49,7 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
     studentName: '',
     rollNumber: '',
     dob: '',
+    genderCode: '',
     email: '',
     phoneNumber: '',
     classId: '',
@@ -66,6 +69,7 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
         studentName: student.studentName,
         rollNumber: student.rollNumber || '',
         dob: student.dob.split('T')[0],
+        genderCode: student.genderCode || '',
         email: student.email,
         phoneNumber: student.phoneNumber,
         classId: '',
@@ -108,6 +112,7 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
           studentName: s.studentName,
           rollNumber: s.rollNumber || s.rollNo || prev.rollNumber,
           dob: s.dob.split('T')[0],
+          genderCode: s.genderCode || '',
           email: s.email,
           phoneNumber: s.phoneNumber,
           classId: s.classId?.toString() ?? '',
@@ -152,6 +157,7 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
       formDataToSend.append('Email', formData.email);
       formDataToSend.append('PhoneNumber', formData.phoneNumber);
       formDataToSend.append('DOB', new Date(formData.dob).toISOString());
+      formDataToSend.append('GenderCode', formData.genderCode);
       formDataToSend.append('IsActive', formData.isActive.toString());
       if (formData.classId) formDataToSend.append('ClassId', formData.classId);
       if (formData.sectionId) formDataToSend.append('SectionId', formData.sectionId);
@@ -270,6 +276,15 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
           <div className="form-group">
             <label>Date of Birth *</label>
             <input type="date" name="dob" required value={formData.dob} onChange={handleChange} />
+          </div>
+          <div className="form-group">
+            <label>Gender *</label>
+            <select name="genderCode" required value={formData.genderCode} onChange={handleChange}>
+              <option value="">Select Gender</option>
+              {GENDER_OPTIONS.map(option => (
+                <option key={option.code} value={option.code}>{option.label}</option>
+              ))}
+            </select>
           </div>
           <div className="form-group">
             <label>Class</label>

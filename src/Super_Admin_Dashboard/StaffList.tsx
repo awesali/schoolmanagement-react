@@ -5,7 +5,9 @@ import EditStaff from './EditStaff';
 import Modal from './Modal';
 import Pagination from './Pagination';
 import { downloadCsv, parseCsv } from '../utils/csv';
+import { genderLabel, parseGenderCode } from '../utils/gender';
 import BulkImportPreview, { ImportPreviewRow } from './BulkImportPreview';
+import ProfileIdCard from './ProfileIdCard';
 import './StaffList.css';
 
 interface Document {
@@ -16,10 +18,12 @@ interface Document {
 
 interface Staff {
   id: number;
+  employeeNumber: number;
   name: string;
   email: string;
   phone: string;
   dob: string;
+  genderCode?: string | null;
   doj: string;
   roleId: number;
   roleName: string;
@@ -44,6 +48,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
   const [showDocuments, setShowDocuments] = useState(false);
+  const [showIdCard, setShowIdCard] = useState(false);
   const [transferring, setTransferring] = useState(false);
   const [importPreview, setImportPreview] = useState<ImportPreviewRow[]>([]);
 
@@ -133,15 +138,15 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
       const response = await fetch(`${API_BASE_URL}/api/Admin/Staff-by-school?schoolId=${selectedSchoolId}&page=1&pageSize=100000`, { headers: authHeaders() });
       const result = await response.json();
       if (!response.ok || !result.success) throw new Error(result.message || 'Export failed');
-      downloadCsv('staff.csv', ['Name', 'DOB', 'DOJ', 'Role', 'Email', 'Phone', 'Address', 'Status'],
-        (result.data || []).map((s: any) => [s.name, s.dob?.split('T')[0], s.doj?.split('T')[0], s.roleName, s.email, s.phone, s.address, s.isActive ? 'Active' : 'Inactive']));
+      downloadCsv('staff.csv', ['EmployeeNumber', 'Name', 'DOB', 'Gender', 'DOJ', 'Role', 'Email', 'Phone', 'Address', 'Status'],
+        (result.data || []).map((s: any) => [s.employeeNumber, s.name, s.dob?.split('T')[0], genderLabel(s.genderCode), s.doj?.split('T')[0], s.roleName, s.email, s.phone, s.address, s.isActive ? 'Active' : 'Inactive']));
     } catch (error: any) { alert(error.message || 'Unable to export staff.'); }
     finally { setTransferring(false); }
   };
 
   const downloadStaffTemplate = () => downloadCsv('staff-import-template.csv',
-    ['Name', 'DOB', 'DOJ', 'Role', 'Email', 'Phone', 'Address'],
-    [['Example Teacher', '1990-01-31', '2026-04-01', 'Teacher', 'teacher@example.com', '9876543210', 'Address']]);
+    ['Name', 'DOB', 'Gender', 'DOJ', 'Role', 'Email', 'Phone', 'Address'],
+    [['Example Teacher', '1990-01-31', 'Male', '2026-04-01', 'Teacher', 'teacher@example.com', '9876543210', 'Address']]);
 
   const prepareStaffImport = async (file: File) => {
     if (!selectedSchoolId) return;
@@ -161,10 +166,12 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
       const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       const preview = rows.map((row, index): ImportPreviewRow => {
         const errors: string[] = [], warnings: string[] = [];
-        ['Name', 'DOB', 'DOJ', 'Role', 'Email', 'Phone', 'Address'].forEach(field => {
+        ['Name', 'DOB', 'Gender', 'DOJ', 'Role', 'Email', 'Phone', 'Address'].forEach(field => {
           if (!row[field]?.trim()) errors.push(`${field} is required.`);
         });
         const email = row.Email?.trim().toLowerCase();
+        const genderCode = parseGenderCode(row.Gender);
+        if (row.Gender && !genderCode) errors.push('Gender must be Male, Female, Other, or Prefer not to say.');
         if (email && !emailPattern.test(email)) errors.push('Email is invalid.');
         if (row.Phone && !/^\d{10}$/.test(row.Phone)) errors.push('Phone must contain 10 digits.');
         if (row.DOB && Number.isNaN(Date.parse(row.DOB))) errors.push('DOB must be a valid date.');
@@ -176,7 +183,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
         const role = roles.find((r: any) => r.roleName.trim().toLowerCase() === row.Role?.trim().toLowerCase());
         if (!role) errors.push(`Role "${row.Role}" was not found.`);
         const values: Record<string, string> = {
-          Name: row.Name, DOB: row.DOB, DOJ: row.DOJ, RoleId: String(role?.id || ''), SchoolId: String(selectedSchoolId),
+          Name: row.Name, DOB: row.DOB, GenderCode: genderCode, DOJ: row.DOJ, RoleId: String(role?.id || ''), SchoolId: String(selectedSchoolId),
           Email: row.Email, Phone: row.Phone, Address: row.Address
         };
         return { rowNumber: index + 2, values: row, errors, warnings, payload: values };
@@ -236,10 +243,12 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
           <table className="staff-table">
             <thead>
               <tr>
+                <th>Employee No.</th>
                 <th>Name</th>
                 <th>Email</th>
                 <th>Phone</th>
                 <th>DOB</th>
+                <th>Gender</th>
                 <th>DOJ</th>
                 <th>Role</th>
                 <th>Status</th>
@@ -249,12 +258,13 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
             <tbody>
               {staff.map((member) => (
                 <tr key={member.id}>
+                  <td>{member.employeeNumber}</td>
                   <td>
                     <span 
                       className="staff-name-link"
                       onClick={() => {
                         setSelectedStaff(member);
-                        setIsEditModalOpen(true);
+                        setShowIdCard(true);
                       }}
                     >
                       {member.name}
@@ -263,6 +273,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
                   <td>{member.email}</td>
                   <td>{member.phone}</td>
                   <td>{new Date(member.dob).toLocaleDateString()}</td>
+                  <td>{genderLabel(member.genderCode)}</td>
                   <td>{new Date(member.doj).toLocaleDateString()}</td>
                   <td>
                     <span className={`role-badge ${member.roleName.toLowerCase()}`}>
@@ -277,10 +288,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
                   <td>
                     <button 
                       className="btn-view-docs"
-                      onClick={() => {
-                        setSelectedStaff(member);
-                        setShowDocuments(true);
-                      }}
+                      onClick={() => { setSelectedStaff(member); setShowDocuments(true); }}
                       disabled={member.documents.length === 0}
                     >
                       View ({member.documents.length})
@@ -319,9 +327,42 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
         onSuccess={() => fetchStaff(currentPage, pageSize)}
       />
 
+      <Modal
+        isOpen={showIdCard}
+        onClose={() => setShowIdCard(false)}
+        title="Employee Profile"
+        showSubmit={false}
+        showCancel={false}
+      >
+        {selectedStaff && (
+          <ProfileIdCard
+            name={selectedStaff.name}
+            type="Employee"
+            identifier={`Employee No: ${selectedStaff.employeeNumber}`}
+            subtitle={selectedStaff.roleName}
+            organization={selectedStaff.schoolName}
+            status={selectedStaff.isActive}
+            onEdit={() => {
+              setShowIdCard(false);
+              setIsEditModalOpen(true);
+            }}
+            fields={[
+              { label: 'Role', value: selectedStaff.roleName },
+              { label: 'Employee No.', value: selectedStaff.employeeNumber },
+              { label: 'Gender', value: genderLabel(selectedStaff.genderCode) },
+              { label: 'Date of Birth', value: new Date(selectedStaff.dob).toLocaleDateString() },
+              { label: 'Date of Joining', value: new Date(selectedStaff.doj).toLocaleDateString() },
+              { label: 'Email', value: selectedStaff.email },
+              { label: 'Phone', value: selectedStaff.phone },
+              { label: 'Address', value: selectedStaff.address },
+            ]}
+          />
+        )}
+      </Modal>
+
       <BulkImportPreview
         title="Preview Staff Import"
-        columns={['Name', 'DOB', 'DOJ', 'Role', 'Email', 'Phone', 'Address']}
+        columns={['Name', 'DOB', 'Gender', 'DOJ', 'Role', 'Email', 'Phone', 'Address']}
         rows={importPreview}
         importing={transferring}
         onClose={() => setImportPreview([])}

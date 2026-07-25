@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import Modal from './Modal';
 import './AddStaff.css';
+import { GENDER_OPTIONS } from '../utils/gender';
 
 interface Document {
   documentId: number;
@@ -15,6 +16,7 @@ interface Staff {
   email: string;
   phone: string;
   dob: string;
+  genderCode?: string | null;
   doj: string;
   roleId: number;
   roleName: string;
@@ -40,6 +42,7 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
   const [formData, setFormData] = useState({
     name: '',
     dob: '',
+    genderCode: '',
     doj: '',
     roleId: 0,
     email: '',
@@ -58,6 +61,7 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
       setFormData({
         name: staff.name,
         dob: staff.dob.split('T')[0],
+        genderCode: staff.genderCode || '',
         doj: staff.doj.split('T')[0],
         roleId: staff.roleId,
         email: staff.email,
@@ -110,6 +114,7 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
       formDataToSend.append('Phone', formData.phone);
       formDataToSend.append('Address', formData.address);
       formDataToSend.append('DOB', new Date(formData.dob).toISOString());
+      formDataToSend.append('GenderCode', formData.genderCode);
       formDataToSend.append('DOJ', new Date(formData.doj).toISOString());
       formDataToSend.append('RoleId', formData.roleId.toString());
       formDataToSend.append('IsActive', formData.isActive.toString());
@@ -276,6 +281,19 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
               value={formData.dob}
               onChange={(e) => setFormData({...formData, dob: e.target.value})}
             />
+          </div>
+          <div className="form-group">
+            <label>Gender *</label>
+            <select
+              required
+              value={formData.genderCode}
+              onChange={(e) => setFormData({...formData, genderCode: e.target.value})}
+            >
+              <option value="">Select Gender</option>
+              {GENDER_OPTIONS.map(option => (
+                <option key={option.code} value={option.code}>{option.label}</option>
+              ))}
+            </select>
           </div>
           <div className="form-group">
             <label>Date of Joining *</label>

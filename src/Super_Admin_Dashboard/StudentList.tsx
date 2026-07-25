@@ -5,7 +5,9 @@ import EditStudent from './EditStudent';
 import Modal from './Modal';
 import Pagination from './Pagination';
 import { downloadCsv, parseCsv } from '../utils/csv';
+import { genderLabel, parseGenderCode } from '../utils/gender';
 import BulkImportPreview, { ImportPreviewRow } from './BulkImportPreview';
+import ProfileIdCard from './ProfileIdCard';
 import './StudentList.css';
 
 interface Document {
@@ -19,6 +21,7 @@ interface Student {
   studentName: string;
   rollNumber?: string;
   dob: string;
+  genderCode?: string | null;
   email: string;
   phoneNumber: string;
   parentId: number;
@@ -45,6 +48,7 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [showDocuments, setShowDocuments] = useState(false);
+  const [showIdCard, setShowIdCard] = useState(false);
   const [transferring, setTransferring] = useState(false);
   const [importPreview, setImportPreview] = useState<ImportPreviewRow[]>([]);
 
@@ -124,15 +128,15 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
       const result = await response.json();
       if (!response.ok || !result.success) throw new Error(result.message || 'Export failed');
       downloadCsv('students.csv',
-        ['StudentName', 'RollNumber', 'DOB', 'Email', 'PhoneNumber', 'Class', 'Section', 'Session', 'Status'],
-        (result.data || []).map((s: any) => [s.studentName, s.rollNumber, s.dob?.split('T')[0], s.email, s.phoneNumber, s.className, s.sectionName, s.academicSession?.split('T')[0], s.isActive ? 'Active' : 'Inactive']));
+        ['StudentName', 'RollNumber', 'DOB', 'Gender', 'Email', 'PhoneNumber', 'Class', 'Section', 'Session', 'Status'],
+        (result.data || []).map((s: any) => [s.studentName, s.rollNumber, s.dob?.split('T')[0], genderLabel(s.genderCode), s.email, s.phoneNumber, s.className, s.sectionName, s.academicSession?.split('T')[0], s.isActive ? 'Active' : 'Inactive']));
     } catch (error: any) { alert(error.message || 'Unable to export students.'); }
     finally { setTransferring(false); }
   };
 
   const downloadStudentTemplate = () => downloadCsv('student-import-template.csv',
-    ['StudentName', 'RollNumber', 'DOB', 'Email', 'PhoneNumber', 'Class', 'Section', 'ParentName', 'ParentEmail', 'ParentPhone', 'ParentAddress', 'ParentRelationship'],
-    [['Example Student', '1', '2015-01-31', 'student@example.com', '9876543210', '1', 'A', 'Parent Name', 'parent@example.com', '9876543211', 'Address', 'Father']]);
+    ['StudentName', 'RollNumber', 'DOB', 'Gender', 'Email', 'PhoneNumber', 'Class', 'Section', 'ParentName', 'ParentEmail', 'ParentPhone', 'ParentAddress', 'ParentRelationship'],
+    [['Example Student', '1', '2015-01-31', 'Female', 'student@example.com', '9876543210', '1', 'A', 'Parent Name', 'parent@example.com', '9876543211', 'Address', 'Father']]);
 
   const prepareStudentImport = async (file: File) => {
     if (!selectedSchoolId) return;
@@ -154,10 +158,12 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
       const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       const preview = rows.map((row, index): ImportPreviewRow => {
         const errors: string[] = [], warnings: string[] = [];
-        const required = ['StudentName', 'RollNumber', 'DOB', 'Email', 'PhoneNumber', 'Class', 'Section', 'ParentName', 'ParentEmail', 'ParentPhone', 'ParentAddress', 'ParentRelationship'];
+        const required = ['StudentName', 'RollNumber', 'DOB', 'Gender', 'Email', 'PhoneNumber', 'Class', 'Section', 'ParentName', 'ParentEmail', 'ParentPhone', 'ParentAddress', 'ParentRelationship'];
         required.forEach(field => { if (!row[field]?.trim()) errors.push(`${field} is required.`); });
         const studentEmail = row.Email?.trim().toLowerCase();
         const parentEmail = row.ParentEmail?.trim().toLowerCase();
+        const genderCode = parseGenderCode(row.Gender);
+        if (row.Gender && !genderCode) errors.push('Gender must be Male, Female, Other, or Prefer not to say.');
         if (studentEmail && !emailPattern.test(studentEmail)) errors.push('Student email is invalid.');
         if (parentEmail && !emailPattern.test(parentEmail)) errors.push('Parent email is invalid.');
         if (studentEmail === parentEmail && studentEmail) errors.push('Student and parent emails must differ.');
@@ -173,7 +179,7 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
         else if (!sectionItem) errors.push('Section was not found in the selected class.');
         if (parentEmail) warnings.push('If this parent login already exists in the school, it will be reused.');
         const values: Record<string, string> = {
-          StudentName: row.StudentName, RollNumber: row.RollNumber, DOB: row.DOB, Email: row.Email,
+          StudentName: row.StudentName, RollNumber: row.RollNumber, DOB: row.DOB, GenderCode: genderCode, Email: row.Email,
           PhoneNumber: row.PhoneNumber, SchoolId: String(selectedSchoolId), ClassId: String(classItem?.id || ''),
           SectionId: String(sectionItem?.id || ''), SessionId: String(activeSessions[0].id), 'Parent.Name': row.ParentName,
           'Parent.Email': row.ParentEmail, 'Parent.PhoneNumber': row.ParentPhone, 'Parent.Address': row.ParentAddress,
@@ -236,6 +242,7 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
                 <th>Email</th>
                 <th>Phone</th>
                 <th>DOB</th>
+                <th>Gender</th>
                 <th>Class</th>
                 <th>Section</th>
                 <th>Session</th>
@@ -249,7 +256,7 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
                   <td>
                     <span
                       className="staff-name-link"
-                      onClick={() => { setSelectedStudent(student); setIsEditModalOpen(true); }}
+                      onClick={() => { setSelectedStudent(student); setShowIdCard(true); }}
                     >
                       {student.studentName}
                     </span>
@@ -258,6 +265,7 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
                   <td>{student.email}</td>
                   <td>{student.phoneNumber}</td>
                   <td>{student.dob.split('T')[0].split('-').reverse().join('/')}</td>
+                  <td>{genderLabel(student.genderCode)}</td>
                   <td><span className="role-badge teacher">{student.className}</span></td>
                   <td><span className="role-badge principal">{student.sectionName}</span></td>
                   <td>{student.academicSession.split('-')[0]}</td>
@@ -309,9 +317,39 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
         onSuccess={() => fetchStudents(currentPage, pageSize)}
       />
 
+      <Modal
+        isOpen={showIdCard}
+        onClose={() => setShowIdCard(false)}
+        title="Student Profile"
+        showSubmit={false}
+        showCancel={false}
+      >
+        {selectedStudent && (
+          <ProfileIdCard
+            name={selectedStudent.studentName}
+            type="Student"
+            identifier={`Student ID: ${selectedStudent.id}`}
+            subtitle={`${selectedStudent.className || 'Class not assigned'} • Section ${selectedStudent.sectionName || '—'}`}
+            status={selectedStudent.isActive}
+            onEdit={() => {
+              setShowIdCard(false);
+              setIsEditModalOpen(true);
+            }}
+            fields={[
+              { label: 'Roll Number', value: selectedStudent.rollNumber },
+              { label: 'Gender', value: genderLabel(selectedStudent.genderCode) },
+              { label: 'Date of Birth', value: selectedStudent.dob?.split('T')[0].split('-').reverse().join('/') },
+              { label: 'Academic Session', value: selectedStudent.academicSession?.split('T')[0] },
+              { label: 'Email', value: selectedStudent.email },
+              { label: 'Phone', value: selectedStudent.phoneNumber },
+            ]}
+          />
+        )}
+      </Modal>
+
       <BulkImportPreview
         title="Preview Student Import"
-        columns={['StudentName', 'RollNumber', 'DOB', 'Email', 'PhoneNumber', 'Class', 'Section', 'ParentName', 'ParentEmail']}
+        columns={['StudentName', 'RollNumber', 'DOB', 'Gender', 'Email', 'PhoneNumber', 'Class', 'Section', 'ParentName', 'ParentEmail']}
         rows={importPreview}
         importing={transferring}
         onClose={() => setImportPreview([])}
