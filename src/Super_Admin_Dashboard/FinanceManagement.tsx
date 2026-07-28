@@ -21,11 +21,13 @@ interface FeeRecord {
   studentFeeId: number;
   studentId: number;
   studentName: string;
+  rollNumber?: string;
   classId: number;
   className: string;
   sectionId: number;
   sectionName: string;
   feeTypeId: number;
+  feeType?: string;
   amount: number;
   paid: number;
   balance: number;
@@ -44,6 +46,7 @@ interface PaymentRecord {
   amountPaid: number;
   paymentMode: string;
   paymentDate: string;
+  acknowledgementId?: string;
 }
 
 interface FeeType {
@@ -100,6 +103,7 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
   const [payModal, setPayModal] = useState<FeeRecord | null>(null);
   const [amountPaid, setAmountPaid] = useState('');
   const [paymentMode, setPaymentMode] = useState('Cash');
+  const [acknowledgementId, setAcknowledgementId] = useState('');
   const [paying, setPaying] = useState(false);
 
   // Pending fees
@@ -189,7 +193,9 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
           setSessions(result.data.sessions || []);
           setClasses(result.data.classes || []);
           setSections(result.data.sections || []);
-          if (result.data.sessions?.length === 1) setSelectedSession(result.data.sessions[0].id.toString());
+          const activeSession = result.data.sessions?.find((session: any) => session.isActive);
+          if (activeSession) setSelectedSession(activeSession.id.toString());
+          else if (result.data.sessions?.length === 1) setSelectedSession(result.data.sessions[0].id.toString());
         }
       }
     } catch { }
@@ -234,7 +240,7 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
         }),
       });
       const result = await res.json();
-      setAssignMsg({ text: result.message || (res.ok ? 'Fees assigned!' : 'Failed'), ok: res.ok });
+      setAssignMsg({ text: result.message || (res.ok ? 'Fees assigned!' : 'Failed'), ok: res.ok && result.success !== false });
       if (res.ok) { setSelectedStudentIds([]); setFeeTypeId(''); setAmount(''); }
     } catch { setAssignMsg({ text: 'Error assigning fees', ok: false }); }
     finally { setAssigning(false); }
@@ -258,6 +264,7 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
 
   const handlePayFee = async () => {
     if (!payModal || !amountPaid) return;
+    if ((paymentMode === 'Online' || paymentMode === 'Cheque') && !acknowledgementId.trim()) return;
     try {
       setPaying(true);
       const res = await fetch(`${API_BASE_URL}/api/Student/PayFee`, {
@@ -267,12 +274,14 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
           studentFeeId: payModal.studentFeeId,
           amountPaid: Number(amountPaid),
           paymentMode,
+          acknowledgementId: acknowledgementId.trim() || null,
           schoolId: selectedSchoolId,
         }),
       });
       if (res.ok) {
         setPayModal(null);
         setAmountPaid('');
+        setAcknowledgementId('');
         loadPendingFees();
       }
     } catch { } finally { setPaying(false); }
@@ -379,7 +388,7 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
             <div className="staff-table-wrapper">
               <table className="staff-table">
                 <thead>
-                  <tr><th>#</th><th>Name</th><th>Status</th><th>Action</th></tr>
+                  <tr><th>S. No.</th><th>Fee Type Name</th><th>Status</th><th>Action</th></tr>
                 </thead>
                 <tbody>
                   {feeTypes.map((ft, i) => (
@@ -449,7 +458,7 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
                   <thead>
                     <tr>
                       <th><input type="checkbox" checked={selectedStudentIds.length === students.length} onChange={toggleAll} /></th>
-                      <th>#</th>
+                       <th>S. No.</th>
                       <th>Name</th>
                       <th>Roll No.</th>
                       <th>Class</th>
@@ -518,16 +527,17 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
             <div className="staff-table-wrapper">
               <table className="staff-table">
                 <thead>
-                  <tr><th>#</th><th>Student</th><th>Class</th><th>Section</th><th>Fee Type</th><th>Amount</th><th>Paid</th><th>Balance</th><th>Status</th><th>Action</th></tr>
+                   <tr><th>S. No.</th><th>Student</th><th>Roll No.</th><th>Class</th><th>Section</th><th>Fee Type</th><th>Amount</th><th>Paid</th><th>Balance</th><th>Status</th><th>Action</th></tr>
                 </thead>
                 <tbody>
                   {pendingStudents.map((student, i) => (
                     <tr key={student.studentId}>
                       <td>{i + 1}</td>
                       <td>{student.studentName}</td>
+                      <td>{student.items[0]?.rollNumber || '-'}</td>
                       <td>{student.className}</td>
                       <td>{student.sectionName}</td>
-                      <td>{student.items.map(item => <div key={item.studentFeeId} style={{padding:'5px 0'}}>{feeTypes.find(ft => ft.id === item.feeTypeId)?.name || `Type #${item.feeTypeId}`}</div>)}</td>
+                       <td>{student.items.map(item => <div key={item.studentFeeId} style={{padding:'5px 0',fontWeight:600}}>{item.feeType || feeTypes.find(ft => ft.id === item.feeTypeId)?.name || `Type ${item.feeTypeId}`}</div>)}</td>
                       <td>{student.items.map(item => <div key={item.studentFeeId} style={{padding:'5px 0'}}>₹{item.amount?.toLocaleString()}</div>)}<strong>Total: ₹{student.amount.toLocaleString()}</strong></td>
                       <td>{student.items.map(item => <div key={item.studentFeeId} style={{padding:'5px 0'}}>₹{item.paid?.toLocaleString()}</div>)}<strong>Total: ₹{student.paid.toLocaleString()}</strong></td>
                       <td>{student.items.map(item => <div key={item.studentFeeId} style={{padding:'5px 0'}}>₹{item.balance?.toLocaleString()}</div>)}<strong>Total: ₹{student.balance.toLocaleString()}</strong></td>
@@ -579,7 +589,7 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
             <div className="staff-table-wrapper">
               <table className="staff-table">
                 <thead>
-                  <tr><th>#</th><th>Student</th><th>Fee Type</th><th>Amount Paid</th><th>Mode</th><th>Date</th><th>Receipt</th></tr>
+                   <tr><th>S. No.</th><th>Student</th><th>Fee Type</th><th>Amount Paid</th><th>Mode</th><th>Acknowledgement ID</th><th>Date</th><th>Receipt</th></tr>
                 </thead>
                 <tbody>
                   {paymentHistory.map((p, i) => (
@@ -589,6 +599,7 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
                       <td>{p.feeType}</td>
                       <td>₹{p.amountPaid?.toLocaleString()}</td>
                       <td>{p.paymentMode}</td>
+                      <td>{p.acknowledgementId || '-'}</td>
                       <td>{p.paymentDate ? new Date(p.paymentDate).toLocaleDateString() : '-'}</td>
                       <td>
                         <button className="btn" style={{ padding: '5px 12px', fontSize: '12px', border: '1px solid #e2e8f0' }}
@@ -626,8 +637,17 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
                 {PAYMENT_MODES.map(m => <option key={m}>{m}</option>)}
               </select>
             </div>
+            {(paymentMode === 'Online' || paymentMode === 'Cheque') && (
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 600, color: '#4a5568', display: 'block', marginBottom: '6px' }}>Acknowledgement ID *</label>
+                <input value={acknowledgementId} onChange={e => setAcknowledgementId(e.target.value)}
+                  placeholder={paymentMode === 'Cheque' ? 'Cheque number' : 'Transaction / acknowledgement ID'}
+                  style={{ ...selectStyle, width: '100%', boxSizing: 'border-box' }} />
+              </div>
+            )}
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button className="btn btn-primary" style={{ flex: 1 }} onClick={handlePayFee} disabled={paying}>
+              <button className="btn btn-primary" style={{ flex: 1 }} onClick={handlePayFee}
+                disabled={paying || ((paymentMode === 'Online' || paymentMode === 'Cheque') && !acknowledgementId.trim())}>
                 {paying ? 'Processing...' : 'Confirm Payment'}
               </button>
               <button className="btn" style={{ flex: 1, border: '1px solid #e2e8f0' }} onClick={() => setPayModal(null)}>Cancel</button>

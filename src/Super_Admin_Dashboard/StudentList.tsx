@@ -198,12 +198,24 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
     const errors: string[] = [];
     let imported = 0;
     try {
-      for (const previewRow of validRows) {
-        const body = new FormData();
-        Object.entries(previewRow.payload as Record<string, string>).forEach(([key, value]) => body.append(key, value || ''));
-        const response = await fetch(`${API_BASE_URL}/api/Student/add-student`, { method: 'POST', headers: authHeaders(), body });
-        const result = await response.json();
-        if (response.ok && result.success) imported++; else errors.push(`Row ${previewRow.rowNumber}: ${result.message || 'Import failed'}`);
+      const concurrency = 5;
+      for (let offset = 0; offset < validRows.length; offset += concurrency) {
+        const batch = validRows.slice(offset, offset + concurrency);
+        const results = await Promise.all(batch.map(async previewRow => {
+          const body = new FormData();
+          Object.entries(previewRow.payload as Record<string, string>).forEach(([key, value]) => body.append(key, value || ''));
+          try {
+            const response = await fetch(`${API_BASE_URL}/api/Student/add-student`, { method: 'POST', headers: authHeaders(), body });
+            const result = await response.json();
+            return { previewRow, ok: response.ok && result.success, message: result.message };
+          } catch (error: any) {
+            return { previewRow, ok: false, message: error.message || 'Import failed' };
+          }
+        }));
+        imported += results.filter(result => result.ok).length;
+        errors.push(...results
+          .filter(result => !result.ok)
+          .map(result => `Row ${result.previewRow.rowNumber}: ${result.message || 'Import failed'}`));
       }
       await fetchStudents(1, pageSize);
       setImportPreview([]);

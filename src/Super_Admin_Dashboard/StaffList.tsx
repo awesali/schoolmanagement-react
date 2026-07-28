@@ -52,6 +52,18 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
   const [transferring, setTransferring] = useState(false);
   const [importPreview, setImportPreview] = useState<ImportPreviewRow[]>([]);
 
+  const readApiResponse = async (response: Response, operation: string) => {
+    const responseText = await response.text();
+    let result: any = {};
+    try {
+      result = responseText ? JSON.parse(responseText) : {};
+    } catch {
+      result = { message: `${operation} failed because the server returned an invalid response (HTTP ${response.status}).` };
+    }
+    if (!response.ok) throw new Error(result.message || `${operation} failed (HTTP ${response.status}).`);
+    return result;
+  };
+
   const handleDeleteDocument = async (documentId: number) => {
     if (!window.confirm('Are you sure you want to delete this document?')) {
       return;
@@ -156,12 +168,14 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
       if (!rows.length) throw new Error('The CSV has no data rows.');
       const [roleResponse, existingResponse] = await Promise.all([
         fetch(`${API_BASE_URL}/api/Admin/Get-roles`, { headers: authHeaders() }),
-        fetch(`${API_BASE_URL}/api/Admin/Staff-by-school?schoolId=${selectedSchoolId}&page=1&pageSize=100000`, { headers: authHeaders() })
+        fetch(`${API_BASE_URL}/api/Admin/staff-emails?schoolId=${selectedSchoolId}`, { headers: authHeaders() })
       ]);
-      const roleResult = await roleResponse.json();
-      const existingResult = await existingResponse.json();
+      const [roleResult, existingResult] = await Promise.all([
+        readApiResponse(roleResponse, 'Loading roles'),
+        readApiResponse(existingResponse, 'Loading existing staff')
+      ]);
       const roles = roleResult.data || [];
-      const existingEmails = new Set((existingResult.data || []).map((s: any) => String(s.email).trim().toLowerCase()));
+      const existingEmails = new Set((existingResult.data || []).map((email: string) => String(email).trim().toLowerCase()));
       const fileEmails = new Set<string>();
       const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       const preview = rows.map((row, index): ImportPreviewRow => {
@@ -199,12 +213,29 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
     const errors: string[] = [];
     let imported = 0;
     try {
-      for (const previewRow of validRows) {
-        const body = new FormData();
-        Object.entries(previewRow.payload as Record<string, string>).forEach(([key, value]) => body.append(key, value || ''));
-        const response = await fetch(`${API_BASE_URL}/api/Admin/add-staff`, { method: 'POST', headers: authHeaders(), body });
-        const result = await response.json();
-        if (response.ok && result.success) imported++; else errors.push(`Row ${previewRow.rowNumber}: ${result.message || 'Import failed'}`);
+      // Staff creation opens a transaction and sends credentials, so keep a
+      // small concurrency limit to avoid exhausting database/SMTP resources.
+      const concurrency = 2;
+      for (let offset = 0; offset < validRows.length; offset += concurrency) {
+        const batch = validRows.slice(offset, offset + concurrency);
+        const results = await Promise.all(batch.map(async previewRow => {
+          const body = new FormData();
+          Object.entries(previewRow.payload as Record<string, string>).forEach(([key, value]) => body.append(key, value || ''));
+          try {
+            const response = await fetch(`${API_BASE_URL}/api/Admin/add-staff`, { method: 'POST', headers: authHeaders(), body });
+            const responseText = await response.text();
+            let result: any;
+            try { result = responseText ? JSON.parse(responseText) : {}; }
+            catch { result = { message: `Server returned an invalid response (HTTP ${response.status}).` }; }
+            return { previewRow, ok: response.ok && result.success, message: result.message };
+          } catch (error: any) {
+            return { previewRow, ok: false, message: error.message || 'Import failed' };
+          }
+        }));
+        imported += results.filter(result => result.ok).length;
+        errors.push(...results
+          .filter(result => !result.ok)
+          .map(result => `Row ${result.previewRow.rowNumber}: ${result.message || 'Import failed'}`));
       }
       await fetchStaff(1, pageSize);
       setImportPreview([]);
