@@ -80,6 +80,7 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
   const [sessions, setSessions] = useState<SessionItem[]>([]);
   const [subjects, setSubjects] = useState<SubjectItem[]>([]);
   const [subjectForm, setSubjectForm] = useState({ classId: '', sectionId: '', subjectId: '', maxMarks: '', passingMarks: '' });
+  const [selectedSubjectIds, setSelectedSubjectIds] = useState<number[]>([]);
   const [savingSubject, setSavingSubject] = useState(false);
   const [subjectMsg, setSubjectMsg] = useState<{ text: string; ok: boolean } | null>(null);
 
@@ -157,6 +158,9 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
     if (!name.trim() || !examTypeId || !academicSessionId || !startDate || !endDate) {
       setExamMsg({ text: 'All fields, including academic session, are required.', ok: false }); return;
     }
+    if (endDate < startDate) {
+      setExamMsg({ text: 'End date must be the same as or later than the start date.', ok: false }); return;
+    }
     try {
       setSavingExam(true); setExamMsg(null);
       const res = await fetch(`${API_BASE_URL}/api/Exam/CreateExam`, {
@@ -218,22 +222,33 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
   };
 
   const handleAddExamSubject = async () => {
-    const { classId, sectionId, subjectId, maxMarks, passingMarks } = subjectForm;
-    if (!selectedExamId || !classId || !sectionId || !subjectId || !maxMarks || !passingMarks) {
+    const { classId, sectionId, maxMarks, passingMarks } = subjectForm;
+    if (!selectedExamId || !classId || !sectionId || !selectedSubjectIds.length || !maxMarks || passingMarks === '') {
       setSubjectMsg({ text: 'All fields are required.', ok: false }); return;
+    }
+    if (Number(maxMarks) <= 0 || Number(passingMarks) < 0 || Number(passingMarks) >= Number(maxMarks)) {
+      setSubjectMsg({ text: 'Passing marks must be less than total marks.', ok: false }); return;
     }
     try {
       setSavingSubject(true); setSubjectMsg(null);
-      const res = await fetch(`${API_BASE_URL}/api/Exam/AddExamSubject`, {
-        method: 'POST', headers: jsonHeaders(),
-        body: JSON.stringify({ schoolId: selectedSchoolId, examId: Number(selectedExamId), classId: Number(classId), sectionId: Number(sectionId), subjectId: Number(subjectId), maxMarks: Number(maxMarks), passingMarks: Number(passingMarks) }),
-      });
-      const result = await res.json();
-      if (res.ok && result.success) {
-        setSubjectMsg({ text: result.message || 'Subject added!', ok: true });
+      const results = await Promise.all(selectedSubjectIds.map(async subjectId => {
+        const res = await fetch(`${API_BASE_URL}/api/Exam/AddExamSubject`, {
+          method: 'POST', headers: jsonHeaders(),
+          body: JSON.stringify({ schoolId: selectedSchoolId, examId: Number(selectedExamId), classId: Number(classId), sectionId: Number(sectionId), subjectId, maxMarks: Number(maxMarks), passingMarks: Number(passingMarks) }),
+        });
+        const result = await res.json();
+        return { ok: res.ok && result.success, message: result.message };
+      }));
+      const failures = results.filter(result => !result.ok);
+      if (!failures.length) {
+        setSubjectMsg({ text: `${results.length} subject(s) added successfully.`, ok: true });
         setSubjectForm({ classId: '', sectionId: '', subjectId: '', maxMarks: '', passingMarks: '' });
+        setSelectedSubjectIds([]);
         setShowAddSubject(false); fetchExamSubjects(selectedExamId);
-      } else { setSubjectMsg({ text: result.message || 'Failed.', ok: false }); }
+      } else {
+        await fetchExamSubjects(selectedExamId);
+        setSubjectMsg({ text: `${results.length - failures.length} added; ${failures.length} failed. ${failures[0].message || ''}`, ok: false });
+      }
     } catch { setSubjectMsg({ text: 'Error adding subject.', ok: false }); }
     finally { setSavingSubject(false); }
   };
@@ -343,7 +358,7 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
             : (
               <div className="staff-table-wrapper">
                 <table className="staff-table">
-                  <thead><tr><th>#</th><th>Name</th><th>Status</th></tr></thead>
+                  <thead><tr><th>S. No.</th><th>Name</th><th>Status</th></tr></thead>
                   <tbody>
                     {examTypes.map((et, i) => (
                       <tr key={et.id}>
@@ -391,7 +406,7 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
             : (
               <div className="staff-table-wrapper">
                 <table className="staff-table">
-                  <thead><tr><th>#</th><th>Name</th><th>Type</th><th>Start</th><th>End</th><th>Published</th><th>Result</th><th>Action</th></tr></thead>
+                  <thead><tr><th>S. No.</th><th>Name</th><th>Type</th><th>Start</th><th>End</th><th>Published</th><th>Result</th><th>Action</th></tr></thead>
                   <tbody>
                     {exams.map((ex, i) => (
                       <tr key={ex.id}>
@@ -426,7 +441,11 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
                   <div key={key} style={{ marginBottom: '14px' }}>
                     <label style={{ fontSize: '13px', fontWeight: 600, color: '#4a5568', display: 'block', marginBottom: '6px' }}>{label}</label>
                     <input type={type} value={(examForm as any)[key]} placeholder={placeholder}
-                      onChange={e => setExamForm(f => ({ ...f, [key]: e.target.value }))}
+                      min={key === 'endDate' ? examForm.startDate : undefined}
+                      onChange={e => setExamForm(f => ({
+                        ...f, [key]: e.target.value,
+                        ...(key === 'startDate' && f.endDate && f.endDate < e.target.value ? { endDate: '' } : {})
+                      }))}
                       style={{ ...selectStyle, width: '100%', boxSizing: 'border-box' }} />
                   </div>
                 ))}
@@ -475,7 +494,7 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
             : (
               <div className="staff-table-wrapper">
                 <table className="staff-table">
-                  <thead><tr><th>#</th><th>Subject</th><th>Class</th><th>Section</th><th>Max Marks</th><th>Pass Marks</th></tr></thead>
+                  <thead><tr><th>S. No.</th><th>Subject</th><th>Class</th><th>Section</th><th>Total Marks</th><th>Passing Marks</th></tr></thead>
                   <tbody>
                     {examSubjects.map((s, i) => (
                       <tr key={s.id}>
@@ -498,41 +517,48 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
                 <h3 style={{ marginBottom: '20px', color: '#1e2a3a' }}>Add Exam Subject</h3>
                 <div style={{ marginBottom: '14px' }}>
                   <label style={{ fontSize: '13px', fontWeight: 600, color: '#4a5568', display: 'block', marginBottom: '6px' }}>Class *</label>
-                  <select value={subjectForm.classId} onChange={e => { setSubjectForm(f => ({ ...f, classId: e.target.value, sectionId: '', subjectId: '' })); setSubjects([]); }} style={{ ...selectStyle, width: '100%' }}>
+                  <select value={subjectForm.classId} onChange={e => { setSubjectForm(f => ({ ...f, classId: e.target.value, sectionId: '', subjectId: '' })); setSelectedSubjectIds([]); setSubjects([]); }} style={{ ...selectStyle, width: '100%' }}>
                     <option value="">Select Class</option>
                     {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                 </div>
                 <div style={{ marginBottom: '14px' }}>
                   <label style={{ fontSize: '13px', fontWeight: 600, color: '#4a5568', display: 'block', marginBottom: '6px' }}>Section *</label>
-                  <select value={subjectForm.sectionId} onChange={e => { setSubjectForm(f => ({ ...f, sectionId: e.target.value, subjectId: '' })); fetchSectionSubjects(e.target.value); }} style={{ ...selectStyle, width: '100%' }} disabled={!subjectForm.classId}>
+                  <select value={subjectForm.sectionId} onChange={e => { setSubjectForm(f => ({ ...f, sectionId: e.target.value, subjectId: '' })); setSelectedSubjectIds([]); fetchSectionSubjects(e.target.value); }} style={{ ...selectStyle, width: '100%' }} disabled={!subjectForm.classId}>
                     <option value="">Select Section</option>
                     {filteredSections.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
                 </div>
                 <div style={{ marginBottom: '14px' }}>
-                  <label style={{ fontSize: '13px', fontWeight: 600, color: '#4a5568', display: 'block', marginBottom: '6px' }}>Subject *</label>
-                  <select value={subjectForm.subjectId} onChange={e => setSubjectForm(f => ({ ...f, subjectId: e.target.value }))} style={{ ...selectStyle, width: '100%' }} disabled={!subjectForm.sectionId}>
-                    <option value="">Select Subject</option>
-                    {subjects.map(s => <option key={s.subjectId} value={s.subjectId}>{s.subjectName}</option>)}
-                  </select>
+                  <label style={{ fontSize: '13px', fontWeight: 600, color: '#4a5568', display: 'block', marginBottom: '6px' }}>Subjects * ({selectedSubjectIds.length} selected)</label>
+                  <div style={{ border: '2px solid #e2e8f0', borderRadius: '8px', padding: '10px', maxHeight: '180px', overflowY: 'auto', background: '#fff' }}>
+                    {subjects.length > 0 && <label style={{ display: 'block', paddingBottom: '8px', marginBottom: '6px', borderBottom: '1px solid #e2e8f0', fontWeight: 600 }}>
+                      <input type="checkbox" checked={selectedSubjectIds.length === subjects.length}
+                        onChange={e => setSelectedSubjectIds(e.target.checked ? subjects.map(s => s.subjectId) : [])} /> Select all
+                    </label>}
+                    {subjects.map(s => <label key={s.subjectId} style={{ display: 'block', padding: '6px 0' }}>
+                      <input type="checkbox" checked={selectedSubjectIds.includes(s.subjectId)}
+                        onChange={() => setSelectedSubjectIds(ids => ids.includes(s.subjectId) ? ids.filter(id => id !== s.subjectId) : [...ids, s.subjectId])} /> {s.subjectName}
+                    </label>)}
+                    {!subjects.length && <span style={{ color: '#718096', fontSize: '13px' }}>Select a class and section to load subjects.</span>}
+                  </div>
                 </div>
                 <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
                   <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: '13px', fontWeight: 600, color: '#4a5568', display: 'block', marginBottom: '6px' }}>Max Marks *</label>
-                    <input type="number" value={subjectForm.maxMarks} onChange={e => setSubjectForm(f => ({ ...f, maxMarks: e.target.value }))} style={{ ...selectStyle, width: '100%', boxSizing: 'border-box' }} placeholder="100" />
+                    <label style={{ fontSize: '13px', fontWeight: 600, color: '#4a5568', display: 'block', marginBottom: '6px' }}>Total Marks *</label>
+                    <input type="number" min="1" value={subjectForm.maxMarks} onChange={e => setSubjectForm(f => ({ ...f, maxMarks: e.target.value }))} style={{ ...selectStyle, width: '100%', boxSizing: 'border-box' }} placeholder="100" />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: '13px', fontWeight: 600, color: '#4a5568', display: 'block', marginBottom: '6px' }}>Pass Marks *</label>
-                    <input type="number" value={subjectForm.passingMarks} onChange={e => setSubjectForm(f => ({ ...f, passingMarks: e.target.value }))} style={{ ...selectStyle, width: '100%', boxSizing: 'border-box' }} placeholder="35" />
+                    <label style={{ fontSize: '13px', fontWeight: 600, color: '#4a5568', display: 'block', marginBottom: '6px' }}>Passing Marks *</label>
+                    <input type="number" min="0" max={subjectForm.maxMarks ? Number(subjectForm.maxMarks) - 1 : undefined} value={subjectForm.passingMarks} onChange={e => setSubjectForm(f => ({ ...f, passingMarks: e.target.value }))} style={{ ...selectStyle, width: '100%', boxSizing: 'border-box' }} placeholder="35" />
                   </div>
                 </div>
                 {subjectMsg && !subjectMsg.ok && (
                   <div style={{ marginBottom: '12px', padding: '8px 14px', borderRadius: '8px', fontSize: '13px', background: '#fed7d7', color: '#742a2a', fontWeight: 600 }}>⚠️ {subjectMsg.text}</div>
                 )}
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleAddExamSubject} disabled={savingSubject}>{savingSubject ? 'Saving...' : 'Add Subject'}</button>
-                  <button className="btn" style={{ flex: 1, border: '1px solid #e2e8f0' }} onClick={() => { setShowAddSubject(false); setSubjectForm({ classId: '', sectionId: '', subjectId: '', maxMarks: '', passingMarks: '' }); setSubjectMsg(null); }}>Cancel</button>
+                  <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleAddExamSubject} disabled={savingSubject || !selectedSubjectIds.length}>{savingSubject ? 'Saving...' : `Add ${selectedSubjectIds.length || ''} Subject(s)`}</button>
+                  <button className="btn" style={{ flex: 1, border: '1px solid #e2e8f0' }} onClick={() => { setShowAddSubject(false); setSubjectForm({ classId: '', sectionId: '', subjectId: '', maxMarks: '', passingMarks: '' }); setSelectedSubjectIds([]); setSubjectMsg(null); }}>Cancel</button>
                 </div>
               </div>
             </div>
@@ -586,16 +612,16 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
                     <div className="staff-table-wrapper">
                       <table className="staff-table">
                         <thead>
-                          <tr><th>#</th><th>Subject</th><th>Exam Date</th><th>Start Time</th><th>End Time</th><th>Max Marks</th><th>Pass Marks</th></tr>
+                          <tr><th>S. No.</th><th>Subject</th><th>Exam Date</th><th>Start Time</th><th>End Time</th><th>Total Marks</th><th>Passing Marks</th></tr>
                         </thead>
                         <tbody>
                           {items.map((t, i) => (
                             <tr key={i}>
                               <td>{i + 1}</td>
                               <td style={{ fontWeight: 600 }}>{t.subjectName}</td>
-                              <td>{t.examDate ? fmt(t.examDate) : '-'}</td>
-                              <td>{t.startTime ? t.startTime.substring(0, 5) : '-'}</td>
-                              <td>{t.endTime ? t.endTime.substring(0, 5) : '-'}</td>
+                              <td>{t.examDate ? fmt(t.examDate) : 'Not Scheduled'}</td>
+                              <td>{t.startTime ? t.startTime.substring(0, 5) : 'Not Scheduled'}</td>
+                              <td>{t.endTime ? t.endTime.substring(0, 5) : 'Not Scheduled'}</td>
                               <td>{t.maxMarks ?? '-'}</td>
                               <td>{t.passingMarks ?? '-'}</td>
                             </tr>

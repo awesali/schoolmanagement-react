@@ -39,8 +39,10 @@ interface ExamDetailModalProps {
   examName: string;
 }
 
-const fmt = (d: string) => new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-const fmtTime = (t: string) => t.substring(0, 5);
+const fmt = (d: string) => d
+  ? new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+  : 'Not Scheduled';
+const fmtTime = (t: string) => t ? t.substring(0, 5) : 'Not Scheduled';
 
 const ExamDetailModal: React.FC<ExamDetailModalProps> = ({ isOpen, onClose, schoolId, examId, examName }) => {
   const [detail, setDetail] = useState<ExamDetail | null>(null);

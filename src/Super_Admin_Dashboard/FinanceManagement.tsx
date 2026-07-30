@@ -123,6 +123,7 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
 
   // History
   const [historyStudentId, setHistoryStudentId] = useState('');
+  const [historyStudentSearch, setHistoryStudentSearch] = useState('');
   const [paymentHistory, setPaymentHistory] = useState<PaymentRecord[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
@@ -202,6 +203,11 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
   };
 
   const filteredSections = sections.filter(s => s.classId === Number(selectedClass));
+  const normalizedHistorySearch = historyStudentSearch.trim().toLowerCase();
+  const matchingHistoryStudents = students.filter(student =>
+      !normalizedHistorySearch ||
+        student.studentName.toLowerCase().includes(normalizedHistorySearch) ||
+        String(student.rollNumber || '').toLowerCase().includes(normalizedHistorySearch));
 
   const loadStudents = async () => {
     if (!selectedSession || !selectedClass || !selectedSection) return;
@@ -287,12 +293,13 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
     } catch { } finally { setPaying(false); }
   };
 
-  const loadHistory = async () => {
-    if (!historyStudentId) return;
+  const loadHistory = async (studentId?: number | string) => {
+    const targetStudentId = String(studentId || historyStudentId);
+    if (!targetStudentId) return;
     try {
       setHistoryLoading(true);
       setPaymentHistory([]);
-      const res = await fetch(`${API_BASE_URL}/api/Student/GetPaymentHistory?studentId=${historyStudentId}`, { headers: headers() });
+      const res = await fetch(`${API_BASE_URL}/api/Student/GetPaymentHistory?studentId=${targetStudentId}`, { headers: headers() });
       if (res.ok) {
         const data = await res.json();
         setPaymentHistory(Array.isArray(data) ? data : []);
@@ -565,26 +572,64 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
       {view === 'history' && (
         <>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap' }}>
-            <select style={selectStyle} value={selectedClass} onChange={e => { setSelectedClass(e.target.value); setSelectedSection(''); setHistoryStudentId(''); }}>
+            <select style={selectStyle} value={selectedSession} onChange={e => { setSelectedSession(e.target.value); setHistoryStudentId(''); setHistoryStudentSearch(''); setPaymentHistory([]); }}>
+              <option value="">Select Session</option>
+              {sessions.map(s => <option key={s.id} value={s.id}>{sessionLabel(s)}</option>)}
+            </select>
+            <select style={selectStyle} value={selectedClass} onChange={e => { setSelectedClass(e.target.value); setSelectedSection(''); setHistoryStudentId(''); setHistoryStudentSearch(''); setPaymentHistory([]); }}>
               <option value="">Select Class</option>
               {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
-            <select style={selectStyle} value={selectedSection} onChange={e => setSelectedSection(e.target.value)} disabled={!selectedClass}>
+            <select style={selectStyle} value={selectedSection} onChange={e => { setSelectedSection(e.target.value); setHistoryStudentId(''); setHistoryStudentSearch(''); setPaymentHistory([]); }} disabled={!selectedClass}>
               <option value="">Select Section</option>
               {filteredSections.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
-            <select style={selectStyle} value={historyStudentId} onChange={e => setHistoryStudentId(e.target.value)} disabled={!selectedSection}>
-              <option value="">Select Student</option>
-              {students.map(s => <option key={s.studentId} value={s.studentId}>{s.studentName}</option>)}
-            </select>
-            <button className="btn btn-primary" onClick={async () => { await loadStudents(); }} disabled={!selectedClass || !selectedSection}>
-              Load Students
-            </button>
-            <button className="btn btn-primary" onClick={loadHistory} disabled={!historyStudentId || historyLoading}>
-              {historyLoading ? 'Loading...' : 'View History'}
+            <button className="btn btn-primary" onClick={async () => { setHistoryStudentId(''); setHistoryStudentSearch(''); setPaymentHistory([]); await loadStudents(); }} disabled={!selectedSession || !selectedClass || !selectedSection || studentsLoading}>
+              {studentsLoading ? 'Loading...' : 'Load Students'}
             </button>
           </div>
-
+          <div style={{ maxWidth: '520px', marginBottom: '16px' }}>
+            <label style={{ display: 'block', marginBottom: '6px', color: '#4a5568', fontSize: '13px', fontWeight: 600 }}>Search Student</label>
+            <input
+              type="search"
+              value={historyStudentSearch}
+              onChange={e => { setHistoryStudentSearch(e.target.value); setHistoryStudentId(''); setPaymentHistory([]); }}
+              placeholder={students.length ? 'Search by student name or roll number' : 'Select filters and load students first'}
+              disabled={!students.length}
+              autoComplete="off"
+              style={{ ...selectStyle, width: '100%', boxSizing: 'border-box' }}
+            />
+          </div>
+          {students.length > 0 && (
+            <div className="staff-table-wrapper" style={{ marginBottom: '20px', maxHeight: '320px', overflowY: 'auto' }}>
+              <table className="staff-table">
+                <thead><tr><th>S. No.</th><th>Roll Number</th><th>Student Name</th><th>Class</th><th>Section</th><th>Action</th></tr></thead>
+                <tbody>
+                  {matchingHistoryStudents.map((student, index) => (
+                    <tr key={student.studentId} style={{ background: historyStudentId === String(student.studentId) ? '#eff6ff' : 'white' }}>
+                      <td>{index + 1}</td>
+                      <td>{student.rollNumber || '-'}</td>
+                      <td style={{ fontWeight: 600 }}>{student.studentName}</td>
+                      <td>{student.className || classes.find(c => c.id === Number(selectedClass))?.name || '-'}</td>
+                      <td>{student.sectionName || sections.find(s => s.id === Number(selectedSection))?.name || '-'}</td>
+                      <td>
+                        <button
+                          type="button"
+                          className="btn btn-primary"
+                          onClick={() => { setHistoryStudentId(String(student.studentId)); loadHistory(student.studentId); }}
+                          disabled={historyLoading}
+                          style={{ padding: '5px 12px', fontSize: '12px' }}
+                        >
+                          {historyLoading && historyStudentId === String(student.studentId) ? 'Loading...' : 'View Payment History'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {!matchingHistoryStudents.length && <tr><td colSpan={6} style={{ textAlign: 'center', padding: '24px', color: '#718096' }}>No students match your search.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          )}
           {paymentHistory.length > 0 ? (
             <div className="staff-table-wrapper">
               <table className="staff-table">
@@ -613,7 +658,16 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
               </table>
             </div>
           ) : (
-            !historyLoading && <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>Select a student and click "View History".</p>
+            !historyLoading && (
+              historyStudentId ? (
+                <div style={{ textAlign: 'center', padding: '36px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '12px', color: '#92400e' }}>
+                  <div style={{ fontSize: '18px', fontWeight: 700, marginBottom: '6px' }}>No Payment Recorded Yet</div>
+                  <div style={{ fontSize: '14px' }}>This student has not made any fee payments yet. Payment history will appear here after the first payment is collected.</div>
+                </div>
+              ) : (
+                <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>Select a student from the grid to view payment history.</p>
+              )
+            )
           )}
         </>
       )}

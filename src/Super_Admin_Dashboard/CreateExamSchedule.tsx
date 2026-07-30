@@ -4,7 +4,7 @@ import './StaffList.css';
 
 interface ClassItem { id: number; name: string; }
 interface SectionItem { id: number; name: string; classId: number; }
-interface Exam { id: number; name: string; }
+interface Exam { id: number; name: string; startDate: string; endDate: string; }
 interface ScheduleRow { subjectId: number; subjectName: string; examDate: string; startTime: string; endTime: string; }
 
 const selectStyle: React.CSSProperties = {
@@ -79,6 +79,9 @@ const CreateExamSchedule: React.FC<CreateExamScheduleProps> = ({ selectedSchoolI
   };
 
   const filteredSections = sections.filter(s => s.classId === Number(classId));
+  const selectedExam = exams.find(exam => exam.id === Number(examId));
+  const examStartDate = selectedExam?.startDate?.substring(0, 10) ?? '';
+  const examEndDate = selectedExam?.endDate?.substring(0, 10) ?? '';
 
   const updateRow = (i: number, field: keyof ScheduleRow, value: string) => {
     setRows(prev => prev.map((r, idx) => idx === i ? { ...r, [field]: value } : r));
@@ -92,11 +95,33 @@ const CreateExamSchedule: React.FC<CreateExamScheduleProps> = ({ selectedSchoolI
     if (incomplete) {
       setMsg({ text: `Please set exam date for "${incomplete.subjectName}".`, ok: false }); return;
     }
+    const outsideDuration = rows.find(r =>
+      r.examDate < examStartDate || r.examDate > examEndDate);
+    if (outsideDuration) {
+      setMsg({
+        text: `"${outsideDuration.subjectName}" must be scheduled between ${examStartDate} and ${examEndDate}.`,
+        ok: false,
+      }); return;
+    }
+    const invalidTime = rows.find(r => !r.startTime || !r.endTime || r.startTime >= r.endTime);
+    if (invalidTime) {
+      setMsg({ text: `End time must be later than start time for "${invalidTime.subjectName}".`, ok: false }); return;
+    }
+    const usedDates = new Set<string>();
+    const duplicateDate = rows.find(r => {
+      if (usedDates.has(r.examDate)) return true;
+      usedDates.add(r.examDate);
+      return false;
+    });
+    if (duplicateDate) {
+      setMsg({ text: `Only one subject can be scheduled on ${duplicateDate.examDate}.`, ok: false }); return;
+    }
 
     try {
       setSaving(true); setMsg(null);
-      const results = await Promise.all(rows.map(r =>
-        fetch(`${API_BASE_URL}/api/Exam/CreateExamSchedule`, {
+      const results: any[] = [];
+      for (const r of rows) {
+        const res = await fetch(`${API_BASE_URL}/api/Exam/CreateExamSchedule`, {
           method: 'POST', headers: jsonHeaders(),
           body: JSON.stringify({
             examId: Number(examId),
@@ -108,12 +133,15 @@ const CreateExamSchedule: React.FC<CreateExamScheduleProps> = ({ selectedSchoolI
             startTime: r.startTime + ':00',
             endTime: r.endTime + ':00',
           }),
-        }).then(res => res.json())
-      ));
+        });
+        const result = await res.json();
+        results.push(result);
+        if (!result.success) break;
+      }
 
       const failed = results.filter(r => !r.success);
       if (failed.length === 0) {
-        setMsg({ text: `${rows.length} schedule(s) created successfully!`, ok: true });
+        setMsg({ text: `${rows.length} schedule(s) saved successfully!`, ok: true });
       } else {
         setMsg({ text: failed[0].message || 'Some schedules failed.', ok: false });
       }
@@ -160,7 +188,7 @@ const CreateExamSchedule: React.FC<CreateExamScheduleProps> = ({ selectedSchoolI
           <div className="staff-table-wrapper" style={{ marginBottom: '16px' }}>
             <table className="staff-table">
               <thead>
-                <tr><th>#</th><th>Subject</th><th>Exam Date</th><th>Start Time</th><th>End Time</th></tr>
+                <tr><th>S. No.</th><th>Subject</th><th>Exam Date</th><th>Start Time</th><th>End Time</th></tr>
               </thead>
               <tbody>
                 {rows.map((row, i) => (
@@ -169,6 +197,8 @@ const CreateExamSchedule: React.FC<CreateExamScheduleProps> = ({ selectedSchoolI
                     <td style={{ fontWeight: 600 }}>{row.subjectName}</td>
                     <td>
                       <input type="date" value={row.examDate}
+                        min={examStartDate}
+                        max={examEndDate}
                         onChange={e => updateRow(i, 'examDate', e.target.value)}
                         style={inputStyle} />
                     </td>

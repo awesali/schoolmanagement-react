@@ -214,9 +214,9 @@ const TeacherExamView: React.FC<{ selectedSchoolId: number | null }> = ({ select
                       <td style={{ fontWeight: 600 }}>{t.subjectName}</td>
                       <td>{t.className}</td>
                       <td>{t.sectionName}</td>
-                      <td>{t.examDate ? fmt(t.examDate) : '-'}</td>
-                      <td>{t.startTime ? t.startTime.substring(0, 5) : '-'}</td>
-                      <td>{t.endTime ? t.endTime.substring(0, 5) : '-'}</td>
+                      <td>{t.examDate ? fmt(t.examDate) : 'Not Scheduled'}</td>
+                      <td>{t.startTime ? t.startTime.substring(0, 5) : 'Not Scheduled'}</td>
+                      <td>{t.endTime ? t.endTime.substring(0, 5) : 'Not Scheduled'}</td>
                       <td>{t.maxMarks ?? '-'}</td>
                       <td>{t.passingMarks ?? '-'}</td>
                     </tr>
@@ -267,7 +267,7 @@ const TeacherExamView: React.FC<{ selectedSchoolId: number | null }> = ({ select
               <div className="staff-table-wrapper" style={{ marginBottom: '16px' }}>
                 <table className="staff-table">
                   <thead>
-                    <tr><th>#</th><th>Roll No.</th><th>Student Name</th><th>Marks Obtained</th><th>Remarks</th></tr>
+                    <tr><th>S. No.</th><th>Roll No.</th><th>Student Name</th><th>Marks Obtained</th><th>Remarks</th></tr>
                   </thead>
                   <tbody>
                     {marksSheet.map((s, i) => (
