@@ -73,6 +73,8 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
 
   // Exam Subjects
   const [selectedExamId, setSelectedExamId] = useState('');
+  const [subjectFilterClassId, setSubjectFilterClassId] = useState('');
+  const [subjectFilterSectionId, setSubjectFilterSectionId] = useState('');
   const [examSubjects, setExamSubjects] = useState<ExamSubject[]>([]);
   const [subjectsLoading, setSubjectsLoading] = useState(false);
   const [showAddSubject, setShowAddSubject] = useState(false);
@@ -314,6 +316,11 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
   };
 
   const filteredSections = sections.filter(s => s.classId === Number(subjectForm.classId));
+  const subjectFilterSections = sections.filter(s => s.classId === Number(subjectFilterClassId));
+  const filteredExamSubjects = examSubjects.filter(subject =>
+    subject.classId === Number(subjectFilterClassId) &&
+    subject.sectionId === Number(subjectFilterSectionId)
+  );
   const examTypeName = (id: number) => examTypes.find(t => t.id === id)?.name || '-';
 
   if (!selectedSchoolId) return <div className="staff-list-loading">Please select a school</div>;
@@ -481,9 +488,37 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
       {view === 'subjects' && (
         <>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap' }}>
-            <select style={selectStyle} value={selectedExamId} onChange={e => { setSelectedExamId(e.target.value); fetchExamSubjects(e.target.value); setSubjectMsg(null); }}>
+            <select style={selectStyle} value={selectedExamId} onChange={e => {
+              setSelectedExamId(e.target.value);
+              setSubjectFilterClassId('');
+              setSubjectFilterSectionId('');
+              setExamSubjects([]);
+              fetchExamSubjects(e.target.value);
+              setSubjectMsg(null);
+            }}>
               <option value="">Select Exam</option>
               {exams.map(ex => <option key={ex.id} value={ex.id}>{ex.name}</option>)}
+            </select>
+            <select
+              style={selectStyle}
+              value={subjectFilterClassId}
+              disabled={!selectedExamId}
+              onChange={e => {
+                setSubjectFilterClassId(e.target.value);
+                setSubjectFilterSectionId('');
+              }}
+            >
+              <option value="">Select Class</option>
+              {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+            <select
+              style={selectStyle}
+              value={subjectFilterSectionId}
+              disabled={!subjectFilterClassId}
+              onChange={e => setSubjectFilterSectionId(e.target.value)}
+            >
+              <option value="">Select Section</option>
+              {subjectFilterSections.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
             {selectedExamId && (
               <button className="btn btn-primary" onClick={() => { setShowAddSubject(true); setSubjectMsg(null); }}>+ Add Subject</button>
@@ -491,13 +526,16 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
           </div>
           {msgBanner(subjectMsg)}
           {subjectsLoading ? <div style={{ textAlign: 'center', padding: '40px', color: '#718096' }}>Loading...</div>
-            : examSubjects.length === 0 ? <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>{selectedExamId ? 'No subjects configured for this exam.' : 'Select an exam to view subjects.'}</p>
+            : !selectedExamId ? <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>Select an exam to view subjects.</p>
+            : !subjectFilterClassId ? <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>Select a class to view subjects.</p>
+            : !subjectFilterSectionId ? <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>Select a section to view subjects.</p>
+            : filteredExamSubjects.length === 0 ? <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>No subjects configured for the selected class and section.</p>
             : (
               <div className="staff-table-wrapper">
                 <table className="staff-table">
                   <thead><tr><th>S. No.</th><th>Subject</th><th>Class</th><th>Section</th><th>Total Marks</th><th>Passing Marks</th></tr></thead>
                   <tbody>
-                    {examSubjects.map((s, i) => (
+                    {filteredExamSubjects.map((s, i) => (
                       <tr key={s.id}>
                         <td>{i + 1}</td>
                         <td style={{ fontWeight: 600 }}>{s.subjectName}</td>
