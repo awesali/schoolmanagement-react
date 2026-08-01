@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
+import { useToastMessageState } from '../components/Toast/Toast';
 import Modal from './Modal';
 import './AddStaff.css';
 
@@ -32,7 +33,7 @@ const EditSubject: React.FC<EditSubjectProps> = ({ isOpen, onClose, subject, onS
     staffId: 0,
   });
   const [staff, setStaff] = useState<Staff[]>([]);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useToastMessageState('error');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -126,7 +127,9 @@ const EditSubject: React.FC<EditSubjectProps> = ({ isOpen, onClose, subject, onS
       isOpen={isOpen}
       onClose={onClose}
       title="Edit Subject"
-      submitLabel={loading ? "Updating..." : "Update Subject"}
+      submitLabel="Update Subject"
+      submitLoading={loading}
+      loadingText="Updating..."
       onCancel={handleClear}
       formId="edit-subject-form"
     >

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { API_BASE_URL } from '../config';
+import { useToastMessageState } from '../components/Toast/Toast';
 import './StaffList.css';
 import './ManagementTabs.css';
 
@@ -30,7 +31,8 @@ const STUDY_MATERIAL_TABS:Tab[]=['dashboard','books','materials','variants','boo
 
 const InventoryManagement:React.FC<{selectedSchoolId:number|null; mode?:'inventory'|'studyMaterials'}>=({selectedSchoolId,mode='inventory'})=>{
  const [tab,setTab]=useState<Tab>('dashboard'),[rows,setRows]=useState<any[]>([]),[summary,setSummary]=useState<any>({});
- const [form,setForm]=useState<Record<string,string>>({}),[open,setOpen]=useState(false),[loading,setLoading]=useState(false),[message,setMessage]=useState('');
+ const [form,setForm]=useState<Record<string,string>>({}),[open,setOpen]=useState(false),[loading,setLoading]=useState(false);
+ const [message,setMessage]=useToastMessageState();
  const [lookups,setLookups]=useState<{products:any[];categories:any[];classes:any[];sections:any[];sessions:any[];subjects:any[]}>({products:[],categories:[],classes:[],sections:[],sessions:[],subjects:[]});
  const cfg=tabs[tab];
  const headers=()=>({accept:'application/json',Authorization:`Bearer ${localStorage.getItem('token')}`,'Content-Type':'application/json'});

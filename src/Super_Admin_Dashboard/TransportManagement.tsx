@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { API_BASE_URL } from '../config';
+import { useToastMessageState } from '../components/Toast/Toast';
 import './StaffList.css';
 import './ManagementTabs.css';
 
@@ -84,7 +85,7 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({ se
   const [form, setForm] = useState<Record<string, string>>({});
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useToastMessageState();
   const [lookups, setLookups] = useState<Record<string, { value: number; label: string }[]>>({});
 
   const headers = () => ({ accept: 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'application/json' });

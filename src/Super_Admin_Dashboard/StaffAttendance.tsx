@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
+import { useToast } from '../components/Toast/Toast';
+import { TOAST_MESSAGES } from '../constants/toastMessages';
+import { LoadingButton } from '../components/Loader/Loader';
 import './StaffList.css';
 
 type AttendanceStatus = 'Present' | 'Absent' | null;
@@ -22,6 +25,7 @@ const statusStyle = (status: string) => ({
 
 
 const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number | null }> = ({ userRole, selectedSchoolId }) => {
+  const toast = useToast();
   const today = new Date().toISOString().split('T')[0];
 
   // Admin state
@@ -36,17 +40,11 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [alreadyMarked, setAlreadyMarked] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [attendance, setAttendance] = useState<AttendanceStatus>(null);
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [history, setHistory] = useState<{ attendanceDate: string; status: string }[] | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
-
-  const showToast = (message: string, type: 'success' | 'error') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
-  };
 
   const fetchAdminAttendance = async (from?: string, to?: string) => {
     try {
@@ -86,7 +84,7 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
 
   const handleSubmit = async () => {
     if (attendance === null) {
-      alert('Please mark your attendance (Present or Absent).');
+      toast.warning(TOAST_MESSAGES.attendance.staffRequired);
       return;
     }
     try {
@@ -100,14 +98,14 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
       const result = await response.json();
       if (response.ok && result?.success) {
         setSubmitted(true);
-        showToast(result.message || `Attendance marked successfully for ${new Date().toLocaleDateString()}!`, 'success');
+        toast.success(result.message || TOAST_MESSAGES.attendance.saved(new Date().toLocaleDateString()));
       } else {
-        const msg = result?.message || 'Failed to mark attendance';
+        const msg = result?.message || TOAST_MESSAGES.attendance.saveFailed;
         if (msg.toLowerCase().includes('already')) setAlreadyMarked(true);
-        showToast(msg, 'error');
+        toast.error(msg);
       }
     } catch (err) {
-      showToast('An error occurred while marking attendance', 'error');
+      toast.error(TOAST_MESSAGES.attendance.saveError);
     } finally {
       setSubmitting(false);
     }
@@ -132,18 +130,6 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
       setHistoryLoading(false);
     }
   };
-
-  const toast_el = toast && (
-    <div style={{
-      position: 'fixed', top: '24px', right: '24px', zIndex: 9999,
-      padding: '14px 24px', borderRadius: '10px', fontWeight: 600, fontSize: '14px',
-      boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-      background: toast.type === 'success' ? '#22543d' : '#742a2a',
-      color: 'white',
-    }}>
-      {toast.type === 'success' ? '✅' : '⚠️'} {toast.message}
-    </div>
-  );
 
   // --- Super Admin View ---
   if (userRole === '1') {
@@ -226,7 +212,6 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
   // --- Selection Screen ---
   if (view === 'select') return (
     <div className="staff-list-container">
-      {toast_el}
       <div className="staff-list-header"><h2>Staff Attendance</h2></div>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '12px' }}>
         <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '8px', letterSpacing: '0.5px', textTransform: 'uppercase', fontWeight: 600 }}>
@@ -272,7 +257,6 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
   // --- Mark Attendance ---
   if (view === 'mark') return (
     <div className="staff-list-container">
-      {toast_el}
       <div className="staff-list-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button onClick={() => setView('select')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px' }}>←</button>
@@ -282,9 +266,10 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
           <span style={{ fontSize: '14px', color: '#4a5568', fontWeight: 600 }}>
             📅 {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
           </span>
-          <button className="btn btn-primary" onClick={handleSubmit} disabled={submitting || submitted}>
-            {submitted ? '✓ Submitted' : submitting ? 'Submitting...' : 'Submit Attendance'}
-          </button>
+          <LoadingButton className="btn btn-primary" onClick={handleSubmit} loading={submitting}
+            loadingText="Submitting..." disabled={submitted}>
+            {submitted ? '✓ Submitted' : 'Submit Attendance'}
+          </LoadingButton>
         </div>
       </div>
 
@@ -325,7 +310,6 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
   // --- History ---
   return (
     <div className="staff-list-container">
-      {toast_el}
       <div className="staff-list-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button onClick={() => setView('select')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px' }}>←</button>
@@ -335,9 +319,8 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
           <input type="date" value={fromDate} max={toDate || today} onChange={(e) => setFromDate(e.target.value)} style={{ padding: '8px 12px', borderRadius: '8px', border: '2px solid #e2e8f0', fontSize: '14px' }} />
           <span style={{ color: '#718096', fontWeight: 600 }}>to</span>
           <input type="date" value={toDate} min={fromDate} max={today} onChange={(e) => setToDate(e.target.value)} style={{ padding: '8px 12px', borderRadius: '8px', border: '2px solid #e2e8f0', fontSize: '14px' }} />
-          <button className="btn btn-primary" onClick={fetchHistory} disabled={!fromDate || !toDate || historyLoading}>
-            {historyLoading ? 'Loading...' : 'View'}
-          </button>
+          <LoadingButton className="btn btn-primary" onClick={fetchHistory} loading={historyLoading}
+            loadingText="Loading..." disabled={!fromDate || !toDate}>View</LoadingButton>
         </div>
       </div>
 

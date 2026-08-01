@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
+import { useToastResultState } from '../components/Toast/Toast';
+import { LoadingButton } from '../components/Loader/Loader';
 import './StaffList.css';
 
 interface ClassItem { id: number; name: string; }
@@ -32,7 +34,7 @@ const CreateExamSchedule: React.FC<CreateExamScheduleProps> = ({ selectedSchoolI
 
   const [rows, setRows] = useState<ScheduleRow[]>([]);
   const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
+  const [msg, setMsg] = useToastResultState();
 
   const token = () => localStorage.getItem('token');
   const headers = () => ({ 'accept': '*/*', 'Authorization': `Bearer ${token()}` });
@@ -219,9 +221,9 @@ const CreateExamSchedule: React.FC<CreateExamScheduleProps> = ({ selectedSchoolI
           </div>
 
           <div style={{ display: 'flex', gap: '10px' }}>
-            <button className="btn btn-primary" onClick={handleSubmit} disabled={saving}>
-              {saving ? 'Saving...' : 'Save Schedule'}
-            </button>
+            <LoadingButton className="btn btn-primary" onClick={handleSubmit} loading={saving} loadingText="Saving...">
+              Save Schedule
+            </LoadingButton>
             <button className="btn" style={{ border: '1px solid #e2e8f0' }} onClick={handleReset}>Reset</button>
           </div>
         </>

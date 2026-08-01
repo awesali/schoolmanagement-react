@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
+import { useToast, useToastMessageState } from '../components/Toast/Toast';
+import { TOAST_MESSAGES } from '../constants/toastMessages';
 import Modal from './Modal';
 import './AddStaff.css';
 
@@ -21,13 +23,15 @@ interface Section {
 }
 
 const AddClass: React.FC<AddClassProps> = ({ isOpen, onClose, schoolId, onSuccess }) => {
+  const toast = useToast();
   const [formData, setFormData] = useState({
     className: '',
   });
   const [sections, setSections] = useState<Section[]>([{ sectionName: '', staffId: 0 }]);
   const [staff, setStaff] = useState<Staff[]>([]);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useToastMessageState('error');
   const [loading, setLoading] = useState(false);
+  const [checkingTeachers, setCheckingTeachers] = useState(false);
 
   useEffect(() => {
     if (isOpen && schoolId) {
@@ -38,6 +42,8 @@ const AddClass: React.FC<AddClassProps> = ({ isOpen, onClose, schoolId, onSucces
 
   const fetchStaff = async () => {
     try {
+      setCheckingTeachers(true);
+      setStaff([]);
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_BASE_URL}/api/Common/by-school/${schoolId}`, {
         headers: {
@@ -49,16 +55,25 @@ const AddClass: React.FC<AddClassProps> = ({ isOpen, onClose, schoolId, onSucces
         const result = await response.json();
         if (result.success && result.data) {
           setStaff(result.data);
+          if (!result.data.length) {
+            toast.warning(TOAST_MESSAGES.dependency.teacherRequired);
+          }
         }
       }
     } catch (err) {
       console.error('Failed to fetch staff');
+    } finally {
+      setCheckingTeachers(false);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (staff.length === 0) {
+      toast.warning(TOAST_MESSAGES.dependency.teacherRequired);
+      return;
+    }
     setLoading(true);
     
     try {
@@ -133,9 +148,12 @@ const AddClass: React.FC<AddClassProps> = ({ isOpen, onClose, schoolId, onSucces
       isOpen={isOpen}
       onClose={onClose}
       title="Add New Class"
-      submitLabel={loading ? "Creating..." : "Create Class"}
+      submitLabel="Create Class"
+      submitLoading={loading}
+      loadingText="Creating..."
       onCancel={handleClear}
       formId="add-class-form"
+      submitDisabled={loading || checkingTeachers || staff.length === 0}
     >
       {error && (
         <div className="error-message">
@@ -177,8 +195,9 @@ const AddClass: React.FC<AddClassProps> = ({ isOpen, onClose, schoolId, onSucces
                 onChange={(e) => handleSectionChange(index, 'staffId', Number(e.target.value))}
                 required
                 className="form-select"
+                disabled={checkingTeachers || staff.length === 0}
               >
-                <option value="">Select Class Teacher</option>
+                <option value="">{checkingTeachers ? 'Checking teachers...' : staff.length === 0 ? 'No teacher available' : 'Select Class Teacher'}</option>
                 {staff.map((member) => (
                   <option key={member.id} value={member.id}>
                     {member.name}

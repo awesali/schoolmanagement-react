@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
+import { useToastResultState } from '../components/Toast/Toast';
+import { LoadingButton } from '../components/Loader/Loader';
 import './StaffList.css';
 
 type TeacherExamView = 'timetable' | 'marks';
@@ -38,7 +40,7 @@ const TeacherExamView: React.FC<{ selectedSchoolId: number | null }> = ({ select
   const [marksLoading, setMarksLoading] = useState(false);
   const [savingMarks, setSavingMarks] = useState(false);
   const [lockingMarks, setLockingMarks] = useState(false);
-  const [marksMsg, setMarksMsg] = useState<{ text: string; ok: boolean } | null>(null);
+  const [marksMsg, setMarksMsg] = useToastResultState();
 
   const token = () => localStorage.getItem('token');
   const headers = () => ({ 'accept': '*/*', 'Authorization': `Bearer ${token()}` });
@@ -189,9 +191,8 @@ const TeacherExamView: React.FC<{ selectedSchoolId: number | null }> = ({ select
               <option value="">Select Exam</option>
               {exams.map(ex => <option key={ex.id} value={ex.id}>{ex.name}</option>)}
             </select>
-            <button className="btn btn-primary" onClick={fetchTimetable} disabled={!timetableExamId || timetableLoading}>
-              {timetableLoading ? 'Loading...' : 'View Timetable'}
-            </button>
+            <LoadingButton className="btn btn-primary" onClick={fetchTimetable} disabled={!timetableExamId}
+              loading={timetableLoading} loadingText="Loading...">View Timetable</LoadingButton>
           </div>
 
           {selectedExam && (
@@ -296,9 +297,8 @@ const TeacherExamView: React.FC<{ selectedSchoolId: number | null }> = ({ select
                 </table>
               </div>
               <div style={{ display: 'flex', gap: '10px' }}>
-                <button className="btn btn-primary" onClick={handleSaveMarks} disabled={savingMarks}>
-                  {savingMarks ? 'Saving...' : 'Save Marks'}
-                </button>
+                <LoadingButton className="btn btn-primary" onClick={handleSaveMarks}
+                  loading={savingMarks} loadingText="Saving...">Save Marks</LoadingButton>
                 <button className="btn" style={{ border: '1px solid #e2e8f0', color: '#742a2a', background: '#fff5f5' }}
                   onClick={handleLockMarks} disabled={lockingMarks}>
                   {lockingMarks ? 'Locking...' : '🔒 Lock Marks'}

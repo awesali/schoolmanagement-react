@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
+import { useToastMessageState } from '../components/Toast/Toast';
 import Modal from './Modal';
 import './AddStaff.css';
 
@@ -38,7 +39,7 @@ const EditClass: React.FC<EditClassProps> = ({ isOpen, onClose, classData, onSuc
   });
   const [sections, setSections] = useState<Section[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useToastMessageState('error');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -147,7 +148,9 @@ const EditClass: React.FC<EditClassProps> = ({ isOpen, onClose, classData, onSuc
       isOpen={isOpen}
       onClose={onClose}
       title="Edit Class"
-      submitLabel={loading ? "Updating..." : "Update Class"}
+      submitLabel="Update Class"
+      submitLoading={loading}
+      loadingText="Updating..."
       onCancel={() => {}}
       showCancel={false}
       formId="edit-class-form"

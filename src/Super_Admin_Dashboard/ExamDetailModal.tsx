@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
+import { useToastMessageState } from '../components/Toast/Toast';
 import Modal from './Modal';
 
 interface Subject {
@@ -47,7 +48,7 @@ const fmtTime = (t: string) => t ? t.substring(0, 5) : 'Not Scheduled';
 const ExamDetailModal: React.FC<ExamDetailModalProps> = ({ isOpen, onClose, schoolId, examId, examName }) => {
   const [detail, setDetail] = useState<ExamDetail | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useToastMessageState('error');
 
   useEffect(() => {
     if (isOpen && examId && schoolId) {

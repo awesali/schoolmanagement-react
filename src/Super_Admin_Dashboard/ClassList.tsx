@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
+import { useToastMessageState } from '../components/Toast/Toast';
 import AddClass from './AddClass';
 import EditClass from './EditClass';
 import AssignSubjects from './AssignSubjects';
@@ -37,7 +38,7 @@ interface ClassListProps {
 const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId }) => {
   const [classes, setClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useToastMessageState('error');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);

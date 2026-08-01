@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
+import { useToastMessageState } from '../components/Toast/Toast';
 import Modal from './Modal';
 import './AddStaff.css';
 
@@ -29,7 +30,7 @@ const AddExam: React.FC<AddExamProps> = ({ isOpen, onClose, schoolId, onSuccess 
   const [selectedSections, setSelectedSections] = useState<Set<number>>(new Set());
   const [examSchedule, setExamSchedule] = useState<Map<string, ExamSubject>>(new Map());
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useToastMessageState('error');
   const [dateErrors, setDateErrors] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
@@ -180,7 +181,7 @@ const AddExam: React.FC<AddExamProps> = ({ isOpen, onClose, schoolId, onSuccess 
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Add Exam" submitLabel={loading ? 'Creating...' : 'Create Schedule'} onCancel={handleClear} formId="add-exam-form" size="large">
+    <Modal isOpen={isOpen} onClose={onClose} title="Add Exam" submitLabel="Create Schedule" submitLoading={loading} loadingText="Creating..." onCancel={handleClear} formId="add-exam-form" size="large">
       {error && <div className="error-message">{error}</div>}
       <form id="add-exam-form" onSubmit={handleSubmit}>
         <div className="form-grid">

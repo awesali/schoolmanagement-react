@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import Pagination from './Pagination';
+import { useToast } from '../components/Toast/Toast';
+import { TOAST_MESSAGES } from '../constants/toastMessages';
+import { LoadingButton } from '../components/Loader/Loader';
 import './StaffList.css';
 
 interface Student {
@@ -17,6 +20,7 @@ type AttendanceStatus = 'Present' | 'Absent' | null;
 type View = 'select' | 'mark' | 'history';
 
 const StudentAttendance: React.FC = () => {
+  const toast = useToast();
   const [view, setView] = useState<View>('select');
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(false);
@@ -28,7 +32,6 @@ const StudentAttendance: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [alreadyMarked, setAlreadyMarked] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [historyDate, setHistoryDate] = useState('');
   const [history, setHistory] = useState<{ studentId: number; studentName: string; sectionName: string; attendanceDate: string; status: string }[] | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -56,11 +59,6 @@ const StudentAttendance: React.FC = () => {
     const role = extractRoleFromToken();
     setUserRole(role);
   }, []);
-
-  const showToast = (message: string, type: 'success' | 'error') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
-  };
 
   useEffect(() => {
     if (view === 'mark') {
@@ -111,7 +109,7 @@ const StudentAttendance: React.FC = () => {
   const handleSubmit = async () => {
     const unmarked = students.filter(s => attendance[s.id] === null);
     if (unmarked.length > 0) {
-      alert(`Please mark attendance for all students. ${unmarked.length} student(s) unmarked.`);
+      toast.warning(TOAST_MESSAGES.attendance.studentsRequired(unmarked.length));
       return;
     }
     try {
@@ -130,16 +128,16 @@ const StudentAttendance: React.FC = () => {
       const result = await response.json();
       if (response.ok) {
         setSubmitted(true);
-        showToast(`Attendance marked successfully for ${new Date().toLocaleDateString()}!`, 'success');
+        toast.success(TOAST_MESSAGES.attendance.saved(new Date().toLocaleDateString()));
       } else {
         if (result?.message?.toLowerCase().includes('already')) {
           setAlreadyMarked(true);
         }
-        showToast(result?.message || 'Failed to mark attendance', 'error');
+        toast.error(result?.message || TOAST_MESSAGES.attendance.saveFailed);
       }
     } catch (err) {
       console.error('Failed to submit attendance');
-      showToast('An error occurred while marking attendance', 'error');
+      toast.error(TOAST_MESSAGES.attendance.saveError);
     } finally {
       setSubmitting(false);
     }
@@ -199,22 +197,9 @@ const StudentAttendance: React.FC = () => {
     fetchHistoryForDate(historyDate, 1, size);
   };
 
-  const toast_el = toast && (
-    <div style={{
-      position: 'fixed', top: '24px', right: '24px', zIndex: 9999,
-      padding: '14px 24px', borderRadius: '10px', fontWeight: 600, fontSize: '14px',
-      boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-      background: toast.type === 'success' ? '#22543d' : '#742a2a',
-      color: 'white', animation: 'slideUp 0.3s ease',
-    }}>
-      {toast.type === 'success' ? '✅' : '⚠️'} {toast.message}
-    </div>
-  );
-
   // --- Selection Screen ---
   if (view === 'select') return (
     <div className="staff-list-container">
-      {toast_el}
       <div className="staff-list-header"><h2>Student Attendance</h2></div>
 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '12px' }}>
@@ -268,7 +253,6 @@ const StudentAttendance: React.FC = () => {
   // --- Mark Attendance ---
   if (view === 'mark') return (
     <div className="staff-list-container">
-      {toast_el}
       <div className="staff-list-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button onClick={() => setView('select')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px' }}>←</button>
@@ -278,9 +262,10 @@ const StudentAttendance: React.FC = () => {
           <span style={{ fontSize: '14px', color: '#4a5568', fontWeight: 600 }}>
             📅 {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
           </span>
-          <button className="btn btn-primary" onClick={handleSubmit} disabled={submitting || submitted}>
-            {submitted ? '✓ Submitted' : submitting ? 'Submitting...' : 'Submit Attendance'}
-          </button>
+          <LoadingButton className="btn btn-primary" onClick={handleSubmit} loading={submitting}
+            loadingText="Submitting..." disabled={submitted}>
+            {submitted ? '✓ Submitted' : 'Submit Attendance'}
+          </LoadingButton>
         </div>
       </div>
 
@@ -339,7 +324,6 @@ const StudentAttendance: React.FC = () => {
   // --- History ---
   return (
     <div className="staff-list-container">
-      {toast_el}
       <div className="staff-list-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button onClick={() => setView('select')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px' }}>←</button>
@@ -347,9 +331,8 @@ const StudentAttendance: React.FC = () => {
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <input type="date" value={historyDate} max={new Date().toISOString().split('T')[0]} onChange={(e) => setHistoryDate(e.target.value)} style={{ padding: '8px 12px', borderRadius: '8px', border: '2px solid #e2e8f0', fontSize: '14px' }} />
-          <button className="btn btn-primary" onClick={fetchHistory} disabled={!historyDate || historyLoading}>
-            {historyLoading ? 'Loading...' : 'View'}
-          </button>
+          <LoadingButton className="btn btn-primary" onClick={fetchHistory} loading={historyLoading}
+            loadingText="Loading..." disabled={!historyDate}>View</LoadingButton>
         </div>
       </div>
 

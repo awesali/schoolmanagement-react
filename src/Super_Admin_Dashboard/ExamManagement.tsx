@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
+import { LoadingButton } from '../components/Loader/Loader';
 import CreateExamSchedule from './CreateExamSchedule';
 import './StaffList.css';
 import './ManagementTabs.css';
@@ -385,7 +386,7 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
                   <div style={{ marginBottom: '12px', padding: '8px 14px', borderRadius: '8px', fontSize: '13px', background: '#fed7d7', color: '#742a2a', fontWeight: 600 }}>⚠️ {examTypeMsg.text}</div>
                 )}
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleAddExamType} disabled={savingExamType}>{savingExamType ? 'Saving...' : 'Save'}</button>
+                  <LoadingButton className="btn btn-primary" style={{ flex: 1 }} onClick={handleAddExamType} loading={savingExamType} loadingText="Saving...">Save</LoadingButton>
                   <button className="btn" style={{ flex: 1, border: '1px solid #e2e8f0' }} onClick={() => { setShowAddExamType(false); setNewExamTypeName(''); setExamTypeMsg(null); }}>Cancel</button>
                 </div>
               </div>
@@ -467,7 +468,7 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
                   <div style={{ marginBottom: '12px', padding: '8px 14px', borderRadius: '8px', fontSize: '13px', background: '#fed7d7', color: '#742a2a', fontWeight: 600 }}>⚠️ {examMsg.text}</div>
                 )}
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleAddExam} disabled={savingExam}>{savingExam ? 'Creating...' : 'Create'}</button>
+                  <LoadingButton className="btn btn-primary" style={{ flex: 1 }} onClick={handleAddExam} loading={savingExam} loadingText="Creating...">Create</LoadingButton>
                   <button className="btn" style={{ flex: 1, border: '1px solid #e2e8f0' }} onClick={() => { setShowAddExam(false); setExamForm({ name: '', examTypeId: '', academicSessionId: '', startDate: '', endDate: '' }); setExamMsg(null); }}>Cancel</button>
                 </div>
               </div>
@@ -557,7 +558,7 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
                   <div style={{ marginBottom: '12px', padding: '8px 14px', borderRadius: '8px', fontSize: '13px', background: '#fed7d7', color: '#742a2a', fontWeight: 600 }}>⚠️ {subjectMsg.text}</div>
                 )}
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleAddExamSubject} disabled={savingSubject || !selectedSubjectIds.length}>{savingSubject ? 'Saving...' : `Add ${selectedSubjectIds.length || ''} Subject(s)`}</button>
+                  <LoadingButton className="btn btn-primary" style={{ flex: 1 }} onClick={handleAddExamSubject} loading={savingSubject} loadingText="Saving..." disabled={!selectedSubjectIds.length}>{`Add ${selectedSubjectIds.length || ''} Subject(s)`}</LoadingButton>
                   <button className="btn" style={{ flex: 1, border: '1px solid #e2e8f0' }} onClick={() => { setShowAddSubject(false); setSubjectForm({ classId: '', sectionId: '', subjectId: '', maxMarks: '', passingMarks: '' }); setSelectedSubjectIds([]); setSubjectMsg(null); }}>Cancel</button>
                 </div>
               </div>
@@ -649,9 +650,9 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
               <option value="">Select Exam</option>
               {exams.map(ex => <option key={ex.id} value={ex.id}>{ex.name}</option>)}
             </select>
-            <button className="btn btn-primary" onClick={fetchResults} disabled={!resultsExamId || resultsLoading}>{resultsLoading ? 'Loading...' : 'View Results'}</button>
-            <button className="btn" style={{ border: '1px solid #e2e8f0' }} onClick={handleGenerateResults} disabled={!resultsExamId || generatingResults}>{generatingResults ? 'Generating...' : '⚙️ Generate Results'}</button>
-            <button className="btn" style={{ border: '1px solid #22543d', color: '#22543d' }} onClick={handlePublishResults} disabled={!resultsExamId || publishingResults}>{publishingResults ? 'Publishing...' : '📢 Publish Results'}</button>
+            <LoadingButton className="btn btn-primary" onClick={fetchResults} disabled={!resultsExamId} loading={resultsLoading} loadingText="Loading...">View Results</LoadingButton>
+            <LoadingButton className="btn" style={{ border: '1px solid #e2e8f0' }} onClick={handleGenerateResults} disabled={!resultsExamId} loading={generatingResults} loadingText="Generating...">⚙️ Generate Results</LoadingButton>
+            <LoadingButton className="btn" style={{ border: '1px solid #22543d', color: '#22543d' }} onClick={handlePublishResults} disabled={!resultsExamId} loading={publishingResults} loadingText="Publishing...">📢 Publish Results</LoadingButton>
           </div>
           {msgBanner(resultsMsg)}
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
+import { useToastResultState } from '../components/Toast/Toast';
 import './StaffList.css';
 import './ManagementTabs.css';
 
@@ -143,7 +144,7 @@ const SalaryManagement: React.FC<SalaryManagementProps> = ({ selectedSchoolId })
   });
   const [salaryHistory, setSalaryHistory] = useState<SalaryHistory[]>([]);
   const [pendingSalaries, setPendingSalaries] = useState<PendingSalary[]>([]);
-  const [actionMsg, setActionMsg] = useState<{ text: string; ok: boolean } | null>(null);
+  const [actionMsg, setActionMsg] = useToastResultState();
 
   const token = () => localStorage.getItem('token');
   const headers = () => ({ Authorization: `Bearer ${token()}` });

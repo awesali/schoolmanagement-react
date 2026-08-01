@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { API_BASE_URL } from '../config';
+import { useToast } from '../components/Toast/Toast';
+import { TOAST_MESSAGES } from '../constants/toastMessages';
 import Modal from './Modal';
 import './AddStaff.css';
 import { GENDER_OPTIONS } from '../utils/gender';
@@ -39,15 +41,19 @@ const initialForm = {
 };
 
 const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSuccess }) => {
+  const toast = useToast();
   const [formData, setFormData] = useState(initialForm);
   const [enrollment, setEnrollment] = useState<EnrollmentData>({ classes: [], sections: [], sessions: [] });
   const [documents, setDocuments] = useState<Array<{ name: string; file: File }>>([]);
   const [formError, setFormError] = useState('');
   const [enrollmentLoading, setEnrollmentLoading] = useState(false);
+  const [checkingClasses, setCheckingClasses] = useState(false);
 
   const fetchEnrollmentInfo = useCallback(async () => {
     setEnrollmentLoading(true);
     try {
+      setCheckingClasses(true);
+      setEnrollment({ classes: [], sections: [], sessions: [] });
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_BASE_URL}/api/Student/enrollment-info?schoolId=${schoolId}`, {
         headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
@@ -55,6 +61,9 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
       const result = await response.json();
       if (response.ok && result.success && result.data) {
         setEnrollment(result.data);
+        if (!result.data.classes?.length) {
+          toast.warning(TOAST_MESSAGES.dependency.classRequired);
+        }
         const activeSessions = (result.data.sessions || []).filter((session: SessionItem) => session.isActive);
         if (activeSessions.length === 1) {
           setFormData(prev => ({ ...prev, sessionId: activeSessions[0].id.toString() }));
@@ -73,6 +82,7 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
       console.error('Failed to fetch enrollment info', err);
     } finally {
       setEnrollmentLoading(false);
+      setCheckingClasses(false);
     }
   }, [schoolId]);
 
@@ -103,6 +113,10 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
     }
 
     setFormError('');
+    if (enrollment.classes.length === 0) {
+      toast.warning(TOAST_MESSAGES.dependency.classRequired);
+      return;
+    }
     try {
       const token = localStorage.getItem('token');
       const formDataToSend = new FormData();
@@ -182,6 +196,7 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
       submitLabel="Add Student"
       onCancel={handleClear}
       formId="add-student-form"
+      submitDisabled={checkingClasses || enrollment.classes.length === 0}
     >
       <form id="add-student-form" onSubmit={handleSubmit}>
         {formError && <div className="error-message">{formError}</div>}
@@ -232,8 +247,8 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
           </div>
           <div className="form-group">
             <label>Class *</label>
-            <select name="classId" required value={formData.classId} onChange={handleClassChange}>
-              <option value="">Select Class</option>
+            <select name="classId" required value={formData.classId} onChange={handleClassChange} disabled={checkingClasses || enrollment.classes.length === 0}>
+              <option value="">{checkingClasses ? 'Checking classes...' : enrollment.classes.length === 0 ? 'No class available' : 'Select Class'}</option>
               {enrollment.classes.map(c => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}

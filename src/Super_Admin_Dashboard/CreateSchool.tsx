@@ -1,5 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { API_BASE_URL } from '../config';
+import { useToast, useToastMessageState } from '../components/Toast/Toast';
+import { TOAST_MESSAGES } from '../constants/toastMessages';
+import { LoadingButton } from '../components/Loader/Loader';
 import './CreateSchool.css';
 
 interface CreateSchoolProps {
@@ -8,6 +11,7 @@ interface CreateSchoolProps {
 }
 
 const CreateSchool: React.FC<CreateSchoolProps> = ({ isOpen, onClose }) => {
+  const toast = useToast();
   const defaultLocation = { lat: 28.6139, lng: 77.2090 };
   const mapTilerKey = 'm00gCZTujgRHYomLPr66';
   const tileSize = 256;
@@ -26,7 +30,7 @@ const CreateSchool: React.FC<CreateSchoolProps> = ({ isOpen, onClose }) => {
   });
   const [mapCenter, setMapCenter] = useState(defaultLocation);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useToastMessageState('error');
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationStatus, setLocationStatus] = useState('Default location selected. Click map or use current location.');
   const [mapZoom, setMapZoom] = useState(17);
@@ -238,7 +242,7 @@ const CreateSchool: React.FC<CreateSchoolProps> = ({ isOpen, onClose }) => {
       });
 
       if (response.ok) {
-        alert('School created successfully!');
+        toast.success(TOAST_MESSAGES.school.created);
         onClose();
         setFormData({
           schoolName: '',
@@ -455,9 +459,9 @@ const CreateSchool: React.FC<CreateSchoolProps> = ({ isOpen, onClose }) => {
             <button type="button" className="btn btn-secondary" onClick={onClose}>
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? 'Creating...' : 'Create School'}
-            </button>
+            <LoadingButton type="submit" className="btn btn-primary" loading={loading} loadingText="Creating...">
+              Create School
+            </LoadingButton>
           </div>
         </form>
       </div>

@@ -8,6 +8,8 @@ import { downloadCsv, parseCsv } from '../utils/csv';
 import { genderLabel, parseGenderCode } from '../utils/gender';
 import BulkImportPreview, { ImportPreviewRow } from './BulkImportPreview';
 import ProfileIdCard from './ProfileIdCard';
+import { useToast } from '../components/Toast/Toast';
+import { TOAST_MESSAGES } from '../constants/toastMessages';
 import './StaffList.css';
 
 interface Document {
@@ -38,6 +40,7 @@ interface StaffListProps {
 }
 
 const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
+  const toast = useToast();
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -80,6 +83,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
       });
       
       if (response.ok) {
+        toast.success(TOAST_MESSAGES.document.deleted);
         fetchStaff(currentPage, pageSize);
         if (selectedStaff) {
           const updatedStaff = {
@@ -89,11 +93,11 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
           setSelectedStaff(updatedStaff);
         }
       } else {
-        alert('Failed to delete document');
+        toast.error(TOAST_MESSAGES.document.deleteFailed);
       }
     } catch (err) {
       console.error('Failed to delete document:', err);
-      alert('Failed to delete document');
+      toast.error(TOAST_MESSAGES.document.deleteFailed);
     }
   };
 

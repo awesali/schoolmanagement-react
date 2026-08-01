@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
+import { useToastMessageState } from '../components/Toast/Toast';
 import Modal from './Modal';
 import './AddStaff.css';
 
@@ -43,7 +44,7 @@ const ExamSchedule: React.FC<ExamScheduleProps> = ({ isOpen, onClose, schoolId, 
   const [selectedSectionId, setSelectedSectionId] = useState<number | null>(null);
   const [examSubjects, setExamSubjects] = useState<ExamSubject[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useToastMessageState('error');
 
   useEffect(() => {
     if (isOpen && schoolId) {

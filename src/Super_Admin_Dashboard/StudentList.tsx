@@ -8,6 +8,8 @@ import { downloadCsv, parseCsv } from '../utils/csv';
 import { genderLabel, parseGenderCode } from '../utils/gender';
 import BulkImportPreview, { ImportPreviewRow } from './BulkImportPreview';
 import ProfileIdCard from './ProfileIdCard';
+import { useToast } from '../components/Toast/Toast';
+import { TOAST_MESSAGES } from '../constants/toastMessages';
 import './StudentList.css';
 
 interface Document {
@@ -38,6 +40,7 @@ interface StudentListProps {
 }
 
 const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
+  const toast = useToast();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -102,6 +105,7 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
         headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
       });
       if (response.ok) {
+        toast.success(TOAST_MESSAGES.document.deleted);
         fetchStudents(currentPage, pageSize);
         if (selectedStudent) {
           setSelectedStudent({
@@ -110,11 +114,11 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
           });
         }
       } else {
-        alert('Failed to delete document');
+        toast.error(TOAST_MESSAGES.document.deleteFailed);
       }
     } catch (err) {
       console.error('Failed to delete document:', err);
-      alert('Failed to delete document');
+      toast.error(TOAST_MESSAGES.document.deleteFailed);
     }
   };
 

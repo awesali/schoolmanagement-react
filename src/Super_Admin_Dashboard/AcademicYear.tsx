@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { API_BASE_URL } from '../config';
+import { useToastMessageState } from '../components/Toast/Toast';
 import Modal from './Modal';
 import './ClassList.css';
 
@@ -17,12 +18,12 @@ interface AcademicSession {
 
 const AcademicYear: React.FC<AcademicYearProps> = ({ selectedSchoolId }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formError, setFormError] = useState('');
-  const [formSuccess, setFormSuccess] = useState('');
+  const [formError, setFormError] = useToastMessageState('error');
+  const [formSuccess, setFormSuccess] = useToastMessageState('success');
   const [formLoading, setFormLoading] = useState(false);
   const [sessions, setSessions] = useState<AcademicSession[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useToastMessageState('error');
   const [formData, setFormData] = useState({
     yearStart: '',
     yearEnd: '',
@@ -203,7 +204,9 @@ const AcademicYear: React.FC<AcademicYearProps> = ({ selectedSchoolId }) => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title="Create Academic Session"
-        submitLabel={formLoading ? "Creating..." : "Create Session"}
+        submitLabel="Create Session"
+        submitLoading={formLoading}
+        loadingText="Creating..."
         onCancel={handleClear}
         formId="create-session-form"
       >

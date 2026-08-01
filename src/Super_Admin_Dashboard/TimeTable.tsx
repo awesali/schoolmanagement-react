@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
+import { useToastMessageState } from '../components/Toast/Toast';
 import Modal from './Modal';
 import './AddStaff.css';
 import './TimeTable.css';
@@ -69,7 +70,7 @@ const TimeTable: React.FC<TimeTableProps> = ({
   const [days, setDays] = useState<Day[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [selectedSectionId, setSelectedSectionId] = useState<number | null>(null);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useToastMessageState('error');
   const [loading, setLoading] = useState(false);
   const [isExistingTimetable, setIsExistingTimetable] = useState(false);
 
@@ -327,7 +328,9 @@ const TimeTable: React.FC<TimeTableProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={`Time Table - ${sectionName}`}
-      submitLabel={loading ? (isExistingTimetable ? "Updating..." : "Creating...") : (isExistingTimetable ? "Update Time Table" : "Create Time Table")}
+      submitLabel={isExistingTimetable ? "Update Time Table" : "Create Time Table"}
+      submitLoading={loading}
+      loadingText={isExistingTimetable ? "Updating..." : "Creating..."}
       onCancel={() => {}}
       formId="timetable-form"
       size="large"

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
+import { useToastMessageState } from '../components/Toast/Toast';
 import Modal from './Modal';
 import './AddStaff.css';
 
@@ -43,7 +44,7 @@ const AssignSubjects: React.FC<AssignSubjectsProps> = ({
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [selectedSubjects, setSelectedSubjects] = useState<number[]>([]);
   const [selectedSectionId, setSelectedSectionId] = useState<number | null>(null);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useToastMessageState('error');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -159,7 +160,9 @@ const AssignSubjects: React.FC<AssignSubjectsProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={`Assign Subjects to ${sectionName}`}
-      submitLabel={loading ? "Assigning..." : "Assign Subjects"}
+      submitLabel="Assign Subjects"
+      submitLoading={loading}
+      loadingText="Assigning..."
       onCancel={handleClear}
       formId="assign-subjects-form"
     >

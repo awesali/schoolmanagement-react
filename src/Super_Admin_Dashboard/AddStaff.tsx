@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
+import { useToastMessageState } from '../components/Toast/Toast';
 import Modal from './Modal';
 import './AddStaff.css';
 import { GENDER_OPTIONS } from '../utils/gender';
@@ -29,7 +30,7 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
   });
   const [roles, setRoles] = useState<Role[]>([]);
   const [documents, setDocuments] = useState<Array<{ name: string; file: File }>>([]);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useToastMessageState('error');
 
   useEffect(() => {
     if (isOpen) {

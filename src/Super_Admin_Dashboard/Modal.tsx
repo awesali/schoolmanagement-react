@@ -1,4 +1,5 @@
 import React from 'react';
+import { LoadingButton } from '../components/Loader/Loader';
 import './Modal.css';
 
 interface ModalProps {
@@ -13,6 +14,9 @@ interface ModalProps {
   children: React.ReactNode;
   formId?: string;
   size?: 'normal' | 'large';
+  submitDisabled?: boolean;
+  submitLoading?: boolean;
+  loadingText?: string;
 }
 
 const Modal: React.FC<ModalProps> = ({
@@ -26,7 +30,10 @@ const Modal: React.FC<ModalProps> = ({
   onCancel,
   children,
   formId,
-  size = 'normal'
+  size = 'normal',
+  submitDisabled = false
+  ,submitLoading = false
+  ,loadingText
 }) => {
   if (!isOpen) return null;
 
@@ -48,9 +55,10 @@ const Modal: React.FC<ModalProps> = ({
               </button>
             )}
             {showSubmit && (
-              <button type="submit" className="btn btn-primary" form={formId} onClick={onSubmit}>
+              <LoadingButton type="submit" className="btn btn-primary" form={formId} onClick={onSubmit}
+                disabled={submitDisabled} loading={submitLoading} loadingText={loadingText}>
                 {submitLabel}
-              </button>
+              </LoadingButton>
             )}
             <button className="modal-close" onClick={onClose}>×</button>
           </div>

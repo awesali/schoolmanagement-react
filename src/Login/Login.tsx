@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useToastMessageState } from '../components/Toast/Toast';
+import { LoadingButton } from '../components/Loader/Loader';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../config';
 import './Login.css';
@@ -6,7 +8,7 @@ import './Login.css';
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useToastMessageState('error');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -69,9 +71,9 @@ const Login: React.FC = () => {
             />
           </div>
           {error && <div className="error">{error}</div>}
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? 'Logging in...' : 'Login'}
-          </button>
+          <LoadingButton type="submit" className="btn btn-primary" loading={loading} loadingText="Logging in...">
+            Login
+          </LoadingButton>
         </form>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
+import { useToastMessageState } from '../components/Toast/Toast';
 import Pagination from './Pagination';
 import AddExam from './AddExam';
 import ExamDetailModal from './ExamDetailModal';
@@ -21,7 +22,7 @@ interface ExamListProps {
 const ExamList: React.FC<ExamListProps> = ({ selectedSchoolId }) => {
   const [exams, setExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useToastMessageState('error');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
