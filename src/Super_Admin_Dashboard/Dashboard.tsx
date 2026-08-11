@@ -35,6 +35,7 @@ interface DashboardExam {
   id: number;
   name: string;
   resultPublished: boolean;
+  createdDate: string;
 }
 
 interface DashboardExamEvent {
@@ -46,6 +47,14 @@ interface DashboardExamEvent {
   examDate: string;
   startTime?: string;
 }
+
+const NOTICE_LIFETIME_MS = 2 * 24 * 60 * 60 * 1000;
+
+const getLocalDateStart = (value: string) => {
+  const dateOnly = value.substring(0, 10);
+  const [year, month, day] = dateOnly.split('-').map(Number);
+  return new Date(year, month - 1, day).getTime();
+};
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -66,6 +75,7 @@ const Dashboard: React.FC = () => {
   const [showAttendancePopup, setShowAttendancePopup] = useState(false);
   const [publishedResults, setPublishedResults] = useState<DashboardExam[]>([]);
   const [upcomingExamEvents, setUpcomingExamEvents] = useState<DashboardExamEvent[]>([]);
+  const [dashboardClock, setDashboardClock] = useState(() => Date.now());
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -90,6 +100,11 @@ const Dashboard: React.FC = () => {
       }
     }
     fetchSchools();
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setDashboardClock(Date.now()), 60 * 1000);
+    return () => window.clearInterval(timer);
   }, []);
 
 
@@ -181,7 +196,7 @@ const Dashboard: React.FC = () => {
 
       const examsResult = await examsResponse.json();
       const exams: DashboardExam[] = examsResult?.data ?? [];
-      setPublishedResults(exams.filter(exam => exam.resultPublished).slice(0, 5));
+      setPublishedResults(exams.filter(exam => exam.resultPublished));
 
       const schedules = await Promise.all(exams.map(async exam => {
         const response = await fetch(`${API_BASE_URL}/api/Exam/GetExamSubjects?examId=${exam.id}`, {
@@ -200,16 +215,24 @@ const Dashboard: React.FC = () => {
         }));
       }));
 
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
       setUpcomingExamEvents(schedules.flat()
-        .filter(event => event.examDate && new Date(event.examDate) >= today)
         .sort((a, b) => new Date(a.examDate).getTime() - new Date(b.examDate).getTime())
-        .slice(0, 5));
+      );
     } catch (error) {
       console.error('Failed to fetch dashboard exam updates:', error);
     }
   };
+
+  const todayStart = new Date(dashboardClock).setHours(0, 0, 0, 0);
+  const visibleNotices = publishedResults
+    .filter(exam => {
+      const postedAt = new Date(exam.createdDate).getTime();
+      return Number.isFinite(postedAt) && dashboardClock < postedAt + NOTICE_LIFETIME_MS;
+    })
+    .slice(0, 5);
+  const visibleEvents = upcomingExamEvents
+    .filter(event => event.examDate && getLocalDateStart(event.examDate) >= todayStart)
+    .slice(0, 5);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -385,9 +408,9 @@ const Dashboard: React.FC = () => {
             <div className="notice-board">
               <h3>Notice Board</h3>
               <div className="notice-list">
-                {publishedResults.length === 0 ? (
+                {visibleNotices.length === 0 ? (
                   <div className="notice-item"><div className="notice-title">No published results.</div></div>
-                ) : publishedResults.map(exam => (
+                ) : visibleNotices.map(exam => (
                   <div className="notice-item" key={exam.id}>
                     <div className="notice-title">Result for {exam.name} is published.</div>
                     <div className="notice-time">Result available now</div>
@@ -399,9 +422,9 @@ const Dashboard: React.FC = () => {
             <div className="events-board">
               <h3>Upcoming Events</h3>
               <div className="event-list">
-                {upcomingExamEvents.length === 0 ? (
+                {visibleEvents.length === 0 ? (
                   <div className="event-item"><div className="event-title">No upcoming scheduled exams.</div></div>
-                ) : upcomingExamEvents.map(event => (
+                ) : visibleEvents.map(event => (
                   <div className="event-item" key={event.id}>
                     <div className="event-title">{event.examName}: {event.subjectName}</div>
                     <div className="event-time">
