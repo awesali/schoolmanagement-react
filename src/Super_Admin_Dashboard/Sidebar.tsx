@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './Sidebar.css';
+import { PAGE_PERMISSIONS, usePermissions } from '../security/Permissions';
 
 interface SidebarProps {
   activePage: string;
@@ -65,6 +66,7 @@ const menuGroups = [
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, userRole }) => {
+  const { can } = usePermissions();
   const [openGroups, setOpenGroups] = useState<string[]>([]);
   const [openItems, setOpenItems] = useState<string[]>([]);
 
@@ -91,7 +93,10 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, 
           if (userRole === '1' && item.label === 'Students' && child === 'Attendance') {
             return false;
           }
-          return true;
+          const permissionPage = child === 'Attendance'
+            ? (item.label === 'Students' ? 'attendance.students' : 'attendance.staff')
+            : PAGE_PERMISSIONS[child];
+          return !permissionPage || can(permissionPage, 'read');
         })
       })).filter(item => item.children.length > 0)
     })).filter(group => group.items.length > 0);
@@ -116,13 +121,13 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, 
       </div>
 
       <nav className="sidebar-nav">
-        <button
+        {can('dashboard.dashboard', 'read') && <button
           className={`nav-item ${activePage === 'Dashboard' ? 'active' : ''}`}
           onClick={() => onNavigate('Dashboard')}
         >
           <span className="nav-icon">📊</span>
           <span>Dashboard</span>
-        </button>
+        </button>}
 
         {filteredMenuGroups.map(({ group, items }) => (
           <div key={group} className="nav-group">

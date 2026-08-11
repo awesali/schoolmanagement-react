@@ -10,6 +10,7 @@ import BulkImportPreview, { ImportPreviewRow } from './BulkImportPreview';
 import ProfileIdCard from './ProfileIdCard';
 import { useToast } from '../components/Toast/Toast';
 import { TOAST_MESSAGES } from '../constants/toastMessages';
+import { usePermissions } from '../security/Permissions';
 import './StaffList.css';
 
 interface Document {
@@ -41,6 +42,7 @@ interface StaffListProps {
 
 const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
   const toast = useToast();
+  const { can } = usePermissions();
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -68,6 +70,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
   };
 
   const handleDeleteDocument = async (documentId: number) => {
+    if (!can('management.staff','delete')) return;
     if (!window.confirm('Are you sure you want to delete this document?')) {
       return;
     }
@@ -261,12 +264,12 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
       <div className="staff-list-header">
         <h2>Staff List</h2>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <button className="btn" disabled={transferring} onClick={downloadStaffTemplate}>Template</button>
+          {can('management.staff','create')&&<><button className="btn" disabled={transferring} onClick={downloadStaffTemplate}>Template</button>
           <label className="btn" style={{ cursor: transferring ? 'not-allowed' : 'pointer' }}>
             Import CSV<input type="file" accept=".csv,text/csv" hidden disabled={transferring} onChange={e => { const file = e.target.files?.[0]; if (file) prepareStaffImport(file); e.target.value = ''; }} />
-          </label>
+          </label></>}
           <button className="btn" disabled={transferring} onClick={exportStaff}>Export CSV</button>
-          <button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>+ Add Staff</button>
+          {can('management.staff','create')&&<button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>+ Add Staff</button>}
         </div>
       </div>
       {staff.length === 0 ? (
