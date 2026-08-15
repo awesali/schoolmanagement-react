@@ -312,7 +312,7 @@ const Dashboard: React.FC = () => {
         ) : activePage === 'Study Materials' ? (
           <InventoryManagement selectedSchoolId={selectedSchoolId} mode="studyMaterials" />
         ) : activePage === 'Role & Permissions' ? (
-          <PermissionManagement />
+          <PermissionManagement selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Attendance' ? (
           attendanceType === 'student' ? (
             <StudentAttendance />
