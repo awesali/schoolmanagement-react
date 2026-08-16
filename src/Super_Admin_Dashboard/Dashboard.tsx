@@ -370,7 +370,6 @@ const Dashboard: React.FC = () => {
             <div className="stat-value">{dashboardData.employeesOnLeave}</div>
           </div>
         </div>
-
         <div className="main-grid">
           <div className="chart-section">
             <div className="section-header">
