@@ -24,12 +24,16 @@
   justify-content: space-between;
   align-items: center;
   box-shadow: 0 2px 4px var(--shadow);
+  gap: 20px;
+  min-width: 0;
 }
 
 .header-left {
   display: flex;
   align-items: center;
   gap: 16px;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .school-picker {
@@ -41,6 +45,8 @@
   color: var(--text-primary);
   cursor: pointer;
   min-width: 200px;
+  max-width: min(420px, 45vw);
+  flex: 1 1 240px;
 }
 
 .school-picker:focus {
@@ -65,12 +71,23 @@
 .dashboard-header h1 {
   font-size: 24px;
   font-weight: 600;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .header-right {
   display: flex;
   align-items: center;
   gap: 16px;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+@media (max-width: 1100px) {
+  .dashboard-header { flex-wrap: wrap; padding: 16px 24px; }
+  .header-left { flex-basis: 100%; }
+  .header-right { margin-left: auto; }
 }
 
 .welcome-text {

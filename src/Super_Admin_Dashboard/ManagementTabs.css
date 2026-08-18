@@ -8,6 +8,13 @@
   scrollbar-width: thin;
 }
 
+.allocation-batch-form { display:flex; flex-direction:column; gap:18px; }
+.allocation-row { position:relative; border:1px solid var(--border); border-radius:10px; padding:18px 14px 14px; min-width:0; }
+.allocation-row legend { padding:0 8px; font-weight:600; }
+.allocation-remove { position:absolute; top:8px; right:10px; color:#b42318; }
+.allocation-add { align-self:flex-start; }
+
+
 .transport-tabs {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
