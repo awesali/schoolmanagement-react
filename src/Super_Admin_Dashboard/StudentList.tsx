@@ -10,6 +10,7 @@ import BulkImportPreview, { ImportPreviewRow } from './BulkImportPreview';
 import ProfileIdCard from './ProfileIdCard';
 import { useToast } from '../components/Toast/Toast';
 import { TOAST_MESSAGES } from '../constants/toastMessages';
+import { usePermissions } from '../security/Permissions';
 import './StudentList.css';
 
 interface Document {
@@ -41,6 +42,7 @@ interface StudentListProps {
 
 const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
   const toast = useToast();
+  const { can } = usePermissions();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -97,6 +99,7 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
   };
 
   const handleDeleteDocument = async (documentId: number) => {
+    if (!can('management.students','delete')) return;
     if (!window.confirm('Are you sure you want to delete this document?')) return;
     try {
       const token = localStorage.getItem('token');
@@ -236,12 +239,12 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
       <div className="staff-list-header">
         <h2>Student List</h2>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <button className="btn" disabled={transferring} onClick={downloadStudentTemplate}>Template</button>
+          {can('management.students','create')&&<><button className="btn" disabled={transferring} onClick={downloadStudentTemplate}>Template</button>
           <label className="btn" style={{ cursor: transferring ? 'not-allowed' : 'pointer' }}>
             Import CSV<input type="file" accept=".csv,text/csv" hidden disabled={transferring} onChange={e => { const file = e.target.files?.[0]; if (file) prepareStudentImport(file); e.target.value = ''; }} />
-          </label>
+          </label></>}
           <button className="btn" disabled={transferring} onClick={exportStudents}>Export CSV</button>
-          <button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>+ Add Student</button>
+          {can('management.students','create')&&<button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>+ Add Student</button>}
         </div>
       </div>
       {students.length === 0 ? (

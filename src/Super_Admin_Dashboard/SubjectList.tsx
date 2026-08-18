@@ -4,6 +4,7 @@ import AddSubject from './AddSubject';
 import EditSubject from './EditSubject';
 import Pagination from './Pagination';
 import './StaffList.css';
+import { usePermissions } from '../security/Permissions';
 
 interface Subject {
   id: number;
@@ -21,6 +22,7 @@ interface SubjectListProps {
 }
 
 const SubjectList: React.FC<SubjectListProps> = ({ selectedSchoolId }) => {
+  const { can } = usePermissions();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -98,9 +100,9 @@ const SubjectList: React.FC<SubjectListProps> = ({ selectedSchoolId }) => {
     <div className="staff-list-container">
       <div className="staff-list-header">
         <h2>Subject List</h2>
-        <button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>
+        {can('academics.subjects','create')&&<button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>
           + Add Subject
-        </button>
+        </button>}
       </div>
       {subjects.length === 0 ? (
         <div style={{
@@ -113,9 +115,9 @@ const SubjectList: React.FC<SubjectListProps> = ({ selectedSchoolId }) => {
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>📚</div>
           <h3 style={{ margin: '0 0 8px 0', color: '#2d3748', fontSize: '20px', fontWeight: '600' }}>No Subjects Found</h3>
           <p style={{ margin: '0 0 24px 0', color: '#718096', fontSize: '14px' }}>Start by adding your first subject to the system</p>
-          <button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>
+          {can('academics.subjects','create')&&<button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>
             + Add First Subject
-          </button>
+          </button>}
         </div>
       ) : (
         <div className="staff-table-wrapper">
@@ -135,7 +137,7 @@ const SubjectList: React.FC<SubjectListProps> = ({ selectedSchoolId }) => {
                   <td>
                     <span 
                       className="staff-name-link"
-                      onClick={() => {
+                      onClick={() => { if(!can('academics.subjects','update'))return;
                         setSelectedSubject(subject);
                         setIsEditModalOpen(true);
                       }}

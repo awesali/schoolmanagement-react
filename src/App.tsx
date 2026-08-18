@@ -3,18 +3,19 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './Login/Login';
 import Dashboard from './Super_Admin_Dashboard/Dashboard';
 import { ToastProvider } from './components/Toast/Toast';
+import { PermissionProvider } from './security/Permissions';
 import './theme.css';
 
 function App() {
   return (
     <ToastProvider>
-      <BrowserRouter>
+      <PermissionProvider><BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/" element={<Navigate to="/login" replace />} />
         </Routes>
-      </BrowserRouter>
+      </BrowserRouter></PermissionProvider>
     </ToastProvider>
   );
 }

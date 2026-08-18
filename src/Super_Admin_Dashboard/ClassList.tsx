@@ -7,6 +7,7 @@ import AssignSubjects from './AssignSubjects';
 import TimeTable from './TimeTable';
 import Pagination from './Pagination';
 import './ClassList.css';
+import { usePermissions } from '../security/Permissions';
 
 interface Subject {
   subjectId: number;
@@ -36,6 +37,7 @@ interface ClassListProps {
 }
 
 const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId }) => {
+  const { can } = usePermissions();
   const [classes, setClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useToastMessageState('error');
@@ -126,9 +128,9 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId }) => {
     <div className="staff-list-container">
       <div className="staff-list-header">
         <h2>Class List</h2>
-        <button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>
+        {can('academics.classes','create')&&<button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>
           + Add Class
-        </button>
+        </button>}
       </div>
       
       {classes.length === 0 ? (
@@ -154,7 +156,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId }) => {
                   <td className="class-name">
                     <span 
                       className="staff-name-link"
-                      onClick={() => {
+                      onClick={() => { if(!can('academics.classes','update'))return;
                         setSelectedClass(classItem);
                         setIsEditModalOpen(true);
                       }}
@@ -174,7 +176,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId }) => {
                   <td>
                     <button
                       className="btn-view-docs"
-                      onClick={() => {
+                      onClick={() => { if(!can('academics.classes','update'))return;
                         setSelectedClass(classItem);
                         setIsAssignSubjectsOpen(true);
                       }}

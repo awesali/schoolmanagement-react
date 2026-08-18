@@ -22,6 +22,7 @@ import StudentPromotion from './StudentPromotion';
 import Sidebar from './Sidebar';
 import { API_BASE_URL } from '../config';
 import './Dashboard.css';
+import { PAGE_PERMISSIONS, usePermissions } from '../security/Permissions';
 
 interface School {
   id: number;
@@ -57,6 +58,7 @@ const getLocalDateStart = (value: string) => {
 };
 
 const Dashboard: React.FC = () => {
+  const { can, loading: permissionsLoading } = usePermissions();
   const navigate = useNavigate();
   const [isCreateSchoolOpen, setIsCreateSchoolOpen] = useState(false);
   const [activePage, setActivePage] = useState('Dashboard');
@@ -240,6 +242,8 @@ const Dashboard: React.FC = () => {
   };
 
   const handleNavigate = (page: string, type?: 'student' | 'staff') => {
+    const permissionPage = page === 'Attendance' ? (type === 'student' ? 'attendance.students' : 'attendance.staff') : PAGE_PERMISSIONS[page];
+    if (permissionPage && !can(permissionPage, 'read')) return;
     setActivePage(page);
     if (window.innerWidth <= 768) setIsCollapsed(true);
     if (page === 'Attendance' && type) {
@@ -290,6 +294,10 @@ const Dashboard: React.FC = () => {
       </header>
 
       <div className="dashboard-content">
+        {permissionsLoading ? <div className="permission-empty">Loading access…</div> : (() => {
+        const activePermission = activePage === 'Attendance' ? (attendanceType === 'student' ? 'attendance.students' : 'attendance.staff') : PAGE_PERMISSIONS[activePage];
+        if (activePermission && !can(activePermission, 'read')) return <div className="permission-empty"><h2>Access denied</h2><p>You do not have permission to view this page.</p></div>;
+        return <>
         {activePage === 'School List' ? (
           <SchoolList />
         ) : activePage === 'Academic Year' ? (
@@ -327,7 +335,7 @@ const Dashboard: React.FC = () => {
         ) : activePage === 'Study Materials' ? (
           <InventoryManagement selectedSchoolId={selectedSchoolId} mode="studyMaterials" />
         ) : activePage === 'Role & Permissions' ? (
-          <PermissionManagement />
+          <PermissionManagement selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Attendance' ? (
           attendanceType === 'student' ? (
             <StudentAttendance />
@@ -441,6 +449,7 @@ const Dashboard: React.FC = () => {
         </div>
         </>
         )}
+        </>})()}
       </div>
 
       <button onClick={handleLogout} className="logout-btn">Logout</button>
