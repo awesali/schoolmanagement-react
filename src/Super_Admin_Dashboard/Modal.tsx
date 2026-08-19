@@ -17,6 +17,7 @@ interface ModalProps {
   submitDisabled?: boolean;
   submitLoading?: boolean;
   loadingText?: string;
+  loadingOverlay?: boolean;
 }
 
 const Modal: React.FC<ModalProps> = ({
@@ -34,6 +35,7 @@ const Modal: React.FC<ModalProps> = ({
   submitDisabled = false
   ,submitLoading = false
   ,loadingText
+  ,loadingOverlay = true
 }) => {
   if (!isOpen) return null;
 
@@ -56,7 +58,7 @@ const Modal: React.FC<ModalProps> = ({
             )}
             {showSubmit && (
               <LoadingButton type="submit" className="btn btn-primary" form={formId} onClick={onSubmit}
-                disabled={submitDisabled} loading={submitLoading} loadingText={loadingText}>
+                disabled={submitDisabled} loading={submitLoading} loadingText={loadingText} loadingOverlay={loadingOverlay}>
                 {submitLabel}
               </LoadingButton>
             )}

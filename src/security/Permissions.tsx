@@ -4,6 +4,7 @@ import { API_BASE_URL } from '../config';
 export type CrudAction = 'create' | 'read' | 'update' | 'delete';
 type PermissionContextValue = {
   loading: boolean;
+  roleName: string;
   permissions: Set<string>;
   can: (page: string, action?: CrudAction) => boolean;
   refresh: () => Promise<void>;
@@ -11,6 +12,7 @@ type PermissionContextValue = {
 
 const PermissionContext = createContext<PermissionContextValue>({
   loading: true,
+  roleName: '',
   permissions: new Set(),
   can: () => false,
   refresh: async () => undefined,
@@ -24,6 +26,7 @@ const tokenRole = () => {
 
 export const PermissionProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
   const [permissions, setPermissions] = useState<Set<string>>(new Set());
+  const [roleName, setRoleName] = useState('');
   const [loading, setLoading] = useState(true);
   const refresh = useCallback(async () => {
     const token = localStorage.getItem('token');
@@ -33,15 +36,16 @@ export const PermissionProvider: React.FC<React.PropsWithChildren> = ({ children
       const response = await fetch(`${API_BASE_URL}/api/permissions/me`, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' });
       if (!response.ok) throw new Error();
       const data = await response.json();
+      setRoleName(data.roleName || '');
       setPermissions(new Set<string>((data.permissions || []).map((x: string) => x.toLowerCase())));
     } catch { setPermissions(new Set()); }
     finally { setLoading(false); }
   }, []);
   useEffect(() => { refresh(); }, [refresh]);
   const value = useMemo(() => ({
-    loading, permissions, refresh,
+    loading, roleName, permissions, refresh,
     can: (page: string, action: CrudAction = 'read') => tokenRole() === '1' || permissions.has(`${page}.${action}`.toLowerCase()),
-  }), [loading, permissions, refresh]);
+  }), [loading, roleName, permissions, refresh]);
   return <PermissionContext.Provider value={value}>{children}</PermissionContext.Provider>;
 };
 

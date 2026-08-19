@@ -45,6 +45,8 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
   const [formData, setFormData] = useState(initialForm);
   const [enrollment, setEnrollment] = useState<EnrollmentData>({ classes: [], sections: [], sessions: [] });
   const [documents, setDocuments] = useState<Array<{ name: string; file: File }>>([]);
+  const [profilePicture, setProfilePicture] = useState<File | null>(null);
+  const [profilePreview, setProfilePreview] = useState('');
   const [formError, setFormError] = useState('');
   const [enrollmentLoading, setEnrollmentLoading] = useState(false);
   const [checkingClasses, setCheckingClasses] = useState(false);
@@ -137,6 +139,13 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
       formDataToSend.append('Parent.Email', formData.parentEmail);
       formDataToSend.append('Parent.Relationship', formData.parentRelationship);
 
+      if (!profilePicture) {
+        setFormError('Please select a profile picture.');
+        return;
+      }
+      formDataToSend.append('DocumentNames', 'Profile Picture');
+      formDataToSend.append('Files', profilePicture);
+
       const validDocuments = documents.filter(doc => doc.file && doc.name.trim());
       validDocuments.forEach(doc => {
         formDataToSend.append('DocumentNames', doc.name);
@@ -151,6 +160,8 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
       const result = await response.json();
       if (response.ok) {
         setFormData(initialForm);
+        setProfilePicture(null);
+        setProfilePreview('');
         setDocuments([]);
         onSuccess();
         onClose();
@@ -168,6 +179,8 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
 
   const handleClear = () => {
     setFormData(initialForm);
+    setProfilePicture(null);
+    setProfilePreview('');
     setDocuments([]);
     setEnrollment({ classes: [], sections: [], sessions: [] });
     setFormError('');
@@ -200,6 +213,19 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
     >
       <form id="add-student-form" onSubmit={handleSubmit}>
         {formError && <div className="error-message">{formError}</div>}
+        <div className="profile-upload-area">
+          <input id="student-profile-picture" type="file" accept="image/jpeg,image/png,image/webp" required
+            onChange={(e) => {
+              const file = e.target.files?.[0] || null;
+              setProfilePicture(file);
+              setProfilePreview(file ? URL.createObjectURL(file) : '');
+            }} />
+          <label htmlFor="student-profile-picture" className={`profile-upload-circle ${profilePreview ? 'has-image' : ''}`}>
+            {profilePreview ? <img src={profilePreview} alt="Student preview" /> : <span>+</span>}
+          </label>
+          <div className="profile-upload-title">Add Profile Picture *</div>
+          <small>JPG, PNG or WebP · Max 5 MB</small>
+        </div>
         <div className="form-grid">
           <div className="form-group full-width">
             <label>— Student Details —</label>

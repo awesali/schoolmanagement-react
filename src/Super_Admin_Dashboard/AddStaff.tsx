@@ -29,11 +29,15 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
     address: ''
   });
   const [roles, setRoles] = useState<Role[]>([]);
+  const [profilePicture, setProfilePicture] = useState<File | null>(null);
+  const [profilePreview, setProfilePreview] = useState('');
   const [documents, setDocuments] = useState<Array<{ name: string; file: File }>>([]);
   const [error, setError] = useToastMessageState('error');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
+      setSubmitting(false);
       fetchRoles();
       setError(''); // Clear any previous errors when modal opens
     }
@@ -76,6 +80,17 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
       formDataToSend.append('DOJ', formData.doj);
       formDataToSend.append('RoleId', formData.roleId.toString());
       formDataToSend.append('SchoolId', schoolId?.toString() || '0');
+
+      if (!profilePicture) {
+        setError('Please select a profile picture.');
+        setSubmitting(false);
+        return;
+      }
+
+      // The API stores the profile picture separately but receives it through
+      // the same multipart document arrays at matching indexes.
+      formDataToSend.append('DocumentNames', 'Profile Picture');
+      formDataToSend.append('Files', profilePicture);
       
       // Only append documents if they exist and are valid
       const validDocuments = documents.filter(doc => doc.file && doc.name.trim());
@@ -90,6 +105,8 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
         phone: formData.phone,
         documentsCount: validDocuments.length
       });
+
+      setSubmitting(true);
 
       const response = await fetch(`${API_BASE_URL}/api/Admin/add-staff`, {
         method: 'POST',
@@ -115,6 +132,8 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
     } catch (err) {
       console.error('Failed to add staff:', err);
       setError('Network error. Please try again.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -129,6 +148,8 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
       phone: '',
       address: ''
     });
+    setProfilePicture(null);
+    setProfilePreview('');
     setDocuments([]);
     setError(''); // Clear errors when clearing form
   };
@@ -163,6 +184,9 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
       submitLabel="Add Staff"
       onCancel={handleClear}
       formId="add-staff-form"
+      submitLoading={submitting}
+      loadingText="Adding staff..."
+      loadingOverlay={false}
     >
       {error && (
         <div className="error-message">
@@ -170,6 +194,19 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
         </div>
       )}
       <form id="add-staff-form" onSubmit={handleSubmit}>
+        <div className="profile-upload-area">
+          <input id="staff-profile-picture" type="file" accept="image/jpeg,image/png,image/webp" required
+            onChange={(e) => {
+              const file = e.target.files?.[0] || null;
+              setProfilePicture(file);
+              setProfilePreview(file ? URL.createObjectURL(file) : '');
+            }} />
+          <label htmlFor="staff-profile-picture" className={`profile-upload-circle ${profilePreview ? 'has-image' : ''}`}>
+            {profilePreview ? <img src={profilePreview} alt="Staff preview" /> : <span>+</span>}
+          </label>
+          <div className="profile-upload-title">Add Profile Picture *</div>
+          <small>JPG, PNG or WebP · Max 5 MB</small>
+        </div>
         <div className="form-grid">
             <div className="form-group">
               <label>Name *</label>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import AddStaff from './AddStaff';
+import { PageLoader } from '../components/Loader/Loader';
 import EditStaff from './EditStaff';
 import Modal from './Modal';
 import Pagination from './Pagination';
@@ -252,7 +253,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
   };
 
   if (loading) {
-    return <div className="staff-list-loading">Loading...</div>;
+    return <PageLoader label="Loading staff..." />;
   }
 
   if (!selectedSchoolId) {

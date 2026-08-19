@@ -10,6 +10,7 @@
 
 # production
 /build
+/.verify-backend/
 
 # misc
 .DS_Store

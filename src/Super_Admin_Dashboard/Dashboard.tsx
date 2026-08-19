@@ -12,6 +12,8 @@ import SubjectList from './SubjectList';
 import ExamList from './ExamList';
 import ExamManagement from './ExamManagement';
 import TeacherExamView from './TeacherExamView';
+import TeacherClassManagement from './TeacherClassManagement';
+import TeacherUnitTest from './TeacherUnitTest';
 import AcademicYear from './AcademicYear';
 import FinanceManagement from './FinanceManagement';
 import SalaryManagement from './SalaryManagement';
@@ -58,7 +60,7 @@ const getLocalDateStart = (value: string) => {
 };
 
 const Dashboard: React.FC = () => {
-  const { can, loading: permissionsLoading } = usePermissions();
+  const { can, loading: permissionsLoading, roleName } = usePermissions();
   const navigate = useNavigate();
   const [isCreateSchoolOpen, setIsCreateSchoolOpen] = useState(false);
   const [activePage, setActivePage] = useState('Dashboard');
@@ -296,7 +298,8 @@ const Dashboard: React.FC = () => {
       <div className="dashboard-content">
         {permissionsLoading ? <div className="permission-empty">Loading access…</div> : (() => {
         const activePermission = activePage === 'Attendance' ? (attendanceType === 'student' ? 'attendance.students' : 'attendance.staff') : PAGE_PERMISSIONS[activePage];
-        if (activePermission && !can(activePermission, 'read')) return <div className="permission-empty"><h2>Access denied</h2><p>You do not have permission to view this page.</p></div>;
+        const isRoleOnlyDashboard = activePage === 'Dashboard' && userRole !== '1' && userRole !== '2';
+        if (!isRoleOnlyDashboard && activePermission && !can(activePermission, 'read')) return <div className="permission-empty"><h2>Access denied</h2><p>You do not have permission to view this page.</p></div>;
         return <>
         {activePage === 'School List' ? (
           <SchoolList />
@@ -304,6 +307,8 @@ const Dashboard: React.FC = () => {
           <AcademicYear selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Class List' ? (
           <ClassList selectedSchoolId={selectedSchoolId} />
+        ) : activePage === 'My Classes' ? (
+          <TeacherClassManagement onNavigate={handleNavigate} />
         ) : activePage === 'Staff List' ? (
           <StaffList selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Student List' || activePage === 'Student Enrollment' ? (
@@ -324,6 +329,8 @@ const Dashboard: React.FC = () => {
           )
         ) : activePage === 'Marks Entry' ? (
           <TeacherExamView selectedSchoolId={selectedSchoolId} />
+        ) : activePage === 'Unit Test' ? (
+          <TeacherUnitTest />
         ) : activePage === 'Fees' || activePage === 'Fee Management' ? (
           <FinanceManagement selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Salary Management' ? (
@@ -346,6 +353,12 @@ const Dashboard: React.FC = () => {
               <p>Please select an attendance type from the menu</p>
             </div>
           )
+        ) : userRole !== '1' && userRole !== '2' ? (
+          <div style={{ minHeight: '65vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 14, padding: '42px 60px', textAlign: 'center', boxShadow: '0 8px 24px rgba(15, 23, 42, 0.06)' }}>
+              <h2 style={{ margin: 0, color: '#1e2a3a' }}>Your role is {roleName || `Role ${userRole}`}</h2>
+            </div>
+          </div>
         ) : (
           <>
         <div className="stats-grid">

@@ -11,6 +11,12 @@ interface SidebarProps {
 
 const teacherMenuGroups = [
   {
+    group: 'Classes',
+    items: [
+      { label: 'Class Management', children: ['My Classes'] },
+    ],
+  },
+  {
     group: 'Attendance',
     items: [
       { label: 'Students', children: ['Attendance'] },
@@ -20,7 +26,7 @@ const teacherMenuGroups = [
   {
     group: 'Exams',
     items: [
-      { label: 'Academic Exam', children: ['Marks Entry'] },
+      { label: 'Academic Exam', children: ['Unit Test', 'Marks Entry'] },
     ],
   },
 ];

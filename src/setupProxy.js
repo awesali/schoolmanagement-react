@@ -4,7 +4,7 @@ module.exports = function (app) {
   app.use(
     '/api',
     createProxyMiddleware({
-      target: 'https://localhost:44380',
+      target: 'https://localhost:7015',
       changeOrigin: true,
       secure: false, // allow self-signed certificate
     })

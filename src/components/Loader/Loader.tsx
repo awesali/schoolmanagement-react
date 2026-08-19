@@ -14,10 +14,12 @@ export const PageLoader: React.FC<{ label?: string }> = ({ label = 'Please wait.
   </div>
 );
 
-type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & { loading?: boolean; loadingText?: string };
-export const LoadingButton: React.FC<Props> = ({ loading = false, loadingText, disabled, children, ...props }) => (
+type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & { loading?: boolean; loadingText?: string; loadingOverlay?: boolean };
+export const LoadingButton: React.FC<Props> = ({ loading = false, loadingText, loadingOverlay = true, disabled, children, ...props }) => (
   <>
-    <button {...props} disabled={disabled || loading} aria-busy={loading}>{children}</button>
-    {loading && <PageLoader label={loadingText} />}
+    <button {...props} disabled={disabled || loading} aria-busy={loading}>
+      {loading && !loadingOverlay ? <Loader size="small" label={loadingText || 'Please wait...'} /> : children}
+    </button>
+    {loading && loadingOverlay && <PageLoader label={loadingText} />}
   </>
 );
