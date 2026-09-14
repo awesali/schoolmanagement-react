@@ -23,6 +23,7 @@ const AcademicYear: React.FC<AcademicYearProps> = ({ selectedSchoolId }) => {
   const [formLoading, setFormLoading] = useState(false);
   const [sessions, setSessions] = useState<AcademicSession[]>([]);
   const [loading, setLoading] = useState(false);
+  const [updatingSessionId, setUpdatingSessionId] = useState<number | null>(null);
   const [error, setError] = useToastMessageState('error');
   const [formData, setFormData] = useState({
     yearStart: '',
@@ -152,6 +153,38 @@ const AcademicYear: React.FC<AcademicYearProps> = ({ selectedSchoolId }) => {
     setFormError('');
   };
 
+  const updateSessionStatus = async (session: AcademicSession) => {
+    const nextStatus = !session.isActive;
+    const action = nextStatus ? 'activate' : 'deactivate';
+    if (!window.confirm(`Are you sure you want to ${action} this academic session?`)) return;
+
+    setUpdatingSessionId(session.id);
+    setError('');
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/Admin/academic-session-status`, {
+        method: 'PUT',
+        headers: {
+          accept: '*/*',
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          schoolId: selectedSchoolId,
+          sessionId: session.id,
+          isActive: nextStatus,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.message || `Failed to ${action} session`);
+      await fetchSessions();
+    } catch (err: any) {
+      setError(err.message || `Unable to ${action} academic session.`);
+    } finally {
+      setUpdatingSessionId(null);
+    }
+  };
+
   if (!selectedSchoolId) {
     return <div className="loading">Please select a school</div>;
   }
@@ -180,6 +213,7 @@ const AcademicYear: React.FC<AcademicYearProps> = ({ selectedSchoolId }) => {
                 <th>End Date</th>
                 <th>Status</th>
                 <th>Created Date</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -193,6 +227,18 @@ const AcademicYear: React.FC<AcademicYearProps> = ({ selectedSchoolId }) => {
                     </span>
                   </td>
                   <td className="created-date">{formatDate(session.createdAt)}</td>
+                  <td>
+                    <button
+                      type="button"
+                      className={`session-status-button ${session.isActive ? 'deactivate' : 'activate'}`}
+                      disabled={updatingSessionId !== null}
+                      onClick={() => updateSessionStatus(session)}
+                    >
+                      {updatingSessionId === session.id
+                        ? 'Updating...'
+                        : session.isActive ? 'Make Inactive' : 'Make Active'}
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

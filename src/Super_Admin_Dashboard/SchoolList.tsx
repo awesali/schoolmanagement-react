@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
+import CreateSchool, { SchoolDetails } from './CreateSchool';
 import './SchoolList.css';
 
-interface School {
+interface School extends SchoolDetails {
   id: number;
   schoolName: string;
   address: string;
@@ -12,9 +13,12 @@ interface School {
   created_Date: string;
 }
 
-const SchoolList: React.FC = () => {
+interface SchoolListProps { onSchoolsChanged?: () => void; }
+
+const SchoolList: React.FC<SchoolListProps> = ({ onSchoolsChanged }) => {
   const [schools, setSchools] = useState<School[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingSchool, setEditingSchool] = useState<School | null>(null);
 
   useEffect(() => {
     fetchSchools();
@@ -59,6 +63,7 @@ const SchoolList: React.FC = () => {
             <div key={school.id} className="school-card">
               <div className="school-card-header">
                 <h3>{school.schoolName}</h3>
+                <button type="button" className="school-edit-button" onClick={() => setEditingSchool(school)}>Edit</button>
               </div>
               <div className="school-card-body">
                 <div className="school-info">
@@ -82,6 +87,12 @@ const SchoolList: React.FC = () => {
           ))}
         </div>
       )}
+      <CreateSchool
+        isOpen={Boolean(editingSchool)}
+        school={editingSchool}
+        onClose={() => setEditingSchool(null)}
+        onSuccess={() => { fetchSchools(); onSchoolsChanged?.(); }}
+      />
     </div>
   );
 };

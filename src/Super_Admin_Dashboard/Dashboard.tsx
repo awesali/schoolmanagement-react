@@ -302,7 +302,7 @@ const Dashboard: React.FC = () => {
         if (!isRoleOnlyDashboard && activePermission && !can(activePermission, 'read')) return <div className="permission-empty"><h2>Access denied</h2><p>You do not have permission to view this page.</p></div>;
         return <>
         {activePage === 'School List' ? (
-          <SchoolList />
+          <SchoolList onSchoolsChanged={fetchSchools} />
         ) : activePage === 'Academic Year' ? (
           <AcademicYear selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Class List' ? (

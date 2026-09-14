@@ -23,10 +23,16 @@ const statusStyle = (status: string) => ({
   color: status === 'Present' ? '#22543d' : status === 'Absent' ? '#742a2a' : status === 'Late' ? '#553c9a' : '#78350f',
 });
 
+const getLocalDateValue = () => {
+  const now = new Date();
+  const offset = now.getTimezoneOffset() * 60 * 1000;
+  return new Date(now.getTime() - offset).toISOString().split('T')[0];
+};
+
 
 const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number | null }> = ({ userRole, selectedSchoolId }) => {
   const toast = useToast();
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateValue();
 
   // Admin state
   const [adminAttendance, setAdminAttendance] = useState<StaffAttendanceRecord[]>([]);
@@ -69,7 +75,10 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
 
   useEffect(() => {
     if (userRole === '1' && selectedSchoolId) {
-      fetchAdminAttendance();
+      setAdminFromDate(today);
+      setAdminToDate(today);
+      setIsFiltered(false);
+      fetchAdminAttendance(today, today);
     }
   }, [userRole, selectedSchoolId]); // eslint-disable-line
 
@@ -150,7 +159,7 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
               style={{ padding: '8px 12px', borderRadius: '8px', border: '2px solid #e2e8f0', fontSize: '14px' }} />
             <button className="btn btn-primary" onClick={() => { setIsFiltered(true); fetchAdminAttendance(adminFromDate, adminToDate); }} disabled={adminLoading}>Search</button>
             {isFiltered && (
-              <button className="btn" onClick={() => { setIsFiltered(false); setAdminFromDate(today); setAdminToDate(today); fetchAdminAttendance(); }}
+              <button className="btn" onClick={() => { setIsFiltered(false); setAdminFromDate(today); setAdminToDate(today); fetchAdminAttendance(today, today); }}
                 style={{ border: '1px solid #e2e8f0' }}>Reset</button>
             )}
           </div>

@@ -36,7 +36,6 @@ const menuGroups = [
     group: 'Academics',
     items: [
       { label: 'Academic Sessions', children: ['Academic Year'] },
-      { label: 'Student Enrollment', children: ['Student Enrollment'] },
       { label: 'Student Promotion', children: ['Student Promotion'] },
       { label: 'Promotion History', children: ['Promotion History'] },
     ],

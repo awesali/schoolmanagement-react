@@ -235,8 +235,8 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
   if (!selectedSchoolId) return <div className="staff-list-loading">Please select a school</div>;
 
   return (
-    <div className="staff-list-container">
-      <div className="staff-list-header">
+    <div className="staff-list-container student-list-container">
+      <div className="staff-list-header student-list-header">
         <h2>Student List</h2>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           {can('management.students','create')&&<><button className="btn" disabled={transferring} onClick={downloadStudentTemplate}>Template</button>
@@ -252,8 +252,8 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
           No students available. Please add a new student.
         </div>
       ) : (
-        <div className="staff-table-wrapper">
-          <table className="staff-table">
+        <div className="staff-table-wrapper student-table-wrapper">
+          <table className="staff-table student-table">
             <thead>
               <tr>
                 <th>Name</th>

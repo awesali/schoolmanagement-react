@@ -1,1 +1,44 @@
 /* Reuses staff-list styles — no additional overrides needed */
+/* Keep the wide student grid usable when zoom reduces the CSS viewport. */
+.student-list-container {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.student-list-header {
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.student-list-header > div {
+  justify-content: flex-end;
+}
+
+.student-table-wrapper {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.student-table {
+  min-width: 1100px;
+}
+
+.student-table th,
+.student-table td {
+  white-space: nowrap;
+}
+
+.student-table td:first-child {
+  min-width: 110px;
+  white-space: normal;
+}
+
+@media (max-width: 768px) {
+  .student-list-header > div {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}

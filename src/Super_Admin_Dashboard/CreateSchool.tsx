@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { API_BASE_URL } from '../config';
 import { useToast, useToastMessageState } from '../components/Toast/Toast';
 import { TOAST_MESSAGES } from '../constants/toastMessages';
@@ -8,9 +8,27 @@ import './CreateSchool.css';
 interface CreateSchoolProps {
   isOpen: boolean;
   onClose: () => void;
+  school?: SchoolDetails | null;
+  onSuccess?: () => void;
 }
 
-const CreateSchool: React.FC<CreateSchoolProps> = ({ isOpen, onClose }) => {
+export interface SchoolDetails {
+  id: number;
+  schoolName: string;
+  address: string;
+  street?: string;
+  city?: string;
+  pinCode?: string;
+  country?: string;
+  state?: string;
+  landmark?: string;
+  latitude?: number;
+  longitude?: number;
+  phone: string;
+  email: string;
+}
+
+const CreateSchool: React.FC<CreateSchoolProps> = ({ isOpen, onClose, school, onSuccess }) => {
   const toast = useToast();
   const defaultLocation = { lat: 28.6139, lng: 77.2090 };
   const mapTilerKey = 'm00gCZTujgRHYomLPr66';
@@ -34,6 +52,29 @@ const CreateSchool: React.FC<CreateSchoolProps> = ({ isOpen, onClose }) => {
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationStatus, setLocationStatus] = useState('Default location selected. Click map or use current location.');
   const [mapZoom, setMapZoom] = useState(17);
+  const isEditing = Boolean(school);
+
+  useEffect(() => {
+    if (!isOpen || !school) return;
+    const latitude = school.latitude ?? defaultLocation.lat;
+    const longitude = school.longitude ?? defaultLocation.lng;
+    setFormData({
+      schoolName: school.schoolName || '',
+      street: school.street || '',
+      city: school.city || '',
+      pinCode: school.pinCode || '',
+      country: school.country || '',
+      state: school.state || '',
+      landmark: school.landmark || '',
+      latitude: latitude.toFixed(6),
+      longitude: longitude.toFixed(6),
+      phone: school.phone || '',
+      email: school.email || '',
+    });
+    setMapCenter({ lat: latitude, lng: longitude });
+    setLocationStatus(`Selected location: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+    setError('');
+  }, [isOpen, school]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fullAddress = useMemo(() => {
     return [
@@ -226,13 +267,14 @@ const CreateSchool: React.FC<CreateSchoolProps> = ({ isOpen, onClose }) => {
       const token = localStorage.getItem('token');
       const payload = {
         ...formData,
+        ...(school ? { id: school.id } : {}),
         address: fullAddress,
         latitude,
         longitude,
       };
 
-      const response = await fetch(`${API_BASE_URL}/api/Admin/create`, {
-        method: 'POST',
+      const response = await fetch(`${API_BASE_URL}/api/Admin/${isEditing ? 'update-school' : 'create'}`, {
+        method: isEditing ? 'PUT' : 'POST',
         headers: {
           'accept': '*/*',
           'Content-Type': 'application/json',
@@ -241,8 +283,10 @@ const CreateSchool: React.FC<CreateSchoolProps> = ({ isOpen, onClose }) => {
         body: JSON.stringify(payload),
       });
 
-      if (response.ok) {
-        toast.success(TOAST_MESSAGES.school.created);
+      const result = await response.json();
+      if (response.ok && result.success) {
+        toast.success(isEditing ? 'School updated successfully' : TOAST_MESSAGES.school.created);
+        onSuccess?.();
         onClose();
         setFormData({
           schoolName: '',
@@ -260,7 +304,7 @@ const CreateSchool: React.FC<CreateSchoolProps> = ({ isOpen, onClose }) => {
         setMapCenter(defaultLocation);
         setMapZoom(17);
       } else {
-        setError('Failed to create school');
+        setError(result.message || `Failed to ${isEditing ? 'update' : 'create'} school`);
       }
     } catch (err) {
       setError('An error occurred');
@@ -275,7 +319,7 @@ const CreateSchool: React.FC<CreateSchoolProps> = ({ isOpen, onClose }) => {
     <div className="create-school-overlay" onClick={onClose}>
       <div className="create-school-modal" onClick={(e) => e.stopPropagation()}>
         <div className="create-school-header">
-          <h2>Create New School</h2>
+          <h2>{isEditing ? 'Edit School' : 'Create New School'}</h2>
           <button className="close-btn" onClick={onClose}>&times;</button>
         </div>
         <form onSubmit={handleSubmit}>
@@ -459,8 +503,8 @@ const CreateSchool: React.FC<CreateSchoolProps> = ({ isOpen, onClose }) => {
             <button type="button" className="btn btn-secondary" onClick={onClose}>
               Cancel
             </button>
-            <LoadingButton type="submit" className="btn btn-primary" loading={loading} loadingText="Creating...">
-              Create School
+            <LoadingButton type="submit" className="btn btn-primary" loading={loading} loadingText={isEditing ? 'Saving...' : 'Creating...'}>
+              {isEditing ? 'Save Changes' : 'Create School'}
             </LoadingButton>
           </div>
         </form>

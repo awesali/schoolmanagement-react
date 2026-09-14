@@ -286,3 +286,27 @@
     font-size: 13px;
   }
 }
+
+.session-status-button {
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.session-status-button.activate {
+  background: #2e7d32;
+}
+
+.session-status-button.deactivate {
+  background: #c62828;
+}
+
+.session-status-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
