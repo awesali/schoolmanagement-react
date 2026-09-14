@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { API_BASE_URL } from '../config';
 import { useToastMessageState } from '../components/Toast/Toast';
 import Modal from './Modal';
+import { LoadingButton } from '../components/Loader/Loader';
 import './ClassList.css';
 
 interface AcademicYearProps {
@@ -24,6 +25,7 @@ const AcademicYear: React.FC<AcademicYearProps> = ({ selectedSchoolId }) => {
   const [sessions, setSessions] = useState<AcademicSession[]>([]);
   const [loading, setLoading] = useState(false);
   const [updatingSessionId, setUpdatingSessionId] = useState<number | null>(null);
+  const [pendingSession, setPendingSession] = useState<AcademicSession | null>(null);
   const [error, setError] = useToastMessageState('error');
   const [formData, setFormData] = useState({
     yearStart: '',
@@ -32,6 +34,8 @@ const AcademicYear: React.FC<AcademicYearProps> = ({ selectedSchoolId }) => {
   });
 
   useEffect(() => {
+    setPendingSession(null);
+    setPendingSession(null);
     if (selectedSchoolId) {
       fetchSessions();
     } else {
@@ -156,7 +160,7 @@ const AcademicYear: React.FC<AcademicYearProps> = ({ selectedSchoolId }) => {
   const updateSessionStatus = async (session: AcademicSession) => {
     const nextStatus = !session.isActive;
     const action = nextStatus ? 'activate' : 'deactivate';
-    if (!window.confirm(`Are you sure you want to ${action} this academic session?`)) return;
+    if (updatingSessionId !== null) return;
 
     setUpdatingSessionId(session.id);
     setError('');
@@ -177,6 +181,8 @@ const AcademicYear: React.FC<AcademicYearProps> = ({ selectedSchoolId }) => {
       });
       const result = await response.json();
       if (!response.ok || !result.success) throw new Error(result.message || `Failed to ${action} session`);
+      setPendingSession(null);
+      setFormSuccess(`Academic session ${nextStatus ? 'activated' : 'deactivated'} successfully!`);
       await fetchSessions();
     } catch (err: any) {
       setError(err.message || `Unable to ${action} academic session.`);
@@ -232,7 +238,7 @@ const AcademicYear: React.FC<AcademicYearProps> = ({ selectedSchoolId }) => {
                       type="button"
                       className={`session-status-button ${session.isActive ? 'deactivate' : 'activate'}`}
                       disabled={updatingSessionId !== null}
-                      onClick={() => updateSessionStatus(session)}
+                      onClick={() => setPendingSession(session)}
                     >
                       {updatingSessionId === session.id
                         ? 'Updating...'
@@ -245,6 +251,23 @@ const AcademicYear: React.FC<AcademicYearProps> = ({ selectedSchoolId }) => {
           </table>
         )}
       </div>
+
+      <Modal
+        isOpen={pendingSession !== null}
+        onClose={() => { if (updatingSessionId === null) setPendingSession(null); }}
+        title={pendingSession?.isActive ? 'Deactivate Academic Session' : 'Activate Academic Session'}
+        showSubmit={false}
+        showCancel={false}
+      >
+        <p>Are you sure you want to {pendingSession?.isActive ? 'deactivate' : 'activate'} this academic session?</p>
+        {pendingSession && <p><strong>{formatDate(pendingSession.yearStart)} – {formatDate(pendingSession.yearEnd)}</strong></p>}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
+          <button type="button" className="btn btn-secondary" disabled={updatingSessionId !== null} onClick={() => setPendingSession(null)}>Cancel</button>
+          <LoadingButton type="button" className="btn btn-primary" loading={updatingSessionId !== null} loadingText="Updating..." onClick={() => { if (pendingSession) updateSessionStatus(pendingSession); }}>
+            {pendingSession?.isActive ? 'Deactivate' : 'Activate'}
+          </LoadingButton>
+        </div>
+      </Modal>
 
       <Modal
         isOpen={isModalOpen}
