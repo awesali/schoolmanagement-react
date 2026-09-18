@@ -2,7 +2,7 @@ import React from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import AddStudent from './AddStudent';
 
-jest.mock('../components/Toast/Toast', () => ({ useToast: () => ({ warning: jest.fn() }) }));
+import { ToastProvider } from '../components/Toast/Toast';
 
 test.each([true, false])('shows loader immediately and clears it after response, success=%s', async success => {
   let finishRequest: (value: any) => void = () => {};
@@ -14,7 +14,7 @@ test.each([true, false])('shows loader immediately and clears it after response,
     } }) }));
   const onClose = jest.fn();
   const onSuccess = jest.fn();
-  const { container } = render(<AddStudent isOpen schoolId={1} onClose={onClose} onSuccess={onSuccess} />);
+  const { container } = render(<ToastProvider><AddStudent isOpen schoolId={1} onClose={onClose} onSuccess={onSuccess} /></ToastProvider>);
   await screen.findByText('Class 1');
   const values: Record<string, string> = {
     studentName: 'Test Student', rollNumber: '1', dob: '2015-01-31', genderCode: 'M',
@@ -37,7 +37,8 @@ test.each([true, false])('shows loader immediately and clears it after response,
   expect(onSuccess).toHaveBeenCalledTimes(success ? 1 : 0);
   expect(onClose).toHaveBeenCalledTimes(success ? 1 : 0);
   if (!success) {
-    expect(screen.getByText('Unable to save student.')).toBeInTheDocument();
+    expect(screen.getByText('Unable to save student.').closest('.custom-toast')).toHaveClass('custom-toast--error');
+    expect(container.querySelector('.modal-body .error-message')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Add Student' })).toBeEnabled();
   }
 });

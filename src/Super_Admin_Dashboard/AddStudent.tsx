@@ -48,7 +48,6 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
   const [documents, setDocuments] = useState<Array<{ name: string; file: File }>>([]);
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const [profilePreview, setProfilePreview] = useState('');
-  const [formError, setFormError] = useState('');
   const [enrollmentLoading, setEnrollmentLoading] = useState(false);
   const [checkingClasses, setCheckingClasses] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -72,17 +71,17 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
         if (activeSessions.length === 1) {
           setFormData(prev => ({ ...prev, sessionId: activeSessions[0].id.toString() }));
         } else if (activeSessions.length === 0) {
-          setFormError('No active academic session is configured for this school.');
+          toast.error('No active academic session is configured for this school.');
         } else {
-          setFormError('Multiple active academic sessions were found. Please correct the academic-session setup.');
+          toast.error('Multiple active academic sessions were found. Please correct the academic-session setup.');
         }
       } else {
         setEnrollment({ classes: [], sections: [], sessions: [] });
-        setFormError(result.message || 'Unable to load enrollment information.');
+        toast.error(result.message || 'Unable to load enrollment information.');
       }
     } catch (err) {
       setEnrollment({ classes: [], sections: [], sessions: [] });
-      setFormError('Unable to load enrollment information.');
+      toast.error('Unable to load enrollment information.');
       console.error('Failed to fetch enrollment info', err);
     } finally {
       setEnrollmentLoading(false);
@@ -92,9 +91,7 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
 
   useEffect(() => {
     if (isOpen && schoolId) {
-      setFormData(prev => ({ ...prev, sessionId: '' }));
-      setFormError('');
-      fetchEnrollmentInfo();
+      setFormData(prev => ({ ...prev, sessionId: '' }));      fetchEnrollmentInfo();
     }
   }, [isOpen, schoolId, fetchEnrollmentInfo]);
 
@@ -113,14 +110,11 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
     e.preventDefault();
     if (submitting) return;
     const dateError = importDateError('Date of Birth', formatImportDate(formData.dob));
-    if (dateError) { setFormError(dateError); return; }
+    if (dateError) { toast.error(dateError); return; }
     if (!formData.sessionId) {
-      setFormError('An active academic session is required before a student can be added.');
+      toast.error('An active academic session is required before a student can be added.');
       return;
-    }
-
-    setFormError('');
-    if (enrollment.classes.length === 0) {
+    }    if (enrollment.classes.length === 0) {
       toast.warning(TOAST_MESSAGES.dependency.classRequired);
       return;
     }
@@ -173,10 +167,10 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
         const validationMessage = result.errors
           ? Object.values(result.errors).flat().join(' ')
           : '';
-        setFormError(result.message || validationMessage || 'Failed to add student.');
+        toast.error(result.message || validationMessage || 'Failed to add student.');
       }
     } catch (err) {
-      setFormError('Unable to add the student. Please try again.');
+      toast.error('Unable to add the student. Please try again.');
       console.error('Failed to add student', err);
     } finally {
       setSubmitting(false);
@@ -188,9 +182,7 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
     setProfilePicture(null);
     setProfilePreview('');
     setDocuments([]);
-    setEnrollment({ classes: [], sections: [], sessions: [] });
-    setFormError('');
-  };
+    setEnrollment({ classes: [], sections: [], sessions: [] });  };
 
   const handleAddDocument = () => setDocuments([...documents, { name: '', file: null as any }]);
   const handleRemoveDocument = (index: number) => setDocuments(documents.filter((_, i) => i !== index));
@@ -220,7 +212,6 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
       loadingText="Adding student..."
     >
       <form id="add-student-form" onSubmit={handleSubmit}>
-        {formError && <div className="error-message">{formError}</div>}
         <div className="profile-upload-area">
           <input id="student-profile-picture" type="file" accept="image/jpeg,image/png,image/webp"
             onChange={(e) => {
