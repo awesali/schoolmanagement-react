@@ -31,7 +31,7 @@
   white-space: nowrap;
 }
 
-.student-table td:first-child {
+.student-table td:nth-child(2) {
   min-width: 110px;
   white-space: normal;
 }

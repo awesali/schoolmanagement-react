@@ -9,6 +9,8 @@ import { downloadCsv, parseCsv } from '../utils/csv';
 import { genderLabel, parseGenderCode } from '../utils/gender';
 import BulkImportPreview, { ImportPreviewRow } from './BulkImportPreview';
 import ProfileIdCard from './ProfileIdCard';
+import ProfileListAvatar from './ProfileListAvatar';
+import { profilePictureUrl } from './ProfilePictureInput';
 import { useToast } from '../components/Toast/Toast';
 import { TOAST_MESSAGES } from '../constants/toastMessages';
 import { usePermissions } from '../security/Permissions';
@@ -56,6 +58,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
   const [showDocuments, setShowDocuments] = useState(false);
   const [showIdCard, setShowIdCard] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState<Staff | null>(null);
   const [transferring, setTransferring] = useState(false);
   const [importPreview, setImportPreview] = useState<ImportPreviewRow[]>([]);
 
@@ -283,7 +286,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
           <table className="staff-table">
             <thead>
               <tr>
-                <th>Employee No.</th>
+                <th>Photo</th>
                 <th>Name</th>
                 <th>Email</th>
                 <th>Phone</th>
@@ -298,7 +301,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
             <tbody>
               {staff.map((member) => (
                 <tr key={member.id}>
-                  <td>{member.employeeNumber}</td>
+                  <td><ProfileListAvatar name={member.name} pictureUrl={member.profilePictureUrl} onView={() => setPhotoPreview(member)} /></td>
                   <td>
                     <span 
                       className="staff-name-link"
@@ -399,6 +402,18 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
             ]}
           />
         )}
+      </Modal>
+
+      <Modal
+        isOpen={photoPreview !== null}
+        onClose={() => setPhotoPreview(null)}
+        title={`Profile Photo - ${photoPreview?.name || ''}`}
+        showSubmit={false}
+        showCancel={false}
+      >
+        {photoPreview && <div className="staff-photo-preview">
+          <img src={profilePictureUrl(photoPreview.profilePictureUrl)} alt={`${photoPreview.name} profile`} />
+        </div>}
       </Modal>
 
       <BulkImportPreview

@@ -9,6 +9,8 @@ import { downloadCsv, parseCsv } from '../utils/csv';
 import { genderLabel, parseGenderCode } from '../utils/gender';
 import BulkImportPreview, { ImportPreviewRow } from './BulkImportPreview';
 import ProfileIdCard from './ProfileIdCard';
+import ProfileListAvatar from './ProfileListAvatar';
+import { profilePictureUrl } from './ProfilePictureInput';
 import { useToast } from '../components/Toast/Toast';
 import { TOAST_MESSAGES } from '../constants/toastMessages';
 import { usePermissions } from '../security/Permissions';
@@ -56,6 +58,7 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [showDocuments, setShowDocuments] = useState(false);
   const [showIdCard, setShowIdCard] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState<Student | null>(null);
   const [transferring, setTransferring] = useState(false);
   const [importPreview, setImportPreview] = useState<ImportPreviewRow[]>([]);
 
@@ -258,8 +261,8 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
           <table className="staff-table student-table">
             <thead>
               <tr>
+                <th>Photo</th>
                 <th>Name</th>
-                <th>Roll No.</th>
                 <th>Email</th>
                 <th>Phone</th>
                 <th>DOB</th>
@@ -274,6 +277,7 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
             <tbody>
               {students.map((student) => (
                 <tr key={student.id}>
+                  <td><ProfileListAvatar name={student.studentName} pictureUrl={student.profilePictureUrl} onView={() => setPhotoPreview(student)} /></td>
                   <td>
                     <span
                       className="staff-name-link"
@@ -282,7 +286,6 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
                       {student.studentName}
                     </span>
                   </td>
-                  <td>{student.rollNumber || '-'}</td>
                   <td>{student.email}</td>
                   <td>{student.phoneNumber}</td>
                   <td>{student.dob.split('T')[0].split('-').reverse().join('/')}</td>
@@ -367,6 +370,18 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
             ]}
           />
         )}
+      </Modal>
+
+      <Modal
+        isOpen={photoPreview !== null}
+        onClose={() => setPhotoPreview(null)}
+        title={`Profile Photo - ${photoPreview?.studentName || ''}`}
+        showSubmit={false}
+        showCancel={false}
+      >
+        {photoPreview && <div className="staff-photo-preview">
+          <img src={profilePictureUrl(photoPreview.profilePictureUrl)} alt={`${photoPreview.studentName} profile`} />
+        </div>}
       </Modal>
 
       <BulkImportPreview
