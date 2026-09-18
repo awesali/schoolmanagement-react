@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
-import { LoadingButton } from '../components/Loader/Loader';
+import { LoadingButton, PageLoader } from '../components/Loader/Loader';
 import CreateExamSchedule from './CreateExamSchedule';
 import './StaffList.css';
 import './ManagementTabs.css';
@@ -57,6 +57,7 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
 
   // Exam Types
   const [examTypes, setExamTypes] = useState<ExamType[]>([]);
+  const [pendingLookups, setPendingLookups] = useState(0);
   const [examTypesLoading, setExamTypesLoading] = useState(false);
   const [showAddExamType, setShowAddExamType] = useState(false);
   const [newExamTypeName, setNewExamTypeName] = useState('');
@@ -189,6 +190,7 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
 
   // ── Exam Subjects ──
   const fetchEnrollmentInfo = async () => {
+    setPendingLookups(count => count + 1);
     try {
       const res = await fetch(`${API_BASE_URL}/api/Student/enrollment-info?schoolId=${selectedSchoolId}`, { headers: headers() });
       if (res.ok) {
@@ -199,17 +201,18 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
           setSessions(result.data.sessions || []);
         }
       }
-    } catch { }
+    } catch { } finally { setPendingLookups(count => count - 1); }
   };
 
   const fetchSectionSubjects = async (sectionId: string) => {
+    setPendingLookups(count => count + 1);
     try {
       const res = await fetch(`${API_BASE_URL}/api/Class/section-subjects/${sectionId}`, { headers: headers() });
       if (res.ok) {
         const result = await res.json();
         setSubjects(result.success ? result.data : []);
       }
-    } catch { }
+    } catch { } finally { setPendingLookups(count => count - 1); }
   };
 
   const fetchExamSubjects = async (examId: string) => {
@@ -334,6 +337,7 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
 
   return (
     <div className="staff-list-container">
+      {pendingLookups > 0 && <PageLoader label="Loading exam options..." />}
       {/* Header + Tabs */}
       <div className="staff-list-header">
         <h2>Exam Management</h2>
@@ -361,7 +365,7 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
             <button className="btn btn-primary" onClick={() => { setShowAddExamType(true); setExamTypeMsg(null); }}>+ Add Exam Type</button>
           </div>
           {msgBanner(examTypeMsg)}
-          {examTypesLoading ? <div style={{ textAlign: 'center', padding: '40px', color: '#718096' }}>Loading...</div>
+          {examTypesLoading ? <PageLoader label="Loading exam data..." />
             : examTypes.length === 0 ? <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>No exam types yet. Add one to get started.</p>
             : (
               <div className="staff-table-wrapper">
@@ -409,7 +413,7 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
             <button className="btn btn-primary" onClick={() => { setShowAddExam(true); setExamMsg(null); }}>+ Create Exam</button>
           </div>
           {msgBanner(examMsg)}
-          {examsLoading ? <div style={{ textAlign: 'center', padding: '40px', color: '#718096' }}>Loading...</div>
+          {examsLoading ? <PageLoader label="Loading exam data..." />
             : exams.length === 0 ? <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>No exams yet.</p>
             : (
               <div className="staff-table-wrapper">
@@ -525,7 +529,7 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
             )}
           </div>
           {msgBanner(subjectMsg)}
-          {subjectsLoading ? <div style={{ textAlign: 'center', padding: '40px', color: '#718096' }}>Loading...</div>
+          {subjectsLoading ? <PageLoader label="Loading exam data..." />
             : !selectedExamId ? <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>Select an exam to view subjects.</p>
             : !subjectFilterClassId ? <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>Select a class to view subjects.</p>
             : !subjectFilterSectionId ? <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>Select a section to view subjects.</p>
@@ -620,7 +624,7 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
             </select>
           </div>
 
-          {timetableLoading && <div style={{ textAlign: 'center', padding: '40px', color: '#718096' }}>Loading...</div>}
+          {timetableLoading && <PageLoader label="Loading exam data..." />}
 
           {!timetableLoading && timetableExamId && timetable.length === 0 && (
             <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>No schedule found for this exam.</p>
@@ -728,7 +732,7 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: 'white', borderRadius: '16px', padding: '32px', width: '100%', maxWidth: '560px', boxShadow: '0 8px 32px rgba(0,0,0,0.18)', maxHeight: '90vh', overflowY: 'auto' }}>
             {detailLoading ? (
-              <div style={{ textAlign: 'center', padding: '40px', color: '#718096' }}>Loading...</div>
+              <PageLoader label="Loading exam data..." />
             ) : studentDetail && (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>

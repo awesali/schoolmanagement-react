@@ -65,6 +65,7 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
     setError(''); // Clear previous errors
     
     try {
@@ -81,16 +82,12 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
       formDataToSend.append('RoleId', formData.roleId.toString());
       formDataToSend.append('SchoolId', schoolId?.toString() || '0');
 
-      if (!profilePicture) {
-        setError('Please select a profile picture.');
-        setSubmitting(false);
-        return;
-      }
-
       // The API stores the profile picture separately but receives it through
       // the same multipart document arrays at matching indexes.
-      formDataToSend.append('DocumentNames', 'Profile Picture');
-      formDataToSend.append('Files', profilePicture);
+      if (profilePicture) {
+        formDataToSend.append('DocumentNames', 'Profile Picture');
+        formDataToSend.append('Files', profilePicture);
+      }
       
       // Only append documents if they exist and are valid
       const validDocuments = documents.filter(doc => doc.file && doc.name.trim());
@@ -179,14 +176,13 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={() => { if (!submitting) onClose(); }}
       title="Add New Staff"
       submitLabel="Add Staff"
       onCancel={handleClear}
       formId="add-staff-form"
       submitLoading={submitting}
       loadingText="Adding staff..."
-      loadingOverlay={false}
     >
       {error && (
         <div className="error-message">
@@ -195,7 +191,7 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
       )}
       <form id="add-staff-form" onSubmit={handleSubmit}>
         <div className="profile-upload-area">
-          <input id="staff-profile-picture" type="file" accept="image/jpeg,image/png,image/webp" required
+          <input id="staff-profile-picture" type="file" accept="image/jpeg,image/png,image/webp"
             onChange={(e) => {
               const file = e.target.files?.[0] || null;
               setProfilePicture(file);
@@ -204,7 +200,7 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
           <label htmlFor="staff-profile-picture" className={`profile-upload-circle ${profilePreview ? 'has-image' : ''}`}>
             {profilePreview ? <img src={profilePreview} alt="Staff preview" /> : <span>+</span>}
           </label>
-          <div className="profile-upload-title">Add Profile Picture *</div>
+          <div className="profile-upload-title">Add Profile Picture (Optional)</div>
           <small>JPG, PNG or WebP · Max 5 MB</small>
         </div>
         <div className="form-grid">

@@ -25,6 +25,7 @@ import Sidebar from './Sidebar';
 import { API_BASE_URL } from '../config';
 import './Dashboard.css';
 import { PAGE_PERMISSIONS, usePermissions } from '../security/Permissions';
+import { SECURITY_UI_ENABLED } from '../security/features';
 
 interface School {
   id: number;
@@ -244,6 +245,7 @@ const Dashboard: React.FC = () => {
   };
 
   const handleNavigate = (page: string, type?: 'student' | 'staff') => {
+    if (!SECURITY_UI_ENABLED && page === 'Role & Permissions') return;
     const permissionPage = page === 'Attendance' ? (type === 'student' ? 'attendance.students' : 'attendance.staff') : PAGE_PERMISSIONS[page];
     if (permissionPage && !can(permissionPage, 'read')) return;
     setActivePage(page);
@@ -298,6 +300,7 @@ const Dashboard: React.FC = () => {
       <div className="dashboard-content">
         {permissionsLoading ? <div className="permission-empty">Loading access…</div> : (() => {
         const activePermission = activePage === 'Attendance' ? (attendanceType === 'student' ? 'attendance.students' : 'attendance.staff') : PAGE_PERMISSIONS[activePage];
+        if (!SECURITY_UI_ENABLED && activePage === 'Role & Permissions') return null;
         const isRoleOnlyDashboard = activePage === 'Dashboard' && userRole !== '1' && userRole !== '2';
         if (!isRoleOnlyDashboard && activePermission && !can(activePermission, 'read')) return <div className="permission-empty"><h2>Access denied</h2><p>You do not have permission to view this page.</p></div>;
         return <>

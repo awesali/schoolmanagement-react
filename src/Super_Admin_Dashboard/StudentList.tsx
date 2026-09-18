@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
+import { PageLoader } from '../components/Loader/Loader';
 import AddStudent from './AddStudent';
 import EditStudent from './EditStudent';
 import Modal from './Modal';
@@ -33,6 +34,7 @@ interface Student {
   sectionName: string;
   academicSession: string;
   isActive: boolean;
+  profilePictureUrl?: string | null;
   documents: Document[];
 }
 
@@ -231,8 +233,8 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
     finally { setTransferring(false); }
   };
 
-  if (loading) return <div className="staff-list-loading">Loading...</div>;
   if (!selectedSchoolId) return <div className="staff-list-loading">Please select a school</div>;
+  if (loading) return <PageLoader label="Loading students..." />;
 
   return (
     <div className="staff-list-container student-list-container">
@@ -345,6 +347,7 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
       >
         {selectedStudent && (
           <ProfileIdCard
+            pictureUrl={selectedStudent.profilePictureUrl}
             name={selectedStudent.studentName}
             type="Student"
             identifier={`Student ID: ${selectedStudent.id}`}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
+import { PageLoader } from '../components/Loader/Loader';
 import { useToastResultState } from '../components/Toast/Toast';
 import './StaffList.css';
 import './ManagementTabs.css';
@@ -134,6 +135,7 @@ const monthName = (month: number) =>
   new Date(0, month - 1).toLocaleString('default', { month: 'long' });
 
 const SalaryManagement: React.FC<SalaryManagementProps> = ({ selectedSchoolId }) => {
+  const [pendingLoads, setPendingLoads] = useState(0);
   const [activeTab, setActiveTab] = useState<SalaryTab>('dashboard');
   const [staffList, setStaffList] = useState<Staff[]>([]);
   const [dashboardData, setDashboardData] = useState<DashboardData>({
@@ -158,6 +160,7 @@ const SalaryManagement: React.FC<SalaryManagementProps> = ({ selectedSchoolId })
   }, [selectedSchoolId]); // eslint-disable-line
 
   const fetchStaffList = async () => {
+    setPendingLoads(count => count + 1);
     try {
       const response = await fetch(`${API_BASE_URL}/api/Admin/Staff-by-school?schoolId=${selectedSchoolId}&page=1&pageSize=1000`, {
         headers: headers(),
@@ -168,10 +171,13 @@ const SalaryManagement: React.FC<SalaryManagementProps> = ({ selectedSchoolId })
       }
     } catch (error) {
       console.error('Failed to fetch staff list:', error);
+    } finally {
+      setPendingLoads(count => count - 1);
     }
   };
 
   const fetchDashboardData = async () => {
+    setPendingLoads(count => count + 1);
     try {
       const response = await fetch(`${API_BASE_URL}/api/Staff/dashboard?schoolId=${selectedSchoolId}`, {
         headers: headers(),
@@ -182,10 +188,13 @@ const SalaryManagement: React.FC<SalaryManagementProps> = ({ selectedSchoolId })
       }
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
+    } finally {
+      setPendingLoads(count => count - 1);
     }
   };
 
   const fetchSalaryHistory = async (month: number, year: number) => {
+    setPendingLoads(count => count + 1);
     try {
       const response = await fetch(`${API_BASE_URL}/api/Staff/history?schoolId=${selectedSchoolId}&month=${month}&year=${year}`, {
         headers: headers(),
@@ -196,10 +205,13 @@ const SalaryManagement: React.FC<SalaryManagementProps> = ({ selectedSchoolId })
       }
     } catch (error) {
       console.error('Failed to fetch salary history:', error);
+    } finally {
+      setPendingLoads(count => count - 1);
     }
   };
 
   const fetchPendingSalaries = async () => {
+    setPendingLoads(count => count + 1);
     try {
       const response = await fetch(`${API_BASE_URL}/api/Staff/pending?schoolId=${selectedSchoolId}`, {
         headers: headers(),
@@ -210,6 +222,8 @@ const SalaryManagement: React.FC<SalaryManagementProps> = ({ selectedSchoolId })
       }
     } catch (error) {
       console.error('Failed to fetch pending salaries:', error);
+    } finally {
+      setPendingLoads(count => count - 1);
     }
   };
 
@@ -306,6 +320,7 @@ const SalaryManagement: React.FC<SalaryManagementProps> = ({ selectedSchoolId })
 
   return (
     <div className="staff-list-container">
+      {(pendingLoads > 0) && <PageLoader label="Loading salary data..." />}
       <div className="staff-list-header">
         <h2>Salary Management</h2>
       </div>
@@ -542,11 +557,7 @@ const AssignSalaryForm: React.FC<{
           {selectedStaff.phone && <div><strong>Phone:</strong> {selectedStaff.phone}</div>}
         </div>
       )}
-      {checkingSalary && (
-        <div style={{ padding: '12px', marginBottom: '16px', borderRadius: '8px', background: '#f7fafc', color: '#4a5568' }}>
-          Checking assigned salary...
-        </div>
-      )}
+      {checkingSalary && <PageLoader label="Loading assigned salary..." />}
       {assignedSalary && (
         <div style={{ padding: '14px', marginBottom: '16px', borderRadius: '10px', background: '#fffbeb', border: '1px solid #fcd34d', color: '#78350f' }}>
           <div style={{ fontWeight: 700, marginBottom: '6px' }}>Salary Already Assigned</div>

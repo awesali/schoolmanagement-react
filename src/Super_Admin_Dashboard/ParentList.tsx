@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { API_BASE_URL } from '../config';
+import { PageLoader } from '../components/Loader/Loader';
 import { useToastMessageState } from '../components/Toast/Toast';
 import Modal from './Modal';
 import Pagination from './Pagination';
@@ -113,7 +114,7 @@ const ParentList: React.FC<{ selectedSchoolId: number | null }> = ({ selectedSch
       </div>
 
       {error && <div className="error-message">{error}</div>}
-      {loading ? <div className="staff-list-loading">Loading parents...</div> : parents.length === 0 ? (
+      {loading ? <PageLoader label="Loading parents..." /> : parents.length === 0 ? (
         <div className="staff-list-loading">No parents found.</div>
       ) : (
         <div className="staff-table-wrapper">

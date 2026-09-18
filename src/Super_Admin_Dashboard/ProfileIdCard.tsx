@@ -1,4 +1,5 @@
 import React from 'react';
+import { profilePictureUrl } from './ProfilePictureInput';
 import './ProfileIdCard.css';
 
 export interface ProfileIdCardField {
@@ -8,6 +9,7 @@ export interface ProfileIdCardField {
 
 interface ProfileIdCardProps {
   name: string;
+  pictureUrl?: string | null;
   type: 'Student' | 'Employee';
   identifier: string;
   subtitle: string;
@@ -21,7 +23,7 @@ const initialsFor = (name: string) =>
   name.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase() || '?';
 
 const ProfileIdCard: React.FC<ProfileIdCardProps> = ({
-  name, type, identifier, subtitle, organization, status, fields, onEdit
+  name, pictureUrl, type, identifier, subtitle, organization, status, fields, onEdit
 }) => (
   <div className="profile-card-shell">
     <article className="profile-id-card">
@@ -34,8 +36,8 @@ const ProfileIdCard: React.FC<ProfileIdCardProps> = ({
       </header>
 
       <section className="profile-card-person">
-        <div className="profile-card-avatar" aria-label={`${name} initials`}>
-          {initialsFor(name)}
+        <div className="profile-card-avatar" aria-label={`${name} profile`}>
+          {pictureUrl ? <img src={profilePictureUrl(pictureUrl)} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }} /> : initialsFor(name)}
         </div>
         <div className="profile-card-person-copy">
           <h3>{name}</h3>

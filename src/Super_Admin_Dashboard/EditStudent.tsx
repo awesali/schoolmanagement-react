@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import Modal from './Modal';
+import ProfilePictureInput from './ProfilePictureInput';
 import './AddStaff.css';
 import { GENDER_OPTIONS } from '../utils/gender';
 
@@ -23,6 +24,7 @@ interface Student {
   sectionName: string;
   academicSession: string;
   isActive: boolean;
+  profilePictureUrl?: string | null;
   documents: Document[];
 }
 
@@ -45,6 +47,10 @@ interface EditStudentProps {
 }
 
 const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, schoolId, onSuccess }) => {
+  const [profilePicture, setProfilePicture] = useState<File | null>(null);
+  const [saveError, setSaveError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [currentPictureUrl, setCurrentPictureUrl] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     studentName: '',
     rollNumber: '',
@@ -63,6 +69,9 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
 
   useEffect(() => {
     if (isOpen && student && schoolId) {
+      setProfilePicture(null);
+      setSaveError('');
+      setCurrentPictureUrl(student.profilePictureUrl || null);
       setNewDocuments([]);
       // Prefill form with data from the list first
       setFormData({
@@ -106,6 +115,7 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
 
       if (studentResult?.success && studentResult.data) {
         const s = studentResult.data;
+        setCurrentPictureUrl(s.profilePictureUrl || null);
         console.log('Student data from API:', s);
         // Update form data but preserve rollNumber from list if API doesn't have it
         setFormData(prev => ({
@@ -145,11 +155,14 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!student) return;
+    if (!student || saving) return;
+    setSaving(true);
+    setSaveError('');
 
     try {
       const token = localStorage.getItem('token');
       const formDataToSend = new FormData();
+      if (profilePicture) formDataToSend.append('ProfilePicture', profilePicture);
 
       formDataToSend.append('Id', student.id.toString());
       formDataToSend.append('StudentName', formData.studentName);
@@ -193,12 +206,16 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
         headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
         body: formDataToSend,
       });
+      const result = await response.json();
+      if (!response.ok || result.success === false) throw new Error(result.message || 'Failed to update student');
       if (response.ok) {
         onSuccess();
         onClose();
       }
     } catch (err) {
-      console.error('Failed to update student');
+      setSaveError(err instanceof Error ? err.message : 'Failed to update student');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -233,7 +250,9 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={() => { if (!saving) onClose(); }}
+      submitLoading={saving}
+      loadingText="Updating..."
       title="Edit Student"
       submitLabel="Update Student"
       onCancel={() => {}}
@@ -241,6 +260,8 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
       formId="edit-student-form"
     >
       <form id="edit-student-form" onSubmit={handleSubmit}>
+        {saveError && <p role="alert" className="error-message">{saveError}</p>}
+        <ProfilePictureInput id="edit-student-picture" currentUrl={currentPictureUrl} file={profilePicture} onChange={setProfilePicture} />
         <div className="form-grid">
           <div className="form-group full-width">
             <label>— Student Details —</label>

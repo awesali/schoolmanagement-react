@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { API_BASE_URL } from '../config';
+import { PageLoader } from '../components/Loader/Loader';
 import { useToastMessageState } from '../components/Toast/Toast';
 import Modal from './Modal';
-import { LoadingButton } from '../components/Loader/Loader';
 import './ClassList.css';
 
 interface AcademicYearProps {
@@ -206,7 +206,7 @@ const AcademicYear: React.FC<AcademicYearProps> = ({ selectedSchoolId }) => {
       
       <div className="class-table-container">
         {loading ? (
-          <div className="loading">Loading academic sessions...</div>
+          <PageLoader label="Loading academic sessions..." />
         ) : error ? (
           <div className="error">{error}</div>
         ) : sessions.length === 0 ? (
@@ -256,16 +256,15 @@ const AcademicYear: React.FC<AcademicYearProps> = ({ selectedSchoolId }) => {
         isOpen={pendingSession !== null}
         onClose={() => { if (updatingSessionId === null) setPendingSession(null); }}
         title={pendingSession?.isActive ? 'Deactivate Academic Session' : 'Activate Academic Session'}
-        showSubmit={false}
+        submitLabel={pendingSession?.isActive ? 'Deactivate' : 'Activate'}
+        submitLoading={updatingSessionId !== null}
+        loadingText="Updating..."
+        onSubmit={() => { if (pendingSession) updateSessionStatus(pendingSession); }}
         showCancel={false}
       >
-        <p>Are you sure you want to {pendingSession?.isActive ? 'deactivate' : 'activate'} this academic session?</p>
-        {pendingSession && <p><strong>{formatDate(pendingSession.yearStart)} – {formatDate(pendingSession.yearEnd)}</strong></p>}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
-          <button type="button" className="btn btn-secondary" disabled={updatingSessionId !== null} onClick={() => setPendingSession(null)}>Cancel</button>
-          <LoadingButton type="button" className="btn btn-primary" loading={updatingSessionId !== null} loadingText="Updating..." onClick={() => { if (pendingSession) updateSessionStatus(pendingSession); }}>
-            {pendingSession?.isActive ? 'Deactivate' : 'Activate'}
-          </LoadingButton>
+        <div style={{ padding: '32px 28px', textAlign: 'center' }}>
+          <p>Are you sure you want to {pendingSession?.isActive ? 'deactivate' : 'activate'} this academic session?</p>
+          {pendingSession && <p><strong>{formatDate(pendingSession.yearStart)} – {formatDate(pendingSession.yearEnd)}</strong></p>}
         </div>
       </Modal>
 

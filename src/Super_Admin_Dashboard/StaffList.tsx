@@ -34,6 +34,7 @@ interface Staff {
   schoolName: string;
   address: string;
   isActive: boolean;
+  profilePictureUrl?: string | null;
   documents: Document[];
 }
 
@@ -375,6 +376,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
       >
         {selectedStaff && (
           <ProfileIdCard
+            pictureUrl={selectedStaff.profilePictureUrl}
             name={selectedStaff.name}
             type="Employee"
             identifier={`Employee No: ${selectedStaff.employeeNumber}`}

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import { useToast } from '../components/Toast/Toast';
 import { TOAST_MESSAGES } from '../constants/toastMessages';
-import { LoadingButton } from '../components/Loader/Loader';
+import { LoadingButton, PageLoader } from '../components/Loader/Loader';
 import './StaffList.css';
 
 type AttendanceStatus = 'Present' | 'Absent' | null;
@@ -166,7 +166,7 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
         </div>
 
         {adminLoading ? (
-          <div style={{ textAlign: 'center', padding: '60px', color: '#718096' }}>Loading...</div>
+          <PageLoader label="Loading staff attendance..." />
         ) : (
           <>
             <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
+import { PageLoader } from '../components/Loader/Loader';
 import AddSubject from './AddSubject';
 import EditSubject from './EditSubject';
 import Pagination from './Pagination';
@@ -89,7 +90,7 @@ const SubjectList: React.FC<SubjectListProps> = ({ selectedSchoolId }) => {
   };
 
   if (loading) {
-    return <div className="staff-list-loading">Loading...</div>;
+    return <PageLoader label="Loading subjects..." />;
   }
 
   if (!selectedSchoolId) {

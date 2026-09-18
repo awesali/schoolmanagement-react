@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
+import { PageLoader } from '../components/Loader/Loader';
 import './StaffList.css';
 import './ManagementTabs.css';
 
@@ -70,6 +71,7 @@ const selectStyle: React.CSSProperties = {
 };
 
 const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selectedSchoolId }) => {
+  const [pendingLoads, setPendingLoads] = useState(0);
   const [view, setView] = useState<FinanceView>('feeTypes');
 
   // Fee Types
@@ -186,6 +188,7 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
   };
 
   const fetchEnrollmentInfo = async () => {
+    setPendingLoads(count => count + 1);
     try {
       const res = await fetch(`${API_BASE_URL}/api/Student/enrollment-info?schoolId=${selectedSchoolId}`, { headers: headers() });
       if (res.ok) {
@@ -199,7 +202,9 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
           else if (result.data.sessions?.length === 1) setSelectedSession(result.data.sessions[0].id.toString());
         }
       }
-    } catch { }
+    } catch { } finally {
+      setPendingLoads(count => count - 1);
+    }
   };
 
   const filteredSections = sections.filter(s => s.classId === Number(selectedClass));
@@ -308,10 +313,13 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
   };
 
   const fetchReceipt = async (paymentId: number) => {
+    setPendingLoads(count => count + 1);
     try {
       const res = await fetch(`${API_BASE_URL}/api/Student/GetReceipt?paymentId=${paymentId}`, { headers: headers() });
       if (res.ok) setReceipt(await res.json());
-    } catch { }
+    } catch { } finally {
+      setPendingLoads(count => count - 1);
+    }
   };
 
   const toggleStudent = (id: number) =>
@@ -351,6 +359,7 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
 
   return (
     <div className="staff-list-container">
+      {(pendingLoads > 0 || feeTypesLoading || studentsLoading || pendingLoading || historyLoading) && <PageLoader label="Loading fee data..." />}
       {/* Header + Tabs */}
       <div className="staff-list-header">
         <h2>Finance Management</h2>
@@ -388,7 +397,7 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
           )}
 
           {feeTypesLoading ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: '#718096' }}>Loading...</div>
+            null
           ) : feeTypes.length === 0 ? (
             <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>No fee types found. Add one to get started.</p>
           ) : (

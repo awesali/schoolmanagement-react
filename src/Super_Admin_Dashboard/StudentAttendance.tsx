@@ -3,7 +3,7 @@ import { API_BASE_URL } from '../config';
 import Pagination from './Pagination';
 import { useToast } from '../components/Toast/Toast';
 import { TOAST_MESSAGES } from '../constants/toastMessages';
-import { LoadingButton } from '../components/Loader/Loader';
+import { LoadingButton, PageLoader } from '../components/Loader/Loader';
 import './StaffList.css';
 
 interface Student {
@@ -275,7 +275,7 @@ const StudentAttendance: React.FC = () => {
         </div>
       )}
 
-      {loading ? <div className="staff-list-loading">Loading...</div> : (
+      {loading ? <PageLoader label="Loading students..." /> : (
         <div className="staff-table-wrapper">
           <table className="staff-table">
             <thead>

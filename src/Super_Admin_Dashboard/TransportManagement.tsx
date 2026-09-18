@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { API_BASE_URL } from '../config';
+import { PageLoader } from '../components/Loader/Loader';
 import { useToastMessageState } from '../components/Toast/Toast';
 import Modal from './Modal';
 import './StaffList.css';
@@ -304,7 +305,7 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({ se
 
     {message && <div style={{ padding: '10px 14px', marginBottom: '14px', borderRadius: '8px', background: '#edf2f7' }}>{message}</div>}
 
-    {tab === 'dashboard' ? <div className="stats-grid">
+    {loading ? <PageLoader label={`Loading ${config.label.toLowerCase()}...`} /> : tab === 'dashboard' ? <div className="stats-grid">
       {[['Vehicles', dashboard.totalVehicles], ['Active Routes', dashboard.activeRoutes], ['Allocated Students', dashboard.allocatedStudents],
         ['Available Seats', dashboard.availableSeats], ['Pending Fees', `Rs. ${Number(dashboard.pendingFees || 0).toLocaleString()}`], ['Expiring Documents', dashboard.expiringDocuments]]
         .map(([label, value]) => <div className="stat-card" key={String(label)}><div className="stat-header"><span>{label}</span></div><div className="stat-value">{value ?? 0}</div></div>)}
@@ -312,7 +313,7 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({ se
         {config.fields && <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
           <button className="btn btn-primary" onClick={() => showForm ? closeForm() : (setAllocationRows([emptyAllocation()]), setShowForm(true))}>{showForm ? 'Close' : `+ Add ${config.label.replace(/s$/, '')}`}</button>
         </div>}
-        {loading ? <div className="staff-list-loading">Loading...</div> : rows.length === 0 ? <div className="staff-list-loading">No records found.</div> :
+        {rows.length === 0 ? <div className="staff-list-loading">No records found.</div> :
           <div className="staff-table-wrapper"><table className="staff-table"><thead><tr>{columns.map(column => <th key={column}>{pretty(column)}</th>)}</tr></thead>
             <tbody>{rows.map((row, index) => <tr key={row.id ?? index}>{columns.map((column, columnIndex) => <td key={column}>
               {config.fields && columnIndex === 0

@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { API_BASE_URL } from '../config';
+import { CRUD_PERMISSIONS_ENABLED } from './features';
 
 export type CrudAction = 'create' | 'read' | 'update' | 'delete';
 type PermissionContextValue = {
@@ -29,6 +30,11 @@ export const PermissionProvider: React.FC<React.PropsWithChildren> = ({ children
   const [roleName, setRoleName] = useState('');
   const [loading, setLoading] = useState(true);
   const refresh = useCallback(async () => {
+    if (!CRUD_PERMISSIONS_ENABLED) {
+      setPermissions(new Set());
+      setLoading(false);
+      return;
+    }
     const token = localStorage.getItem('token');
     if (!token) { setPermissions(new Set()); setLoading(false); return; }
     setLoading(true);
@@ -44,7 +50,7 @@ export const PermissionProvider: React.FC<React.PropsWithChildren> = ({ children
   useEffect(() => { refresh(); }, [refresh]);
   const value = useMemo(() => ({
     loading, roleName, permissions, refresh,
-    can: (page: string, action: CrudAction = 'read') => tokenRole() === '1' || permissions.has(`${page}.${action}`.toLowerCase()),
+    can: (page: string, action: CrudAction = 'read') => (!CRUD_PERMISSIONS_ENABLED && !!tokenRole()) || tokenRole() === '1' || permissions.has(`${page}.${action}`.toLowerCase()),
   }), [loading, roleName, permissions, refresh]);
   return <PermissionContext.Provider value={value}>{children}</PermissionContext.Provider>;
 };

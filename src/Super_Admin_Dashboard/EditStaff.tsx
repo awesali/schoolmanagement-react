@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import Modal from './Modal';
+import ProfilePictureInput from './ProfilePictureInput';
 import './AddStaff.css';
 import { GENDER_OPTIONS } from '../utils/gender';
 
@@ -23,6 +24,7 @@ interface Staff {
   schoolName: string;
   address: string;
   isActive: boolean;
+  profilePictureUrl?: string | null;
   documents: Document[];
 }
 
@@ -39,6 +41,10 @@ interface Role {
 }
 
 const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess }) => {
+  const [profilePicture, setProfilePicture] = useState<File | null>(null);
+  const [saveError, setSaveError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [currentPictureUrl, setCurrentPictureUrl] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     dob: '',
@@ -75,6 +81,9 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
         url: doc.documentURL,
         originalName: doc.documentName // Store original name to track changes
       })));
+      setProfilePicture(null);
+      setSaveError('');
+      setCurrentPictureUrl(staff.profilePictureUrl || null);
       setNewDocuments([]);
       fetchRoles();
     }
@@ -102,11 +111,14 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!staff) return;
+    if (!staff || saving) return;
+    setSaving(true);
+    setSaveError('');
 
     try {
       const token = localStorage.getItem('token');
       const formDataToSend = new FormData();
+      if (profilePicture) formDataToSend.append('ProfilePicture', profilePicture);
       
       formDataToSend.append('Id', staff.id.toString());
       formDataToSend.append('Name', formData.name);
@@ -182,12 +194,16 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
         },
         body: formDataToSend,
       });
+      const result = await response.json();
+      if (!response.ok || result.success === false) throw new Error(result.message || 'Failed to update staff');
       if (response.ok) {
         onSuccess();
         onClose();
       }
     } catch (err) {
-      console.error('Failed to update staff');
+      setSaveError(err instanceof Error ? err.message : 'Failed to update staff');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -230,7 +246,9 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={() => { if (!saving) onClose(); }}
+      submitLoading={saving}
+      loadingText="Updating..."
       title="Edit Staff"
       submitLabel="Update Staff"
       onCancel={() => {}}
@@ -238,6 +256,8 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
       formId="edit-staff-form"
     >
       <form id="edit-staff-form" onSubmit={handleSubmit}>
+        {saveError && <p role="alert" className="error-message">{saveError}</p>}
+        <ProfilePictureInput id="edit-staff-picture" currentUrl={currentPictureUrl} file={profilePicture} onChange={setProfilePicture} />
         <div className="form-grid">
           <div className="form-group">
             <label>Name *</label>

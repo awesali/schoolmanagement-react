@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { PageLoader } from '../components/Loader/Loader';
 import { API_BASE_URL } from '../config';
 import { useToastMessageState } from '../components/Toast/Toast';
 import AddClass from './AddClass';
@@ -113,7 +114,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId }) => {
   };
 
   if (loading) {
-    return <div className="staff-list-loading">Loading classes...</div>;
+    return <PageLoader label="Loading classes..." />;
   }
 
   if (error) {

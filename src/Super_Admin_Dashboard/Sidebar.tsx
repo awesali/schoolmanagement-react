@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './Sidebar.css';
 import { PAGE_PERMISSIONS, usePermissions } from '../security/Permissions';
+import { SECURITY_UI_ENABLED } from '../security/features';
 
 interface SidebarProps {
   activePage: string;
@@ -37,15 +38,14 @@ const menuGroups = [
     items: [
       { label: 'Academic Sessions', children: ['Academic Year'] },
       { label: 'Student Promotion', children: ['Student Promotion'] },
-      { label: 'Promotion History', children: ['Promotion History'] },
     ],
   },
   {
     group: 'Management',
     items: [
       { label: 'School', children: ['School List'] },
-      { label: 'Classes', children: ['Class List', 'Class Schedule'] },
-      { label: 'Staff', children: ['Staff List', 'Attendance', 'Payroll'] },
+      { label: 'Classes', children: ['Class List'] },
+      { label: 'Staff', children: ['Staff List', 'Attendance'] },
       { label: 'Security', children: ['Role & Permissions'] },
       { label: 'Students', children: ['Student List', 'Attendance'] },
       { label: 'Parents', children: ['Parent List'] },
@@ -92,7 +92,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, 
   const getFilteredMenuGroups = () => {
     return currentMenuGroups.map(group => ({
       ...group,
-      items: group.items.map(item => ({
+      items: group.items.filter(item => SECURITY_UI_ENABLED || item.label !== 'Security').map(item => ({
         ...item,
         children: item.children.filter(child => {
           if (userRole === '1' && item.label === 'Students' && child === 'Attendance') {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { PageLoader } from '../components/Loader/Loader';
 import { API_BASE_URL } from '../config';
 import CreateSchool, { SchoolDetails } from './CreateSchool';
 import './SchoolList.css';
@@ -25,6 +26,7 @@ const SchoolList: React.FC<SchoolListProps> = ({ onSchoolsChanged }) => {
   }, []);
 
   const fetchSchools = async () => {
+    setLoading(true);
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_BASE_URL}/api/Admin/School-by-superadmin`, {
@@ -47,7 +49,7 @@ const SchoolList: React.FC<SchoolListProps> = ({ onSchoolsChanged }) => {
   };
 
   if (loading) {
-    return <div className="school-list-loading">Loading...</div>;
+    return <PageLoader label="Loading schools..." />;
   }
 
   return (
