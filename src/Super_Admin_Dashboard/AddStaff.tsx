@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
+import { importDateError, formatImportDate } from '../utils/importDate';
 import { useToastMessageState } from '../components/Toast/Toast';
 import Modal from './Modal';
 import './AddStaff.css';
@@ -65,6 +66,8 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const dateError = importDateError('Date of Birth', formatImportDate(formData.dob)) || importDateError('Date of Joining', formatImportDate(formData.doj));
+    if (dateError) { setError(dateError); return; }
     if (submitting) return;
     setError(''); // Clear previous errors
     
@@ -242,10 +245,13 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
               <label>Date of Birth *</label>
               <input
                 type="date"
+              onInvalid={event => event.currentTarget.setCustomValidity('Choose a valid date using the calendar or the format shown in this field. CSV dates accept MM-DD-YYYY or MM/DD/YYYY, e.g. 01-31-2010 or 1/31/2010.')}
+              onInput={event => event.currentTarget.setCustomValidity('')}
                 required
                 value={formData.dob}
                 onChange={(e) => setFormData({...formData, dob: e.target.value})}
               />
+            <small>Use the calendar or the date format shown above. CSV: MM-DD-YYYY or MM/DD/YYYY (e.g. 01-31-2010 or 1/31/2010).</small>
             </div>
             <div className="form-group">
               <label>Gender *</label>
@@ -264,10 +270,13 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
               <label>Date of Joining *</label>
               <input
                 type="date"
+              onInvalid={event => event.currentTarget.setCustomValidity('Choose a valid date using the calendar or the format shown in this field. CSV dates accept MM-DD-YYYY or MM/DD/YYYY, e.g. 01-31-2010 or 1/31/2010.')}
+              onInput={event => event.currentTarget.setCustomValidity('')}
                 required
                 value={formData.doj}
                 onChange={(e) => setFormData({...formData, doj: e.target.value})}
               />
+            <small>Use the calendar or the date format shown above. CSV: MM-DD-YYYY or MM/DD/YYYY (e.g. 01-31-2010 or 1/31/2010).</small>
             </div>
             <div className="form-group">
               <label>Role *</label>

@@ -32,9 +32,11 @@ const AddClass: React.FC<AddClassProps> = ({ isOpen, onClose, schoolId, onSucces
   const [error, setError] = useToastMessageState('error');
   const [loading, setLoading] = useState(false);
   const [checkingTeachers, setCheckingTeachers] = useState(false);
+  const [teacherConflicts, setTeacherConflicts] = useState<string[]>([]);
 
   useEffect(() => {
     if (isOpen && schoolId) {
+      setTeacherConflicts([]);
       fetchStaff();
       setError('');
     }
@@ -67,8 +69,9 @@ const AddClass: React.FC<AddClassProps> = ({ isOpen, onClose, schoolId, onSucces
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent, confirmed = false) => {
+    e?.preventDefault();
+    if (loading || !schoolId) return;
     setError('');
     if (staff.length === 0) {
       toast.warning(TOAST_MESSAGES.dependency.teacherRequired);
@@ -94,6 +97,34 @@ const AddClass: React.FC<AddClassProps> = ({ isOpen, onClose, schoolId, onSucces
         sections: validSections
       };
 
+      if (!confirmed) {
+        const assignments: string[] = [];
+        let page = 1;
+        let totalPages = 1;
+        do {
+          const classResponse = await fetch(`${API_BASE_URL}/api/Class/calss-list?schoolId=${schoolId}&page=${page}&pageSize=100`, {
+            cache: 'no-store', headers: { accept: '*/*', Authorization: `Bearer ${token}` },
+          });
+          const classResult = await classResponse.json();
+          if (!classResponse.ok || !classResult.success) throw new Error('Unable to check existing class teachers. Please try again.');
+          for (const existingClass of classResult.data || []) {
+            for (const section of existingClass.sections || []) {
+              if (validSections.some(selected => selected.staffId === section.staffId)) {
+                const teacher = staff.find(member => member.id === section.staffId);
+                assignments.push(`${teacher?.name || 'Selected teacher'} is already the class teacher of ${existingClass.className}, section ${section.sectionName}.`);
+              }
+            }
+          }
+          totalPages = classResult.totalPages || 1;
+          page++;
+        } while (page <= totalPages);
+        if (assignments.length) {
+          setTeacherConflicts(Array.from(new Set(assignments)));
+          return;
+        }
+      }
+      setTeacherConflicts([]);
+
       const response = await fetch(`${API_BASE_URL}/api/Class/create-class-with-sections`, {
         method: 'POST',
         headers: {
@@ -115,7 +146,7 @@ const AddClass: React.FC<AddClassProps> = ({ isOpen, onClose, schoolId, onSucces
       }
     } catch (err) {
       console.error('Failed to create class:', err);
-      setError('Network error. Please try again.');
+      setError(err instanceof Error ? err.message : 'Network error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -144,14 +175,15 @@ const AddClass: React.FC<AddClassProps> = ({ isOpen, onClose, schoolId, onSucces
   };
 
   return (
+    <>
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={() => { if (!loading) { setTeacherConflicts([]); onClose(); } }}
       title="Add New Class"
       submitLabel="Create Class"
       submitLoading={loading}
       loadingText="Creating..."
-      onCancel={handleClear}
+      onCancel={() => { if (!loading) handleClear(); }}
       formId="add-class-form"
       submitDisabled={loading || checkingTeachers || staff.length === 0}
     >
@@ -218,6 +250,20 @@ const AddClass: React.FC<AddClassProps> = ({ isOpen, onClose, schoolId, onSucces
         </div>
       </form>
     </Modal>
+    <Modal
+      isOpen={isOpen && teacherConflicts.length > 0}
+      onClose={() => setTeacherConflicts([])}
+      title="Confirm Class Teacher"
+      submitLabel="Yes, Create Class"
+      showCancel={false}
+      onSubmit={() => handleSubmit(undefined, true)}
+    >
+      <div style={{ padding: '24px 28px', textAlign: 'center' }}>
+        {teacherConflicts.map(conflict => <p key={conflict}>{conflict}</p>)}
+        <p>Do you also want to assign {teacherConflicts.length > 1 ? 'these teachers' : 'this teacher'} to class <strong>{formData.className}</strong>?</p>
+      </div>
+    </Modal>
+    </>
   );
 };
 

@@ -6,6 +6,7 @@ import EditStudent from './EditStudent';
 import Modal from './Modal';
 import Pagination from './Pagination';
 import { downloadCsv, parseCsv } from '../utils/csv';
+import { DATE_FORMAT_HELP, formatImportDate, toApiDate, importDateError } from '../utils/importDate';
 import { genderLabel, parseGenderCode } from '../utils/gender';
 import BulkImportPreview, { ImportPreviewRow } from './BulkImportPreview';
 import ProfileIdCard from './ProfileIdCard';
@@ -141,14 +142,14 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
       if (!response.ok || !result.success) throw new Error(result.message || 'Export failed');
       downloadCsv('students.csv',
         ['StudentName', 'RollNumber', 'DOB', 'Gender', 'Email', 'PhoneNumber', 'Class', 'Section', 'Session', 'Status'],
-        (result.data || []).map((s: any) => [s.studentName, s.rollNumber, s.dob?.split('T')[0], genderLabel(s.genderCode), s.email, s.phoneNumber, s.className, s.sectionName, s.academicSession?.split('T')[0], s.isActive ? 'Active' : 'Inactive']));
-    } catch (error: any) { alert(error.message || 'Unable to export students.'); }
+        (result.data || []).map((s: any) => [s.studentName, s.rollNumber, formatImportDate(s.dob), genderLabel(s.genderCode), s.email, s.phoneNumber, s.className, s.sectionName, s.academicSession?.split('T')[0], s.isActive ? 'Active' : 'Inactive']));
+    } catch (error: any) { toast.error(error.message || 'Unable to export students.'); }
     finally { setTransferring(false); }
   };
 
   const downloadStudentTemplate = () => downloadCsv('student-import-template.csv',
     ['StudentName', 'RollNumber', 'DOB', 'Gender', 'Email', 'PhoneNumber', 'Class', 'Section', 'ParentName', 'ParentEmail', 'ParentPhone', 'ParentAddress', 'ParentRelationship'],
-    [['Example Student', '1', '2015-01-31', 'Female', 'student@example.com', '9876543210', '1', 'A', 'Parent Name', 'parent@example.com', '9876543211', 'Address', 'Father']]);
+    [['Example Student', '1', '01-31-2015', 'Female', 'student@example.com', '9876543210', '1', 'A', 'Parent Name', 'parent@example.com', '9876543211', 'Address', 'Father']]);
 
   const prepareStudentImport = async (file: File) => {
     if (!selectedSchoolId) return;
@@ -171,7 +172,7 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
       const preview = rows.map((row, index): ImportPreviewRow => {
         const errors: string[] = [], warnings: string[] = [];
         const required = ['StudentName', 'RollNumber', 'DOB', 'Gender', 'Email', 'PhoneNumber', 'Class', 'Section', 'ParentName', 'ParentEmail', 'ParentPhone', 'ParentAddress', 'ParentRelationship'];
-        required.forEach(field => { if (!row[field]?.trim()) errors.push(`${field} is required.`); });
+        required.forEach(field => { if (field !== 'DOB' && !row[field]?.trim()) errors.push(`${field} is required.`); });
         const studentEmail = row.Email?.trim().toLowerCase();
         const parentEmail = row.ParentEmail?.trim().toLowerCase();
         const genderCode = parseGenderCode(row.Gender);
@@ -181,7 +182,8 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
         if (studentEmail === parentEmail && studentEmail) errors.push('Student and parent emails must differ.');
         if (row.PhoneNumber && !/^\d{10}$/.test(row.PhoneNumber)) errors.push('Student phone must contain 10 digits.');
         if (row.ParentPhone && !/^\d{10}$/.test(row.ParentPhone)) errors.push('Parent phone must contain 10 digits.');
-        if (row.DOB && Number.isNaN(Date.parse(row.DOB))) errors.push('DOB must be a valid date.');
+        const dobError = importDateError('DOB', row.DOB);
+        if (dobError) errors.push(dobError);
         if (studentEmail && existingEmails.has(studentEmail)) errors.push('Student email already exists.');
         if (studentEmail && fileEmails.has(studentEmail)) errors.push('Duplicate student email in this file.');
         if (studentEmail) fileEmails.add(studentEmail);
@@ -191,7 +193,7 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
         else if (!sectionItem) errors.push('Section was not found in the selected class.');
         if (parentEmail) warnings.push('If this parent login already exists in the school, it will be reused.');
         const values: Record<string, string> = {
-          StudentName: row.StudentName, RollNumber: row.RollNumber, DOB: row.DOB, GenderCode: genderCode, Email: row.Email,
+          StudentName: row.StudentName, RollNumber: row.RollNumber, DOB: toApiDate(row.DOB), GenderCode: genderCode, Email: row.Email,
           PhoneNumber: row.PhoneNumber, SchoolId: String(selectedSchoolId), ClassId: String(classItem?.id || ''),
           SectionId: String(sectionItem?.id || ''), SessionId: String(activeSessions[0].id), 'Parent.Name': row.ParentName,
           'Parent.Email': row.ParentEmail, 'Parent.PhoneNumber': row.ParentPhone, 'Parent.Address': row.ParentAddress,
@@ -200,7 +202,7 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
         return { rowNumber: index + 2, values: row, errors, warnings, payload: values };
       });
       setImportPreview(preview);
-    } catch (error: any) { alert(error.message || 'Unable to validate students.'); }
+    } catch (error: any) { toast.error(error.message || 'Unable to validate students.'); }
     finally { setTransferring(false); }
   };
 
@@ -231,8 +233,14 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
       }
       await fetchStudents(1, pageSize);
       setImportPreview([]);
-      alert(`Imported ${imported} of ${validRows.length} valid students.${errors.length ? `\n\n${errors.join('\n')}` : ''}`);
-    } catch (error: any) { alert(error.message || 'Unable to import students.'); }
+      const importMessage = `Imported ${imported} of ${validRows.length} valid students.${errors.length ? `\n\n${errors.join('\n')}` : ''}`;
+      if (errors.length) {
+        if (imported > 0) toast.warning(importMessage, 10000);
+        else toast.error(importMessage, 10000);
+      } else {
+        toast.success(importMessage);
+      }
+    } catch (error: any) { toast.error(error.message || 'Unable to import students.'); }
     finally { setTransferring(false); }
   };
 
@@ -252,6 +260,7 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
           {can('management.students','create')&&<button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>+ Add Student</button>}
         </div>
       </div>
+      <p style={{ color: '#64748b', fontSize: 13 }}>CSV dates: {DATE_FORMAT_HELP} Profile images are optional.</p>
       {students.length === 0 ? (
         <div className="staff-list-loading" style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
           No students available. Please add a new student.
@@ -330,7 +339,7 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         schoolId={selectedSchoolId}
-        onSuccess={() => fetchStudents(currentPage, pageSize)}
+        onSuccess={() => { toast.success('Student added successfully.'); fetchStudents(currentPage, pageSize); }}
       />
 
       <EditStudent

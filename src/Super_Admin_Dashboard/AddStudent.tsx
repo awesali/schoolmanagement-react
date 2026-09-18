@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { API_BASE_URL } from '../config';
+import { importDateError, formatImportDate } from '../utils/importDate';
 import { useToast } from '../components/Toast/Toast';
 import { TOAST_MESSAGES } from '../constants/toastMessages';
 import Modal from './Modal';
@@ -50,6 +51,7 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
   const [formError, setFormError] = useState('');
   const [enrollmentLoading, setEnrollmentLoading] = useState(false);
   const [checkingClasses, setCheckingClasses] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const fetchEnrollmentInfo = useCallback(async () => {
     setEnrollmentLoading(true);
@@ -109,6 +111,9 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
+    const dateError = importDateError('Date of Birth', formatImportDate(formData.dob));
+    if (dateError) { setFormError(dateError); return; }
     if (!formData.sessionId) {
       setFormError('An active academic session is required before a student can be added.');
       return;
@@ -119,6 +124,7 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
       toast.warning(TOAST_MESSAGES.dependency.classRequired);
       return;
     }
+    setSubmitting(true);
     try {
       const token = localStorage.getItem('token');
       const formDataToSend = new FormData();
@@ -139,12 +145,10 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
       formDataToSend.append('Parent.Email', formData.parentEmail);
       formDataToSend.append('Parent.Relationship', formData.parentRelationship);
 
-      if (!profilePicture) {
-        setFormError('Please select a profile picture.');
-        return;
+      if (profilePicture) {
+        formDataToSend.append('DocumentNames', 'Profile Picture');
+        formDataToSend.append('Files', profilePicture);
       }
-      formDataToSend.append('DocumentNames', 'Profile Picture');
-      formDataToSend.append('Files', profilePicture);
 
       const validDocuments = documents.filter(doc => doc.file && doc.name.trim());
       validDocuments.forEach(doc => {
@@ -174,6 +178,8 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
     } catch (err) {
       setFormError('Unable to add the student. Please try again.');
       console.error('Failed to add student', err);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -204,17 +210,19 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={() => { if (!submitting) onClose(); }}
       title="Add New Student"
       submitLabel="Add Student"
-      onCancel={handleClear}
+      onCancel={() => { if (!submitting) handleClear(); }}
       formId="add-student-form"
-      submitDisabled={checkingClasses || enrollment.classes.length === 0}
+      submitDisabled={submitting || checkingClasses || enrollment.classes.length === 0}
+      submitLoading={submitting}
+      loadingText="Adding student..."
     >
       <form id="add-student-form" onSubmit={handleSubmit}>
         {formError && <div className="error-message">{formError}</div>}
         <div className="profile-upload-area">
-          <input id="student-profile-picture" type="file" accept="image/jpeg,image/png,image/webp" required
+          <input id="student-profile-picture" type="file" accept="image/jpeg,image/png,image/webp"
             onChange={(e) => {
               const file = e.target.files?.[0] || null;
               setProfilePicture(file);
@@ -223,7 +231,7 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
           <label htmlFor="student-profile-picture" className={`profile-upload-circle ${profilePreview ? 'has-image' : ''}`}>
             {profilePreview ? <img src={profilePreview} alt="Student preview" /> : <span>+</span>}
           </label>
-          <div className="profile-upload-title">Add Profile Picture *</div>
+          <div className="profile-upload-title">Add Profile Picture (Optional)</div>
           <small>JPG, PNG or WebP · Max 5 MB</small>
         </div>
         <div className="form-grid">
@@ -260,7 +268,10 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
           </div>
           <div className="form-group">
             <label>Date of Birth *</label>
-            <input type="date" name="dob" required value={formData.dob} onChange={handleChange} />
+            <input type="date"
+              onInvalid={event => event.currentTarget.setCustomValidity('Choose a valid date using the calendar or the format shown in this field. CSV dates accept MM-DD-YYYY or MM/DD/YYYY, e.g. 01-31-2010 or 1/31/2010.')}
+              onInput={event => event.currentTarget.setCustomValidity('')} name="dob" required value={formData.dob} onChange={handleChange} />
+            <small>Use the calendar or the date format shown above. CSV: MM-DD-YYYY or MM/DD/YYYY (e.g. 01-31-2010 or 1/31/2010).</small>
           </div>
           <div className="form-group">
             <label>Gender *</label>

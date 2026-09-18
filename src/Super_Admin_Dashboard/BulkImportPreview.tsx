@@ -22,6 +22,8 @@ const BulkImportPreview: React.FC<Props> = ({ title, columns, rows, importing, o
   const validCount = rows.filter(row => row.errors.length === 0).length;
   const errorCount = rows.length - validCount;
   const warningCount = rows.filter(row => row.warnings.length > 0).length;
+  // Reorder only the preview; keep the original rows/payloads in CSV order for saving.
+  const displayRows = [...rows.filter(row => row.errors.length > 0), ...rows.filter(row => row.errors.length === 0)];
 
   return (
     <Modal isOpen={rows.length > 0} onClose={onClose} title={title} showSubmit={false} showCancel={false} size="large">
@@ -35,12 +37,12 @@ const BulkImportPreview: React.FC<Props> = ({ title, columns, rows, importing, o
           <table className="staff-table" style={{ minWidth: Math.max(1200, columns.length * 150 + 340), width: '100%' }}>
             <thead><tr><th>Row</th>{columns.map(column => <th key={column}>{column}</th>)}<th>Validation</th></tr></thead>
             <tbody>
-              {rows.map(row => (
+              {displayRows.map(row => (
                 <tr key={row.rowNumber} style={{ background: row.errors.length ? '#fff5f5' : row.warnings.length ? '#fffaf0' : undefined }}>
                   <td>{row.rowNumber}</td>
                   {columns.map(column => <td key={column}>{row.values[column] || '-'}</td>)}
                   <td style={{ minWidth: 240 }}>
-                    {row.errors.map(error => <div key={error} style={{ color: '#c53030' }}>Error: {error}</div>)}
+                    {Array.from(new Set(row.errors)).map(error => <div key={error} style={{ color: '#c53030' }}>Error: {error}</div>)}
                     {row.warnings.map(warning => <div key={warning} style={{ color: '#975a16' }}>Warning: {warning}</div>)}
                     {!row.errors.length && !row.warnings.length && <span style={{ color: '#2f855a' }}>Ready</span>}
                   </td>

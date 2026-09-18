@@ -41,9 +41,11 @@ const EditClass: React.FC<EditClassProps> = ({ isOpen, onClose, classData, onSuc
   const [staff, setStaff] = useState<Staff[]>([]);
   const [error, setError] = useToastMessageState('error');
   const [loading, setLoading] = useState(false);
+  const [teacherConflicts, setTeacherConflicts] = useState<string[]>([]);
 
   useEffect(() => {
     if (isOpen && classData) {
+      setTeacherConflicts([]);
       setFormData({
         className: classData.className,
       });
@@ -78,8 +80,9 @@ const EditClass: React.FC<EditClassProps> = ({ isOpen, onClose, classData, onSuc
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent, confirmed = false) => {
+    e?.preventDefault();
+    if (loading || !classData) return;
     setError('');
     setLoading(true);
     
@@ -101,6 +104,39 @@ const EditClass: React.FC<EditClassProps> = ({ isOpen, onClose, classData, onSuc
         sections: validSections
       };
 
+      const changedSections = validSections.filter(section => !section.id ||
+        classData.sections.find(original => original.id === section.id)?.staffId !== section.staffId);
+      if (!confirmed && changedSections.length) {
+        const assignments: string[] = [];
+        let page = 1;
+        let totalPages = 1;
+        do {
+          const classResponse = await fetch(`${API_BASE_URL}/api/Class/calss-list?schoolId=${classData.schoolId}&page=${page}&pageSize=100`, {
+            cache: 'no-store', headers: { accept: '*/*', Authorization: `Bearer ${token}` },
+          });
+          const classResult = await classResponse.json();
+          if (!classResponse.ok || !classResult.success) throw new Error('Unable to check existing class teachers. Please try again.');
+          for (const existingClass of classResult.data || []) {
+            // For this class, use the assignments that will remain after saving.
+            const existingSections = existingClass.id === classData.id ? validSections : existingClass.sections || [];
+            for (const section of existingSections) {
+              if (changedSections.some(selected => selected.staffId === section.staffId &&
+                (existingClass.id !== classData.id || selected !== section))) {
+                const teacher = staff.find(member => member.id === section.staffId);
+                assignments.push(`${teacher?.name || 'Selected teacher'} is assigned to ${existingClass.className}, section ${section.sectionName}.`);
+              }
+            }
+          }
+          totalPages = classResult.totalPages || 1;
+          page++;
+        } while (page <= totalPages);
+        if (assignments.length) {
+          setTeacherConflicts(Array.from(new Set(assignments)));
+          return;
+        }
+      }
+      setTeacherConflicts([]);
+
       const response = await fetch(`${API_BASE_URL}/api/Class/update-class-with-sections`, {
         method: 'PUT',
         headers: {
@@ -121,7 +157,7 @@ const EditClass: React.FC<EditClassProps> = ({ isOpen, onClose, classData, onSuc
       }
     } catch (err) {
       console.error('Failed to update class:', err);
-      setError('Network error. Please try again.');
+      setError(err instanceof Error ? err.message : 'Network error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -144,9 +180,10 @@ const EditClass: React.FC<EditClassProps> = ({ isOpen, onClose, classData, onSuc
   };
 
   return (
+    <>
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={() => { if (!loading) { setTeacherConflicts([]); onClose(); } }}
       title="Edit Class"
       submitLabel="Update Class"
       submitLoading={loading}
@@ -217,6 +254,20 @@ const EditClass: React.FC<EditClassProps> = ({ isOpen, onClose, classData, onSuc
         </div>
       </form>
     </Modal>
+    <Modal
+      isOpen={isOpen && teacherConflicts.length > 0}
+      onClose={() => setTeacherConflicts([])}
+      title="Confirm Class Teacher"
+      submitLabel="Yes, Update Class"
+      showCancel={false}
+      onSubmit={() => handleSubmit(undefined, true)}
+    >
+      <div style={{ padding: '24px 28px', textAlign: 'center' }}>
+        {teacherConflicts.map(conflict => <p key={conflict}>{conflict}</p>)}
+        <p>Do you also want to use the selected teacher assignments for class <strong>{formData.className}</strong>?</p>
+      </div>
+    </Modal>
+    </>
   );
 };
 

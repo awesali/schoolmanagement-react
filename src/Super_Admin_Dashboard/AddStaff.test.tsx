@@ -18,6 +18,9 @@ test.each([false, true])('adds staff with optional photo selected: %s and uses t
   const onSuccess = jest.fn();
   const { container } = render(<AddStaff isOpen schoolId={1} onClose={jest.fn()} onSuccess={onSuccess} />);
   await screen.findByText('Teacher');
+  const dates = container.querySelectorAll('input[type="date"]');
+  fireEvent.change(dates[0], { target: { value: '1990-01-31' } });
+  fireEvent.change(dates[1], { target: { value: '2026-04-01' } });
   const photoInput = container.querySelector('#staff-profile-picture')!;
   expect(photoInput).not.toBeRequired();
   const photo = new File(['image'], 'photo.png', { type: 'image/png' });

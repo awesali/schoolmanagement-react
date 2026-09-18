@@ -6,6 +6,7 @@ import EditStaff from './EditStaff';
 import Modal from './Modal';
 import Pagination from './Pagination';
 import { downloadCsv, parseCsv } from '../utils/csv';
+import { DATE_FORMAT_HELP, formatImportDate, toApiDate, importDatesError, isValidImportDate } from '../utils/importDate';
 import { genderLabel, parseGenderCode } from '../utils/gender';
 import BulkImportPreview, { ImportPreviewRow } from './BulkImportPreview';
 import ProfileIdCard from './ProfileIdCard';
@@ -163,14 +164,14 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
       const result = await response.json();
       if (!response.ok || !result.success) throw new Error(result.message || 'Export failed');
       downloadCsv('staff.csv', ['EmployeeNumber', 'Name', 'DOB', 'Gender', 'DOJ', 'Role', 'Email', 'Phone', 'Address', 'Status'],
-        (result.data || []).map((s: any) => [s.employeeNumber, s.name, s.dob?.split('T')[0], genderLabel(s.genderCode), s.doj?.split('T')[0], s.roleName, s.email, s.phone, s.address, s.isActive ? 'Active' : 'Inactive']));
-    } catch (error: any) { alert(error.message || 'Unable to export staff.'); }
+        (result.data || []).map((s: any) => [s.employeeNumber, s.name, formatImportDate(s.dob), genderLabel(s.genderCode), formatImportDate(s.doj), s.roleName, s.email, s.phone, s.address, s.isActive ? 'Active' : 'Inactive']));
+    } catch (error: any) { toast.error(error.message || 'Unable to export staff.'); }
     finally { setTransferring(false); }
   };
 
   const downloadStaffTemplate = () => downloadCsv('staff-import-template.csv',
     ['Name', 'DOB', 'Gender', 'DOJ', 'Role', 'Email', 'Phone', 'Address'],
-    [['Example Teacher', '1990-01-31', 'Male', '2026-04-01', 'Teacher', 'teacher@example.com', '9876543210', 'Address']]);
+    [['Example Teacher', '01-31-1990', 'Male', '04-01-2026', 'Teacher', 'teacher@example.com', '9876543210', 'Address']]);
 
   const prepareStaffImport = async (file: File) => {
     if (!selectedSchoolId) return;
@@ -193,29 +194,29 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
       const preview = rows.map((row, index): ImportPreviewRow => {
         const errors: string[] = [], warnings: string[] = [];
         ['Name', 'DOB', 'Gender', 'DOJ', 'Role', 'Email', 'Phone', 'Address'].forEach(field => {
-          if (!row[field]?.trim()) errors.push(`${field} is required.`);
+          if (!['DOB', 'DOJ'].includes(field) && !row[field]?.trim()) errors.push(`${field} is required.`);
         });
         const email = row.Email?.trim().toLowerCase();
         const genderCode = parseGenderCode(row.Gender);
         if (row.Gender && !genderCode) errors.push('Gender must be Male, Female, Other, or Prefer not to say.');
         if (email && !emailPattern.test(email)) errors.push('Email is invalid.');
         if (row.Phone && !/^\d{10}$/.test(row.Phone)) errors.push('Phone must contain 10 digits.');
-        if (row.DOB && Number.isNaN(Date.parse(row.DOB))) errors.push('DOB must be a valid date.');
-        if (row.DOJ && Number.isNaN(Date.parse(row.DOJ))) errors.push('DOJ must be a valid date.');
-        if (row.DOB && row.DOJ && Date.parse(row.DOJ) < Date.parse(row.DOB)) errors.push('DOJ cannot be before DOB.');
+        const dateError = importDatesError({ DOB: row.DOB, DOJ: row.DOJ });
+        if (dateError) errors.push(dateError);
+        if (isValidImportDate(row.DOB || '') && isValidImportDate(row.DOJ || '') && toApiDate(row.DOJ) < toApiDate(row.DOB)) errors.push('DOJ cannot be before DOB.');
         if (email && existingEmails.has(email)) errors.push('Staff email already exists.');
         if (email && fileEmails.has(email)) errors.push('Duplicate email in this file.');
         if (email) fileEmails.add(email);
         const role = roles.find((r: any) => r.roleName.trim().toLowerCase() === row.Role?.trim().toLowerCase());
         if (!role) errors.push(`Role "${row.Role}" was not found.`);
         const values: Record<string, string> = {
-          Name: row.Name, DOB: row.DOB, GenderCode: genderCode, DOJ: row.DOJ, RoleId: String(role?.id || ''), SchoolId: String(selectedSchoolId),
+          Name: row.Name, DOB: toApiDate(row.DOB), GenderCode: genderCode, DOJ: toApiDate(row.DOJ), RoleId: String(role?.id || ''), SchoolId: String(selectedSchoolId),
           Email: row.Email, Phone: row.Phone, Address: row.Address
         };
         return { rowNumber: index + 2, values: row, errors, warnings, payload: values };
       });
       setImportPreview(preview);
-    } catch (error: any) { alert(error.message || 'Unable to validate staff.'); }
+    } catch (error: any) { toast.error(error.message || 'Unable to validate staff.'); }
     finally { setTransferring(false); }
   };
 
@@ -251,8 +252,14 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
       }
       await fetchStaff(1, pageSize);
       setImportPreview([]);
-      alert(`Imported ${imported} of ${validRows.length} valid staff members.${errors.length ? `\n\n${errors.join('\n')}` : ''}`);
-    } catch (error: any) { alert(error.message || 'Unable to import staff.'); }
+      const importMessage = `Imported ${imported} of ${validRows.length} valid staff members.${errors.length ? `\n\n${errors.join('\n')}` : ''}`;
+      if (errors.length) {
+        if (imported > 0) toast.warning(importMessage, 10000);
+        else toast.error(importMessage, 10000);
+      } else {
+        toast.success(importMessage);
+      }
+    } catch (error: any) { toast.error(error.message || 'Unable to import staff.'); }
     finally { setTransferring(false); }
   };
 
@@ -277,6 +284,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
           {can('management.staff','create')&&<button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>+ Add Staff</button>}
         </div>
       </div>
+      <p style={{ color: '#64748b', fontSize: 13 }}>CSV dates: {DATE_FORMAT_HELP} Profile images are optional.</p>
       {staff.length === 0 ? (
         <div className="staff-list-loading" style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
           No staff members available. Please add a new staff member.
@@ -360,7 +368,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         schoolId={selectedSchoolId}
-        onSuccess={() => fetchStaff(currentPage, pageSize)}
+        onSuccess={() => { toast.success('Staff added successfully.'); fetchStaff(currentPage, pageSize); }}
       />
 
       <EditStaff
