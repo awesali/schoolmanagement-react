@@ -12,6 +12,7 @@ interface ModalProps {
   showCancel?: boolean;
   onCancel?: () => void;
   children: React.ReactNode;
+  headerActions?: React.ReactNode;
   formId?: string;
   size?: 'normal' | 'large';
   submitDisabled?: boolean;
@@ -30,6 +31,7 @@ const Modal: React.FC<ModalProps> = ({
   showCancel = true,
   onCancel,
   children,
+  headerActions,
   formId,
   size = 'normal',
   submitDisabled = false
@@ -51,6 +53,7 @@ const Modal: React.FC<ModalProps> = ({
         <div className="modal-header">
           <h3>{title}</h3>
           <div className="header-actions">
+            {headerActions}
             {showCancel && (
               <button type="button" className="btn btn-primary" onClick={handleCancel}>
                 Clear

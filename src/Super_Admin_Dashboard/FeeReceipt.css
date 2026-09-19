@@ -1,0 +1,23 @@
+@media print {
+  body:has(.school-fee-receipt) * { visibility: hidden !important; }
+  body .school-fee-receipt,
+  body .school-fee-receipt * { visibility: visible !important; }
+  body .school-fee-receipt-overlay {
+    position: absolute !important;
+    inset: 0 !important;
+    display: block !important;
+    background: transparent !important;
+  }
+  body .school-fee-receipt {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    color: #000;
+  }
+  body .school-fee-receipt-actions { display: none !important; }
+}

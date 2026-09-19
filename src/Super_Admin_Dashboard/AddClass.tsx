@@ -4,6 +4,8 @@ import { useToast, useToastMessageState } from '../components/Toast/Toast';
 import { TOAST_MESSAGES } from '../constants/toastMessages';
 import Modal from './Modal';
 import './AddStaff.css';
+import './CsvImportHint.css';
+import { CLASS_NAME_GUIDANCE, isValidClassName, classNameKey } from '../utils/className';
 
 interface AddClassProps {
   isOpen: boolean;
@@ -24,6 +26,7 @@ interface Section {
 
 const AddClass: React.FC<AddClassProps> = ({ isOpen, onClose, schoolId, onSuccess }) => {
   const toast = useToast();
+  const [showClassHint, setShowClassHint] = useState(false);
   const [formData, setFormData] = useState({
     className: '',
   });
@@ -73,6 +76,10 @@ const AddClass: React.FC<AddClassProps> = ({ isOpen, onClose, schoolId, onSucces
     e?.preventDefault();
     if (loading || !schoolId) return;
     setError('');
+    if (!isValidClassName(formData.className)) {
+      setError(`Please enter a valid class name. ${CLASS_NAME_GUIDANCE}`);
+      return;
+    }
     if (staff.length === 0) {
       toast.warning(TOAST_MESSAGES.dependency.teacherRequired);
       return;
@@ -108,6 +115,9 @@ const AddClass: React.FC<AddClassProps> = ({ isOpen, onClose, schoolId, onSucces
           const classResult = await classResponse.json();
           if (!classResponse.ok || !classResult.success) throw new Error('Unable to check existing class teachers. Please try again.');
           for (const existingClass of classResult.data || []) {
+            if (classNameKey(existingClass.className) === classNameKey(formData.className)) {
+              throw new Error('A class with this name already exists in this school. Please use a different name.');
+            }
             for (const section of existingClass.sections || []) {
               if (validSections.some(selected => selected.staffId === section.staffId)) {
                 const teacher = staff.find(member => member.id === section.staffId);
@@ -195,12 +205,22 @@ const AddClass: React.FC<AddClassProps> = ({ isOpen, onClose, schoolId, onSucces
       <form id="add-class-form" onSubmit={handleSubmit}>
         <div className="form-grid">
           <div className="form-group full-width">
-            <label>Class Name *</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <label htmlFor="add-class-name">Class Name *</label>
+              <div className="csv-import-hint" style={{ margin: 0 }} onMouseEnter={() => setShowClassHint(true)} onMouseLeave={() => setShowClassHint(false)}>
+                <button type="button" className="csv-import-hint-icon" style={{ width: 18, height: 18, fontSize: 11 }} aria-label="Class name guidance"
+                  aria-describedby={showClassHint ? 'class-name-guidance' : undefined}
+                  onFocus={() => setShowClassHint(true)} onBlur={() => setShowClassHint(false)}
+                  onClick={() => setShowClassHint(true)} onKeyDown={event => { if (event.key === 'Escape') setShowClassHint(false); }}>i</button>
+                {showClassHint && <div role="tooltip" id="class-name-guidance" className="csv-import-hint-tooltip">{CLASS_NAME_GUIDANCE}</div>}
+              </div>
+            </div>
             <input
               type="text"
               required
               placeholder="e.g., 1st, 2nd, Nursery"
               value={formData.className}
+              id="add-class-name"
               onChange={(e) => setFormData({...formData, className: e.target.value})}
             />
           </div>

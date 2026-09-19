@@ -7,22 +7,29 @@ jest.mock('../components/Toast/Toast', () => ({
   useToastMessageState: () => require('react').useState(''),
 }));
 
-const setup = async (assigned: boolean) => {
+const setup = async (assigned: boolean, existingName = 'Class 1') => {
   global.fetch = jest.fn().mockImplementation(async (url, options) => ({ ok: true, json: async () => {
     if (options?.method === 'POST') return { success: true };
     if (String(url).includes('/Common/')) return { success: true, data: [{ id: 4, name: 'Teacher A' }] };
-    return { success: true, totalPages: 1, data: assigned ? [{ className: 'Class 1', sections: [{ staffId: 4, sectionName: 'A' }] }] : [] };
+    return { success: true, totalPages: 1, data: assigned ? [{ className: existingName, sections: [{ staffId: 4, sectionName: 'A' }] }] : [] };
   } }));
   const onSuccess = jest.fn();
   const { container } = render(<AddClass isOpen schoolId={1} onSuccess={onSuccess} onClose={jest.fn()} />);
   await screen.findByText('Teacher A');
-  fireEvent.change(screen.getByPlaceholderText('e.g., 1st, 2nd, Nursery'), { target: { value: 'Class 2' } });
+  fireEvent.change(screen.getByPlaceholderText('e.g., 1st, 2nd, Nursery'), { target: { value: 'Class 2nd' } });
   fireEvent.change(screen.getByPlaceholderText('Section Name (e.g., A, B, C)'), { target: { value: 'B' } });
   fireEvent.change(screen.getByRole('combobox'), { target: { value: '4' } });
   fireEvent.submit(container.querySelector('form')!);
   return onSuccess;
 };
 const posts = () => (fetch as jest.Mock).mock.calls.filter(([, options]) => options?.method === 'POST');
+
+test('blocks duplicate class names before teacher confirmation or saving', async () => {
+  await setup(true, '  CLASS 2 nd  ');
+  expect(await screen.findByText('A class with this name already exists in this school. Please use a different name.')).toBeInTheDocument();
+  expect(posts()).toHaveLength(0);
+  expect(screen.queryByText('Confirm Class Teacher')).not.toBeInTheDocument();
+});
 
 test('requires app confirmation for an already assigned teacher', async () => {
   const onSuccess = await setup(true);

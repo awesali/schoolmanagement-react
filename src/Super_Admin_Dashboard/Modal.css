@@ -94,6 +94,11 @@
   border: none;
   width: 36px;
   height: 36px;
+  flex: 0 0 36px;
+  min-width: 36px;
+  padding: 0;
+  box-sizing: border-box;
+  aspect-ratio: 1;
   border-radius: 50%;
   font-size: 24px;
   cursor: pointer;

@@ -64,6 +64,19 @@ const TABS: Record<TransportTab, TabConfig> = {
 };
 
 const pretty = (value: string) => value.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase());
+const EMPTY_MESSAGES: Record<TransportTab, string> = {
+  dashboard: 'No vehicles added yet. Start by adding a vehicle and its details in the Vehicle tab, then add drivers and routes to set up school transport.',
+  vehicleTypes: 'No vehicle types added yet. Add a vehicle type and its seating capacity to get started.',
+  vehicles: 'No vehicles added yet. Click + Add Vehicle to enter the vehicle and registration details.',
+  drivers: 'No drivers added yet. Click + Add Driver to enter driver contact and licence details.',
+  conductors: 'No conductors added yet. Click + Add Conductor to enter conductor details.',
+  routes: 'No routes added yet. Click + Add Route to enter the route and stop details.',
+  assignments: 'No vehicle assignments added yet. Add a vehicle, driver and route first, then click + Add Vehicle Assignment.',
+  allocations: 'No students assigned to transport yet. Set up a vehicle assignment first, then click + Add Student Transport.',
+  payments: 'No transport payments recorded yet. Assign students to transport with fee details, then use + Add Fee Collection to record a payment.',
+  fuel: 'No fuel records added yet. Add a vehicle first, then click + Add Fuel Management to record fuel details.',
+  maintenance: 'No maintenance records added yet. Add a vehicle first, then click + Add Vehicle Maintenance to record service details.',
+};
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'
@@ -95,6 +108,7 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({ se
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingRow, setEditingRow] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadedTab, setLoadedTab] = useState<TransportTab | null>(null);
   const [message, setMessage] = useToastMessageState();
   const [lookups, setLookups] = useState<Record<string, LookupOption[]>>({});
   const [billFile, setBillFile] = useState<File | null>(null);
@@ -152,7 +166,7 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({ se
     const endpoint = tab === 'dashboard' ? 'dashboard' : config.endpoint;
     if (!endpoint) { setRows([]); return; }
     try {
-      setLoading(true); setMessage('');
+      setLoading(true); setLoadedTab(null); setMessage('');
       const response = await fetch(`${API_BASE_URL}/api/Transport/${endpoint}?schoolId=${selectedSchoolId}`, {
         cache: 'no-store', headers: headers()
       });
@@ -160,9 +174,10 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({ se
       if (!contentType.toLowerCase().includes('json'))
         throw new Error(`Transport API returned HTML instead of JSON: ${response.url}`);
       const result = await response.json();
-      if (!response.ok) throw new Error(apiError(result, 'Unable to load transport data.'));
+      if (!response.ok || result.success === false) throw new Error(apiError(result, 'Unable to load transport data.'));
       if (tab === 'dashboard') setDashboard(result.data ?? {});
       else setRows(result.data ?? []);
+      setLoadedTab(tab);
     } catch (error) { setMessage(error instanceof Error ? error.message : 'Unable to load data.'); }
     finally { setLoading(false); }
   };
@@ -305,15 +320,20 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({ se
 
     {message && <div style={{ padding: '10px 14px', marginBottom: '14px', borderRadius: '8px', background: '#edf2f7' }}>{message}</div>}
 
-    {loading ? <PageLoader label={`Loading ${config.label.toLowerCase()}...`} /> : tab === 'dashboard' ? <div className="stats-grid">
+    {loading ? <PageLoader label={`Loading ${config.label.toLowerCase()}...`} /> : tab === 'dashboard' ? <>
+      {loadedTab === tab && dashboard.totalVehicles === 0 && <div className="staff-list-loading">
+        <p>{EMPTY_MESSAGES.dashboard}</p>
+        <button type="button" className="btn btn-primary" onClick={() => { setTab('vehicles'); closeForm(); }}>Go to Vehicle</button>
+      </div>}
+      <div className="stats-grid">
       {[['Vehicles', dashboard.totalVehicles], ['Active Routes', dashboard.activeRoutes], ['Allocated Students', dashboard.allocatedStudents],
         ['Available Seats', dashboard.availableSeats], ['Pending Fees', `Rs. ${Number(dashboard.pendingFees || 0).toLocaleString()}`], ['Expiring Documents', dashboard.expiringDocuments]]
         .map(([label, value]) => <div className="stat-card" key={String(label)}><div className="stat-header"><span>{label}</span></div><div className="stat-value">{value ?? 0}</div></div>)}
-    </div> : <>
+    </div></> : <>
         {config.fields && <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
           <button className="btn btn-primary" onClick={() => showForm ? closeForm() : (setAllocationRows([emptyAllocation()]), setShowForm(true))}>{showForm ? 'Close' : `+ Add ${config.label.replace(/s$/, '')}`}</button>
         </div>}
-        {rows.length === 0 ? <div className="staff-list-loading">No records found.</div> :
+        {rows.length === 0 ? loadedTab === tab && <div className="staff-list-loading">{EMPTY_MESSAGES[tab]}</div> :
           <div className="staff-table-wrapper"><table className="staff-table"><thead><tr>{columns.map(column => <th key={column}>{pretty(column)}</th>)}</tr></thead>
             <tbody>{rows.map((row, index) => <tr key={row.id ?? index}>{columns.map((column, columnIndex) => <td key={column}>
               {config.fields && columnIndex === 0

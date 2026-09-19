@@ -4,6 +4,7 @@ import { importDateError, formatImportDate } from '../utils/importDate';
 import { useToast } from '../components/Toast/Toast';
 import { TOAST_MESSAGES } from '../constants/toastMessages';
 import Modal from './Modal';
+import RelationshipSelect from './RelationshipSelect';
 import './AddStaff.css';
 import { GENDER_OPTIONS } from '../utils/gender';
 
@@ -332,7 +333,7 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
           </div>
           <div className="form-group">
             <label>Relationship *</label>
-            <input type="text" name="parentRelationship" required value={formData.parentRelationship} onChange={handleChange} />
+            <RelationshipSelect value={formData.parentRelationship} onChange={handleChange} />
           </div>
           <div className="form-group full-width">
             <label>Parent Address *</label>

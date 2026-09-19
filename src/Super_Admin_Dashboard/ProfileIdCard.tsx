@@ -17,13 +17,14 @@ interface ProfileIdCardProps {
   status: boolean;
   fields: ProfileIdCardField[];
   onEdit?: () => void;
+  hideActions?: boolean;
 }
 
 const initialsFor = (name: string) =>
   name.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase() || '?';
 
 const ProfileIdCard: React.FC<ProfileIdCardProps> = ({
-  name, pictureUrl, type, identifier, subtitle, organization, status, fields, onEdit
+  name, pictureUrl, type, identifier, subtitle, organization, status, fields, onEdit, hideActions = false
 }) => (
   <div className="profile-card-shell">
     <article className="profile-id-card">
@@ -63,7 +64,7 @@ const ProfileIdCard: React.FC<ProfileIdCardProps> = ({
       </footer>
     </article>
 
-    <div className="profile-card-actions">
+    {!hideActions && <div className="profile-card-actions">
       {onEdit && (
         <button type="button" className="profile-card-edit" onClick={onEdit}>
           Edit Profile
@@ -72,7 +73,7 @@ const ProfileIdCard: React.FC<ProfileIdCardProps> = ({
       <button type="button" className="profile-card-print" onClick={() => window.print()}>
         Print ID Card
       </button>
-    </div>
+    </div>}
   </div>
 );
 

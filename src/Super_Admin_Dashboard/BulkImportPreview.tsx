@@ -26,7 +26,10 @@ const BulkImportPreview: React.FC<Props> = ({ title, columns, rows, importing, o
   const displayRows = [...rows.filter(row => row.errors.length > 0), ...rows.filter(row => row.errors.length === 0)];
 
   return (
-    <Modal isOpen={rows.length > 0} onClose={onClose} title={title} showSubmit={false} showCancel={false} size="large">
+    <Modal isOpen={rows.length > 0} onClose={() => { if (!importing) onClose(); }} title={title}
+      showCancel={false} size="large" onSubmit={onConfirm}
+      submitLabel={`Import ${validCount} valid row${validCount === 1 ? '' : 's'}`}
+      submitDisabled={validCount === 0} submitLoading={importing} loadingText="Importing...">
       <div style={{ padding: '20px 24px 24px' }}>
         <div style={{ display: 'flex', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
           <span className="status-badge active">{validCount} valid</span>
@@ -50,12 +53,6 @@ const BulkImportPreview: React.FC<Props> = ({ title, columns, rows, importing, o
               ))}
             </tbody>
           </table>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 18 }}>
-          <button className="btn" disabled={importing} onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" disabled={importing || validCount === 0} onClick={onConfirm}>
-            {importing ? 'Importing...' : `Import ${validCount} valid row${validCount === 1 ? '' : 's'}`}
-          </button>
         </div>
       </div>
     </Modal>

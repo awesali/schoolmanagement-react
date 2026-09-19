@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { API_BASE_URL } from '../config';
 import { useToast, useToastMessageState } from '../components/Toast/Toast';
 import { TOAST_MESSAGES } from '../constants/toastMessages';
-import { LoadingButton } from '../components/Loader/Loader';
+import Modal from './Modal';
 import './CreateSchool.css';
 
 interface CreateSchoolProps {
@@ -316,13 +316,11 @@ const CreateSchool: React.FC<CreateSchoolProps> = ({ isOpen, onClose, school, on
   if (!isOpen) return null;
 
   return (
-    <div className="create-school-overlay" onClick={onClose}>
-      <div className="create-school-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="create-school-header">
-          <h2>{isEditing ? 'Edit School' : 'Create New School'}</h2>
-          <button className="close-btn" onClick={onClose}>&times;</button>
-        </div>
-        <form onSubmit={handleSubmit}>
+    <Modal isOpen={isOpen} onClose={() => { if (!loading) onClose(); }}
+      title={isEditing ? 'Edit School' : 'Create New School'}
+      formId="create-school-form" submitLabel={isEditing ? 'Save Changes' : 'Create School'}
+      showCancel={false} submitLoading={loading} loadingText={isEditing ? 'Saving...' : 'Creating...'}>
+        <form id="create-school-form" onSubmit={handleSubmit} style={{ padding: 24 }}>
           <div className="form-group">
             <label>School Name *</label>
             <input
@@ -499,17 +497,8 @@ const CreateSchool: React.FC<CreateSchoolProps> = ({ isOpen, onClose, school, on
             </div>
           </div>
           {error && <div className="error">{error}</div>}
-          <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>
-              Cancel
-            </button>
-            <LoadingButton type="submit" className="btn btn-primary" loading={loading} loadingText={isEditing ? 'Saving...' : 'Creating...'}>
-              {isEditing ? 'Save Changes' : 'Create School'}
-            </LoadingButton>
-          </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 };
 

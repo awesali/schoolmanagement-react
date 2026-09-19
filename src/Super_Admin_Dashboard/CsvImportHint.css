@@ -1,0 +1,18 @@
+.csv-import-hint { position: relative; width: fit-content; margin: 0 0 12px; }
+.csv-import-hint-icon {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; padding: 0;
+  border: 1px solid #93b4d8; border-radius: 50%; background: #f0f6fc;
+  color: #2563a0; font-size: 15px; font-weight: 700; cursor: help;
+}
+.csv-import-hint-icon:focus-visible { outline: 2px solid #2563eb; outline-offset: 3px; }
+.csv-import-hint-tooltip {
+  position: absolute; top: 100%; left: 0; z-index: 50;
+  width: min(360px, calc(100vw - 80px)); box-sizing: border-box;
+  padding: 12px 14px; border: 1px solid #dbe7f4; border-radius: 8px;
+  background: #fff; box-shadow: 0 6px 20px rgba(15, 23, 42, 0.14);
+  color: #475569; font-size: 13px; line-height: 1.6;
+}
+.csv-import-hint-title { display: block; margin-bottom: 4px; color: #234567; }
+.csv-import-hint-tooltip p { margin: 0; }
+.csv-import-hint-example { white-space: nowrap; }

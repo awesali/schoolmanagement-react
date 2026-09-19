@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
+import { sortStudentsByClass } from '../utils/studentOrder';
 import { PageLoader } from '../components/Loader/Loader';
 import AddStudent from './AddStudent';
 import EditStudent from './EditStudent';
 import Modal from './Modal';
 import Pagination from './Pagination';
 import { downloadCsv, parseCsv } from '../utils/csv';
-import { DATE_FORMAT_HELP, formatImportDate, toApiDate, importDateError } from '../utils/importDate';
+import { formatImportDate, toApiDate, importDateError } from '../utils/importDate';
 import { genderLabel, parseGenderCode } from '../utils/gender';
 import BulkImportPreview, { ImportPreviewRow } from './BulkImportPreview';
 import ProfileIdCard from './ProfileIdCard';
+import CsvImportHint from './CsvImportHint';
+import ImportResults, { ImportFailure, ImportResult } from './ImportResults';
 import ProfileListAvatar from './ProfileListAvatar';
 import { profilePictureUrl } from './ProfilePictureInput';
 import { useToast } from '../components/Toast/Toast';
@@ -32,6 +35,8 @@ interface Student {
   email: string;
   phoneNumber: string;
   parentId: number;
+  parentName?: string;
+  parentRelationship?: string;
   schoolId: number;
   className: string;
   sectionName: string;
@@ -43,12 +48,15 @@ interface Student {
 
 interface StudentListProps {
   selectedSchoolId: number | null;
+  onViewParent?: (parentId: number) => void;
 }
 
-const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
+const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId, onViewParent }) => {
   const toast = useToast();
   const { can } = usePermissions();
   const [students, setStudents] = useState<Student[]>([]);
+  const [allStudents, setAllStudents] = useState<Student[]>([]);
+  const studentRequest = React.useRef(0);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -62,6 +70,7 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
   const [photoPreview, setPhotoPreview] = useState<Student | null>(null);
   const [transferring, setTransferring] = useState(false);
   const [importPreview, setImportPreview] = useState<ImportPreviewRow[]>([]);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
 
   useEffect(() => {
     if (selectedSchoolId) {
@@ -70,37 +79,51 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
     }
   }, [selectedSchoolId]);
 
+  useEffect(() => () => { studentRequest.current++; }, [selectedSchoolId]);
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    fetchStudents(page, pageSize);
+    setStudents(allStudents.slice((page - 1) * pageSize, page * pageSize));
   };
 
   const handlePageSizeChange = (size: number) => {
     setPageSize(size);
     setCurrentPage(1);
-    fetchStudents(1, size);
+    setTotalPages(Math.max(1, Math.ceil(allStudents.length / size)));
+    setStudents(allStudents.slice(0, size));
   };
 
   const fetchStudents = async (page: number = 1, size: number = pageSize) => {
+    const request = ++studentRequest.current;
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/Student/students-by-school?schoolId=${selectedSchoolId}&page=${page}&pageSize=${size}`, {
+      const records: Student[] = [];
+      let apiPage = 1;
+      let apiPages = 1;
+      do {
+      const response = await fetch(`${API_BASE_URL}/api/Student/students-by-school?schoolId=${selectedSchoolId}&page=${apiPage}&pageSize=500`, {
         headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
       });
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data) {
-          setStudents(result.data.map((s: Student) => ({ ...s, documents: s.documents ?? [] })));
-          setCurrentPage(result.currentPage);
-          setTotalPages(result.totalPages);
-          setTotalRecords(result.totalRecords);
-        }
-      }
+      const result = await response.json();
+      if (request !== studentRequest.current) return;
+      if (!response.ok || !result.success || !Array.isArray(result.data)) throw new Error('Unable to load students.');
+      records.push(...result.data.map((s: Student) => ({ ...s, documents: s.documents ?? [] })));
+      apiPages = result.totalPages || 1;
+      apiPage++;
+      } while (apiPage <= apiPages);
+      const ordered = sortStudentsByClass(records);
+      const pages = Math.max(1, Math.ceil(ordered.length / size));
+      const nextPage = Math.min(page, pages);
+      setAllStudents(ordered);
+      setStudents(ordered.slice((nextPage - 1) * size, nextPage * size));
+      setCurrentPage(nextPage);
+      setTotalPages(pages);
+      setTotalRecords(ordered.length);
     } catch (err) {
-      console.error('Failed to fetch students');
+      if (request === studentRequest.current) toast.error('Unable to load students. Please try again.');
     } finally {
-      setLoading(false);
+      if (request === studentRequest.current) setLoading(false);
     }
   };
 
@@ -163,11 +186,15 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
       ]);
       const infoResult = await infoResponse.json();
       const existingResult = await existingResponse.json();
+      if (!infoResponse.ok || !infoResult.success || !existingResponse.ok || !existingResult.success) throw new Error('Unable to validate existing student records. Please try again.');
       const info = infoResult.data;
       const activeSessions = (info?.sessions || []).filter((s: any) => s.isActive);
       if (activeSessions.length !== 1) throw new Error('Exactly one active academic session is required.');
       const existingEmails = new Set((existingResult.data || []).map((s: any) => String(s.email).trim().toLowerCase()));
       const fileEmails = new Set<string>();
+      const fileRolls = new Set<string>();
+      const filePhones = new Set<string>();
+      const existingPhones = new Set((existingResult.data || []).map((s: any) => String(s.phoneNumber || '').trim()));
       const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       const preview = rows.map((row, index): ImportPreviewRow => {
         const errors: string[] = [], warnings: string[] = [];
@@ -180,8 +207,8 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
         if (studentEmail && !emailPattern.test(studentEmail)) errors.push('Student email is invalid.');
         if (parentEmail && !emailPattern.test(parentEmail)) errors.push('Parent email is invalid.');
         if (studentEmail === parentEmail && studentEmail) errors.push('Student and parent emails must differ.');
-        if (row.PhoneNumber && !/^\d{10}$/.test(row.PhoneNumber)) errors.push('Student phone must contain 10 digits.');
-        if (row.ParentPhone && !/^\d{10}$/.test(row.ParentPhone)) errors.push('Parent phone must contain 10 digits.');
+        if (row.PhoneNumber && !/^\d{10}$/.test(row.PhoneNumber.trim())) errors.push('Student phone must contain 10 digits.');
+        if (row.ParentPhone && !/^\d{10}$/.test(row.ParentPhone.trim())) errors.push('Parent phone must contain 10 digits.');
         const dobError = importDateError('DOB', row.DOB);
         if (dobError) errors.push(dobError);
         if (studentEmail && existingEmails.has(studentEmail)) errors.push('Student email already exists.');
@@ -191,6 +218,21 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
         const sectionItem = (info.sections || []).find((s: any) => s.classId === classItem?.id && s.name.trim().toLowerCase() === row.Section?.trim().toLowerCase());
         if (!classItem) errors.push('Class was not found.');
         else if (!sectionItem) errors.push('Section was not found in the selected class.');
+        const roll = row.RollNumber?.trim();
+        if (classItem && roll) {
+          const rollKey = String(classItem.id) + ':' + roll;
+          const assigned = (existingResult.data || []).find((s: any) =>
+            String(s.className || '').trim().toLowerCase() === classItem.name.trim().toLowerCase() && String(s.rollNumber || '').trim() === roll);
+          if (assigned) errors.push('Roll number already assigned to ' + assigned.studentName + ' in this class.');
+          if (fileRolls.has(rollKey)) errors.push('Duplicate roll number for this class in the file.');
+          fileRolls.add(rollKey);
+        }
+        const phone = row.PhoneNumber?.trim();
+        if (phone && /^\d{10}$/.test(phone)) {
+          if (existingPhones.has(phone)) warnings.push('Phone number is already used by another student.');
+          else if (filePhones.has(phone)) warnings.push('Phone number is repeated in this file.');
+          filePhones.add(phone);
+        }
         if (parentEmail) warnings.push('If this parent login already exists in the school, it will be reused.');
         const values: Record<string, string> = {
           StudentName: row.StudentName, RollNumber: row.RollNumber, DOB: toApiDate(row.DOB), GenderCode: genderCode, Email: row.Email,
@@ -209,7 +251,8 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
   const confirmStudentImport = async () => {
     const validRows = importPreview.filter(row => row.errors.length === 0);
     setTransferring(true);
-    const errors: string[] = [];
+    const errors: ImportFailure[] = [];
+    setImportResult(null);
     let imported = 0;
     try {
       const concurrency = 5;
@@ -229,12 +272,13 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
         imported += results.filter(result => result.ok).length;
         errors.push(...results
           .filter(result => !result.ok)
-          .map(result => `Row ${result.previewRow.rowNumber}: ${result.message || 'Import failed'}`));
+          .map(result => ({ rowNumber: result.previewRow.rowNumber, name: result.previewRow.values.StudentName || '', email: result.previewRow.values.Email || '', message: result.message || 'Import failed. Please try again.' })));
       }
       await fetchStudents(1, pageSize);
       setImportPreview([]);
-      const importMessage = `Imported ${imported} of ${validRows.length} valid students.${errors.length ? `\n\n${errors.join('\n')}` : ''}`;
+      const importMessage = `${imported} students imported${errors.length ? `, ${errors.length} failed` : ' successfully'}.`;
       if (errors.length) {
+        setImportResult({ imported, errors });
         if (imported > 0) toast.warning(importMessage, 10000);
         else toast.error(importMessage, 10000);
       } else {
@@ -260,7 +304,7 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
           {can('management.students','create')&&<button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>+ Add Student</button>}
         </div>
       </div>
-      <p style={{ color: '#64748b', fontSize: 13 }}>CSV dates: {DATE_FORMAT_HELP} Profile images are optional.</p>
+      <CsvImportHint />
       {students.length === 0 ? (
         <div className="staff-list-loading" style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
           No students available. Please add a new student.
@@ -359,16 +403,16 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
       >
         {selectedStudent && (
           <ProfileIdCard
+            onEdit={() => {
+              setShowIdCard(false);
+              setIsEditModalOpen(true);
+            }}
             pictureUrl={selectedStudent.profilePictureUrl}
             name={selectedStudent.studentName}
             type="Student"
             identifier={`Student ID: ${selectedStudent.id}`}
             subtitle={`${selectedStudent.className || 'Class not assigned'} • Section ${selectedStudent.sectionName || '—'}`}
             status={selectedStudent.isActive}
-            onEdit={() => {
-              setShowIdCard(false);
-              setIsEditModalOpen(true);
-            }}
             fields={[
               { label: 'Roll Number', value: selectedStudent.rollNumber },
               { label: 'Gender', value: genderLabel(selectedStudent.genderCode) },
@@ -376,6 +420,10 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
               { label: 'Academic Session', value: selectedStudent.academicSession?.split('T')[0] },
               { label: 'Email', value: selectedStudent.email },
               { label: 'Phone', value: selectedStudent.phoneNumber },
+              { label: 'Parent Name', value: selectedStudent.parentName && onViewParent && can('management.parents', 'read') ? (
+                <button type="button" className="parent-profile-link" onClick={() => onViewParent(selectedStudent.parentId)}>{selectedStudent.parentName}</button>
+              ) : selectedStudent.parentName },
+              { label: 'Relationship', value: selectedStudent.parentRelationship },
             ]}
           />
         )}
@@ -392,6 +440,8 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId }) => {
           <img src={profilePictureUrl(photoPreview.profilePictureUrl)} alt={`${photoPreview.studentName} profile`} />
         </div>}
       </Modal>
+
+      <ImportResults type="Student" result={importResult} onClose={() => setImportResult(null)} />
 
       <BulkImportPreview
         title="Preview Student Import"

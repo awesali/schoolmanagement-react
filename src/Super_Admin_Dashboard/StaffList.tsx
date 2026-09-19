@@ -6,10 +6,12 @@ import EditStaff from './EditStaff';
 import Modal from './Modal';
 import Pagination from './Pagination';
 import { downloadCsv, parseCsv } from '../utils/csv';
-import { DATE_FORMAT_HELP, formatImportDate, toApiDate, importDatesError, isValidImportDate } from '../utils/importDate';
+import { formatImportDate, toApiDate, importDatesError, isValidImportDate } from '../utils/importDate';
 import { genderLabel, parseGenderCode } from '../utils/gender';
 import BulkImportPreview, { ImportPreviewRow } from './BulkImportPreview';
 import ProfileIdCard from './ProfileIdCard';
+import CsvImportHint from './CsvImportHint';
+import ImportResults, { ImportFailure, ImportResult } from './ImportResults';
 import ProfileListAvatar from './ProfileListAvatar';
 import { profilePictureUrl } from './ProfilePictureInput';
 import { useToast } from '../components/Toast/Toast';
@@ -62,6 +64,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
   const [photoPreview, setPhotoPreview] = useState<Staff | null>(null);
   const [transferring, setTransferring] = useState(false);
   const [importPreview, setImportPreview] = useState<ImportPreviewRow[]>([]);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
 
   const readApiResponse = async (response: Response, operation: string) => {
     const responseText = await response.text();
@@ -179,14 +182,19 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
     try {
       const rows = parseCsv(await file.text());
       if (!rows.length) throw new Error('The CSV has no data rows.');
-      const [roleResponse, existingResponse] = await Promise.all([
+      const [roleResponse, existingResponse, staffResponse] = await Promise.all([
         fetch(`${API_BASE_URL}/api/Admin/Get-roles`, { headers: authHeaders() }),
-        fetch(`${API_BASE_URL}/api/Admin/staff-emails?schoolId=${selectedSchoolId}`, { headers: authHeaders() })
+        fetch(`${API_BASE_URL}/api/Admin/staff-emails?schoolId=${selectedSchoolId}`, { headers: authHeaders() }),
+        fetch(`${API_BASE_URL}/api/Admin/Staff-by-school?schoolId=${selectedSchoolId}&page=1&pageSize=100000`, { headers: authHeaders() })
       ]);
       const [roleResult, existingResult] = await Promise.all([
         readApiResponse(roleResponse, 'Loading roles'),
         readApiResponse(existingResponse, 'Loading existing staff')
       ]);
+      const staffResult = await readApiResponse(staffResponse, 'Loading staff phone numbers');
+      if (roleResult.success === false || existingResult.success === false || staffResult.success === false) throw new Error('Unable to validate existing staff records. Please try again.');
+      const existingPhones = new Set((staffResult.data || []).map((s: any) => String(s.phone || '').trim()));
+      const filePhones = new Set<string>();
       const roles = roleResult.data || [];
       const existingEmails = new Set((existingResult.data || []).map((email: string) => String(email).trim().toLowerCase()));
       const fileEmails = new Set<string>();
@@ -200,7 +208,13 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
         const genderCode = parseGenderCode(row.Gender);
         if (row.Gender && !genderCode) errors.push('Gender must be Male, Female, Other, or Prefer not to say.');
         if (email && !emailPattern.test(email)) errors.push('Email is invalid.');
-        if (row.Phone && !/^\d{10}$/.test(row.Phone)) errors.push('Phone must contain 10 digits.');
+        if (row.Phone && !/^\d{10}$/.test(row.Phone.trim())) errors.push('Phone must contain 10 digits.');
+        const phone = row.Phone?.trim();
+        if (phone && /^\d{10}$/.test(phone)) {
+          if (existingPhones.has(phone)) warnings.push('Phone number is already used by another staff member.');
+          else if (filePhones.has(phone)) warnings.push('Phone number is repeated in this file.');
+          filePhones.add(phone);
+        }
         const dateError = importDatesError({ DOB: row.DOB, DOJ: row.DOJ });
         if (dateError) errors.push(dateError);
         if (isValidImportDate(row.DOB || '') && isValidImportDate(row.DOJ || '') && toApiDate(row.DOJ) < toApiDate(row.DOB)) errors.push('DOJ cannot be before DOB.');
@@ -223,7 +237,8 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
   const confirmStaffImport = async () => {
     const validRows = importPreview.filter(row => row.errors.length === 0);
     setTransferring(true);
-    const errors: string[] = [];
+    const errors: ImportFailure[] = [];
+    setImportResult(null);
     let imported = 0;
     try {
       // Staff creation opens a transaction and sends credentials, so keep a
@@ -248,12 +263,13 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
         imported += results.filter(result => result.ok).length;
         errors.push(...results
           .filter(result => !result.ok)
-          .map(result => `Row ${result.previewRow.rowNumber}: ${result.message || 'Import failed'}`));
+          .map(result => ({ rowNumber: result.previewRow.rowNumber, name: result.previewRow.values.Name || '', email: result.previewRow.values.Email || '', message: result.message || 'Import failed. Please try again.' })));
       }
       await fetchStaff(1, pageSize);
       setImportPreview([]);
-      const importMessage = `Imported ${imported} of ${validRows.length} valid staff members.${errors.length ? `\n\n${errors.join('\n')}` : ''}`;
+      const importMessage = `${imported} staff members imported${errors.length ? `, ${errors.length} failed` : ' successfully'}.`;
       if (errors.length) {
+        setImportResult({ imported, errors });
         if (imported > 0) toast.warning(importMessage, 10000);
         else toast.error(importMessage, 10000);
       } else {
@@ -284,7 +300,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
           {can('management.staff','create')&&<button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>+ Add Staff</button>}
         </div>
       </div>
-      <p style={{ color: '#64748b', fontSize: 13 }}>CSV dates: {DATE_FORMAT_HELP} Profile images are optional.</p>
+      <CsvImportHint />
       {staff.length === 0 ? (
         <div className="staff-list-loading" style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
           No staff members available. Please add a new staff member.
@@ -387,6 +403,10 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
       >
         {selectedStaff && (
           <ProfileIdCard
+            onEdit={() => {
+              setShowIdCard(false);
+              setIsEditModalOpen(true);
+            }}
             pictureUrl={selectedStaff.profilePictureUrl}
             name={selectedStaff.name}
             type="Employee"
@@ -394,10 +414,6 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
             subtitle={selectedStaff.roleName}
             organization={selectedStaff.schoolName}
             status={selectedStaff.isActive}
-            onEdit={() => {
-              setShowIdCard(false);
-              setIsEditModalOpen(true);
-            }}
             fields={[
               { label: 'Role', value: selectedStaff.roleName },
               { label: 'Employee No.', value: selectedStaff.employeeNumber },
@@ -423,6 +439,8 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
           <img src={profilePictureUrl(photoPreview.profilePictureUrl)} alt={`${photoPreview.name} profile`} />
         </div>}
       </Modal>
+
+      <ImportResults type="Staff" result={importResult} onClose={() => setImportResult(null)} />
 
       <BulkImportPreview
         title="Preview Staff Import"

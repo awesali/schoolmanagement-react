@@ -3,6 +3,10 @@ import { API_BASE_URL } from '../config';
 import { PageLoader } from '../components/Loader/Loader';
 import './StaffList.css';
 import './ManagementTabs.css';
+import './FeeReceipt.css';
+import Modal from './Modal';
+import { useToast } from '../components/Toast/Toast';
+import { usePermissions } from '../security/Permissions';
 
 type FinanceView = 'feeTypes' | 'assign' | 'pending' | 'history';
 
@@ -71,6 +75,33 @@ const selectStyle: React.CSSProperties = {
 };
 
 const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selectedSchoolId }) => {
+  const toast = useToast();
+  const { can } = usePermissions();
+  const [editFee, setEditFee] = useState<FeeRecord | null>(null);
+  const [editAmount, setEditAmount] = useState('');
+  const [savingFee, setSavingFee] = useState(false);
+  const updateAssignedFee = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!editFee || savingFee || !can('finance.fees', 'update')) return;
+    const value = Number(editAmount);
+    if (!editAmount.trim() || !Number.isFinite(value) || value <= 0 || value < editFee.paid) {
+      toast.error('Enter a positive fee amount that is not less than the amount already paid.');
+      return;
+    }
+    setSavingFee(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/Student/UpdateAssignedFee`, {
+        method: 'PUT', headers: { ...headers(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentFeeId: editFee.studentFeeId, schoolId: selectedSchoolId, amount: value }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.message || 'Unable to update the fee.');
+      setEditFee(null);
+      toast.success('Assigned fee updated successfully.');
+      await loadPendingFees();
+    } catch (error) { toast.error(error instanceof Error ? error.message : 'Unable to update the fee.'); }
+    finally { setSavingFee(false); }
+  };
   const [pendingLoads, setPendingLoads] = useState(0);
   const [view, setView] = useState<FinanceView>('feeTypes');
 
@@ -155,7 +186,7 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
   };
 
   const handleAddFeeType = async () => {
-    if (!newFeeTypeName.trim()) { setFeeTypeMsg({ text: 'Fee type name is required.', ok: false }); return; }
+    if (!newFeeTypeName.trim()) { toast.error('Fee type name is required.'); return; }
     try {
       setSavingFeeType(true);
       setFeeTypeMsg(null);
@@ -171,9 +202,9 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
         setShowAddFeeType(false);
         fetchFeeTypes();
       } else {
-        setFeeTypeMsg({ text: result.message || 'Failed to create fee type.', ok: false });
+        toast.error(result.message || 'Failed to create fee type.');
       }
-    } catch { setFeeTypeMsg({ text: 'Error creating fee type.', ok: false }); }
+    } catch { toast.error('Error creating fee type.'); }
     finally { setSavingFeeType(false); }
   };
 
@@ -263,7 +294,7 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
       setPendingLoading(true);
       setPendingFees([]);
       const res = await fetch(
-        `${API_BASE_URL}/api/Student/GetPendingFees?schoolId=${selectedSchoolId}&classId=${selectedClass}&sectionId=${selectedSection}&sessionId=${selectedSession}`,
+        `${API_BASE_URL}/api/Student/GetPendingFees?schoolId=${selectedSchoolId}&classId=${selectedClass}&sectionId=${selectedSection}&sessionId=${selectedSession}&includePaid=true`,
         { headers: headers() }
       );
       if (res.ok) {
@@ -274,7 +305,7 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
   };
 
   const handlePayFee = async () => {
-    if (!payModal || !amountPaid) return;
+    if (!payModal || !amountPaid || paying) return;
     if ((paymentMode === 'Online' || paymentMode === 'Cheque') && !acknowledgementId.trim()) return;
     try {
       setPaying(true);
@@ -331,7 +362,7 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
   const TAB_LABELS: Record<FinanceView, string> = {
     feeTypes: 'Fee Types',
     assign: 'Assign Fees',
-    pending: 'Pending Fees',
+    pending: 'Assigned Fees',
     history: 'Payment History',
   };
 
@@ -426,34 +457,18 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
           )}
 
           {/* Add Fee Type Modal */}
-          {showAddFeeType && (
-            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-              <div style={{ background: 'white', borderRadius: '16px', padding: '32px', width: '100%', maxWidth: '420px', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
-                <h3 style={{ marginBottom: '20px', color: '#1e2a3a' }}>Add Fee Type</h3>
-                <div style={{ marginBottom: '14px' }}>
-                  <label style={{ fontSize: '13px', fontWeight: 600, color: '#4a5568', display: 'block', marginBottom: '6px' }}>Name *</label>
-                  <input value={newFeeTypeName} onChange={e => setNewFeeTypeName(e.target.value)}
-                    placeholder="e.g. Tuition Fee"
-                    style={{ ...selectStyle, width: '100%', boxSizing: 'border-box' }} />
-                </div>
-                {feeTypeMsg && !feeTypeMsg.ok && (
-                  <div style={{ marginBottom: '12px', padding: '8px 14px', borderRadius: '8px', fontSize: '13px',
-                    background: '#fed7d7', color: '#742a2a', fontWeight: 600 }}>
-                    ⚠️ {feeTypeMsg.text}
-                  </div>
-                )}
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleAddFeeType} disabled={savingFeeType}>
-                    {savingFeeType ? 'Saving...' : 'Save'}
-                  </button>
-                  <button className="btn" style={{ flex: 1, border: '1px solid #e2e8f0' }}
-                    onClick={() => { setShowAddFeeType(false); setNewFeeTypeName(''); setFeeTypeMsg(null); }}>
-                    Cancel
-                  </button>
-                </div>
+          <Modal isOpen={showAddFeeType} title="Add Fee Type" showCancel={false}
+            formId="add-fee-type-form" submitLabel="Save" submitLoading={savingFeeType} loadingText="Saving fee type..."
+            onClose={() => { if (!savingFeeType) { setShowAddFeeType(false); setNewFeeTypeName(''); setFeeTypeMsg(null); } }}>
+            <form id="add-fee-type-form" style={{ padding: 24 }} onSubmit={event => { event.preventDefault(); if (!savingFeeType) handleAddFeeType(); }}>
+              <div className="form-group">
+                <label htmlFor="fee-type-name">Name *</label>
+                <input id="fee-type-name" required disabled={savingFeeType} value={newFeeTypeName}
+                  onChange={event => setNewFeeTypeName(event.target.value)} placeholder="e.g. Tuition Fee"
+                  style={{ ...selectStyle, width: '100%', boxSizing: 'border-box' }} />
               </div>
-            </div>
-          )}
+            </form>
+          </Modal>
         </>
       )}
 
@@ -535,7 +550,7 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
           {filterBar}
           <div style={{ marginBottom: '16px' }}>
             <button className="btn btn-primary" onClick={loadPendingFees} disabled={!selectedSession || !selectedClass || !selectedSection || pendingLoading}>
-              {pendingLoading ? 'Loading...' : 'Load Pending Fees'}
+              {pendingLoading ? 'Loading...' : 'Load Assigned Fees'}
             </button>
           </div>
 
@@ -562,6 +577,9 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
                         <details>
                           <summary className="btn btn-primary" style={{padding:'6px 12px',fontSize:'13px',cursor:'pointer'}}>Manage ({student.items.length})</summary>
                           <div style={{display:'grid',gap:'8px',marginTop:'8px',minWidth:'170px'}}>
+                            {can('finance.fees', 'update') && student.items.map(item => <button key={`edit-${item.studentFeeId}`} className="btn" onClick={() => { setEditFee(item); setEditAmount(String(item.amount)); }}>
+                              Edit {item.feeType || feeTypes.find(ft => ft.id === item.feeTypeId)?.name || 'Fee'}
+                            </button>)}
                             {student.items.filter(item=>item.balance>0).map(item=><button key={item.studentFeeId} className="btn" style={{padding:'6px 8px',fontSize:'12px',border:'1px solid #cbd5e1'}} onClick={()=>{setPayModal(item);setAmountPaid(item.balance.toString())}}>Collect {feeTypes.find(ft=>ft.id===item.feeTypeId)?.name||`Type #${item.feeTypeId}`}</button>)}
                           </div>
                         </details>
@@ -572,7 +590,7 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
               </table>
             </div>
           ) : (
-            !pendingLoading && <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>Select class & section, then click "Load Pending Fees".</p>
+            !pendingLoading && <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>Select class & section, then click "Load Assigned Fees".</p>
           )}
         </>
       )}
@@ -682,47 +700,51 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
       )}
 
       {/* ── PAY FEE MODAL ── */}
-      {payModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'white', borderRadius: '16px', padding: '32px', width: '100%', maxWidth: '420px', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
-            <h3 style={{ marginBottom: '20px', color: '#1e2a3a' }}>Collect Fee</h3>
+      <Modal isOpen={!!editFee} onClose={() => { if (!savingFee) setEditFee(null); }} title="Edit Assigned Fee"
+        formId="edit-assigned-fee" submitLabel="Update Fee" showCancel={false} submitLoading={savingFee} loadingText="Updating fee...">
+        {editFee && <form id="edit-assigned-fee" onSubmit={updateAssignedFee} style={{ padding: 24 }}>
+          <p><strong>{editFee.studentName}</strong> — {editFee.feeType || feeTypes.find(ft => ft.id === editFee.feeTypeId)?.name}</p>
+          <p>Already paid: ₹{editFee.paid.toLocaleString()}</p>
+          <div className="form-group"><label htmlFor="assigned-fee-amount">Fee amount *</label>
+            <input id="assigned-fee-amount" type="number" required min={Math.max(0.01, editFee.paid)} step="0.01"
+              value={editAmount} disabled={savingFee} onChange={event => setEditAmount(event.target.value)} /></div>
+          <p>Revised balance: ₹{Math.max(0, Number(editAmount || 0) - editFee.paid).toLocaleString()}</p>
+        </form>}
+      </Modal>
+      <Modal isOpen={!!payModal} title={`Collect ${payModal?.feeType || feeTypes.find(ft => ft.id === payModal?.feeTypeId)?.name || 'Fee'}`}
+        onClose={() => { if (!paying) setPayModal(null); }} showCancel={false}
+        formId="collect-fee-form" submitLabel="Confirm Payment" submitLoading={paying} loadingText="Processing payment..."
+        submitDisabled={(paymentMode === 'Online' || paymentMode === 'Cheque') && !acknowledgementId.trim()}>
+        {payModal && <form id="collect-fee-form" style={{ padding: 24 }} onSubmit={event => { event.preventDefault(); handlePayFee(); }}>
             <div style={{ marginBottom: '12px', color: '#4a5568', fontSize: '14px' }}>
               <strong>{payModal.studentName}</strong> — {feeTypes.find(ft => ft.id === payModal.feeTypeId)?.name || `Type #${payModal.feeTypeId}`} (₹{payModal.amount?.toLocaleString()} | Balance: ₹{payModal.balance?.toLocaleString()})
             </div>
             <div style={{ marginBottom: '12px' }}>
               <label style={{ fontSize: '13px', fontWeight: 600, color: '#4a5568', display: 'block', marginBottom: '6px' }}>Amount Paid *</label>
-              <input type="number" value={amountPaid} onChange={e => setAmountPaid(e.target.value)}
+              <input type="number" required min="0.01" max={payModal.balance} step="0.01" disabled={paying} value={amountPaid} onChange={e => setAmountPaid(e.target.value)}
                 style={{ ...selectStyle, width: '100%', boxSizing: 'border-box' }} />
             </div>
             <div style={{ marginBottom: '20px' }}>
               <label style={{ fontSize: '13px', fontWeight: 600, color: '#4a5568', display: 'block', marginBottom: '6px' }}>Payment Mode *</label>
-              <select value={paymentMode} onChange={e => setPaymentMode(e.target.value)} style={{ ...selectStyle, width: '100%' }}>
+              <select disabled={paying} value={paymentMode} onChange={e => setPaymentMode(e.target.value)} style={{ ...selectStyle, width: '100%' }}>
                 {PAYMENT_MODES.map(m => <option key={m}>{m}</option>)}
               </select>
             </div>
             {(paymentMode === 'Online' || paymentMode === 'Cheque') && (
               <div style={{ marginBottom: '20px' }}>
                 <label style={{ fontSize: '13px', fontWeight: 600, color: '#4a5568', display: 'block', marginBottom: '6px' }}>Acknowledgement ID *</label>
-                <input value={acknowledgementId} onChange={e => setAcknowledgementId(e.target.value)}
+                <input required disabled={paying} value={acknowledgementId} onChange={e => setAcknowledgementId(e.target.value)}
                   placeholder={paymentMode === 'Cheque' ? 'Cheque number' : 'Transaction / acknowledgement ID'}
                   style={{ ...selectStyle, width: '100%', boxSizing: 'border-box' }} />
               </div>
             )}
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button className="btn btn-primary" style={{ flex: 1 }} onClick={handlePayFee}
-                disabled={paying || ((paymentMode === 'Online' || paymentMode === 'Cheque') && !acknowledgementId.trim())}>
-                {paying ? 'Processing...' : 'Confirm Payment'}
-              </button>
-              <button className="btn" style={{ flex: 1, border: '1px solid #e2e8f0' }} onClick={() => setPayModal(null)}>Cancel</button>
-            </div>
-          </div>
-        </div>
-      )}
+        </form>}
+      </Modal>
 
       {/* ── RECEIPT MODAL ── */}
       {receipt && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'white', borderRadius: '16px', padding: '32px', width: '100%', maxWidth: '480px', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
+        <div className="school-fee-receipt-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="school-fee-receipt" style={{ background: 'white', borderRadius: '16px', padding: '32px', width: '100%', maxWidth: '480px', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
             <h3 style={{ marginBottom: '20px', color: '#1e2a3a' }}>🧾 Payment Receipt</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '14px', color: '#4a5568', marginBottom: '24px' }}>
               {Object.entries(receipt).map(([k, v]) => (
@@ -732,7 +754,10 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
                 </div>
               ))}
             </div>
-            <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => setReceipt(null)}>Close</button>
+            <div className="school-fee-receipt-actions" style={{ display: 'flex', gap: 12 }}>
+              <button type="button" className="btn btn-primary" style={{ flex: 1 }} onClick={() => window.print()}>Print Receipt</button>
+              <button type="button" className="btn" style={{ flex: 1 }} onClick={() => setReceipt(null)}>Close</button>
+            </div>
           </div>
         </div>
       )}

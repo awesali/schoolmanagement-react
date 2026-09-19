@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import Modal from './Modal';
+import RelationshipSelect from './RelationshipSelect';
 import ProfilePictureInput from './ProfilePictureInput';
 import './AddStaff.css';
 import { GENDER_OPTIONS } from '../utils/gender';
@@ -25,6 +26,7 @@ interface Student {
   academicSession: string;
   isActive: boolean;
   profilePictureUrl?: string | null;
+  parentRelationship?: string;
   documents: Document[];
 }
 
@@ -53,6 +55,7 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
   const [currentPictureUrl, setCurrentPictureUrl] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     studentName: '',
+    parentRelationship: '',
     rollNumber: '',
     dob: '',
     genderCode: '',
@@ -76,6 +79,7 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
       // Prefill form with data from the list first
       setFormData({
         studentName: student.studentName,
+        parentRelationship: student.parentRelationship || '',
         rollNumber: student.rollNumber || '',
         dob: student.dob.split('T')[0],
         genderCode: student.genderCode || '',
@@ -120,6 +124,7 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
         // Update form data but preserve rollNumber from list if API doesn't have it
         setFormData(prev => ({
           studentName: s.studentName,
+          parentRelationship: s.parentRelationship || '',
           rollNumber: s.rollNumber || s.rollNo || prev.rollNumber,
           dob: s.dob.split('T')[0],
           genderCode: s.genderCode || '',
@@ -166,6 +171,7 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
 
       formDataToSend.append('Id', student.id.toString());
       formDataToSend.append('StudentName', formData.studentName);
+      if (formData.parentRelationship) formDataToSend.append('Parent.Relationship', formData.parentRelationship);
       formDataToSend.append('RollNumber', formData.rollNumber);
       formDataToSend.append('Email', formData.email);
       formDataToSend.append('PhoneNumber', formData.phoneNumber);
@@ -270,6 +276,10 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
           <div className="form-group">
             <label>Student Name *</label>
             <input type="text" name="studentName" required value={formData.studentName} onChange={handleChange} />
+          </div>
+          <div className="form-group">
+            <label>Relationship *</label>
+            <RelationshipSelect value={formData.parentRelationship} onChange={handleChange} />
           </div>
           <div className="form-group">
             <label>Roll Number</label>

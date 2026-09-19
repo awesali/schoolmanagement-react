@@ -65,6 +65,7 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [isCreateSchoolOpen, setIsCreateSchoolOpen] = useState(false);
   const [activePage, setActivePage] = useState('Dashboard');
+  const [parentToOpen, setParentToOpen] = useState<number | null>(null);
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [schools, setSchools] = useState<School[]>([]);
   const [selectedSchoolId, setSelectedSchoolId] = useState<number | null>(null);
@@ -249,6 +250,7 @@ const Dashboard: React.FC = () => {
     const permissionPage = page === 'Attendance' ? (type === 'student' ? 'attendance.students' : 'attendance.staff') : PAGE_PERMISSIONS[page];
     if (permissionPage && !can(permissionPage, 'read')) return;
     setActivePage(page);
+    setParentToOpen(null);
     if (window.innerWidth <= 768) setIsCollapsed(true);
     if (page === 'Attendance' && type) {
       setAttendanceType(type);
@@ -315,13 +317,16 @@ const Dashboard: React.FC = () => {
         ) : activePage === 'Staff List' ? (
           <StaffList selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Student List' || activePage === 'Student Enrollment' ? (
-          <StudentList selectedSchoolId={selectedSchoolId} />
+          <StudentList selectedSchoolId={selectedSchoolId} onViewParent={id => {
+            handleNavigate('Parent List');
+            setParentToOpen(id);
+          }} />
         ) : activePage === 'Student Promotion' ? (
           <StudentPromotion selectedSchoolId={selectedSchoolId} initialView="promotion" />
         ) : activePage === 'Promotion History' ? (
           <StudentPromotion selectedSchoolId={selectedSchoolId} initialView="history" />
         ) : activePage === 'Parent List' ? (
-          <ParentList selectedSchoolId={selectedSchoolId} />
+          <ParentList selectedSchoolId={selectedSchoolId} initialParentId={parentToOpen} />
         ) : activePage === 'Subject List' ? (
           <SubjectList selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Exam List' || activePage === 'Exam Management' ? (
