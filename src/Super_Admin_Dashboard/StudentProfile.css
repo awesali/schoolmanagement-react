@@ -1,0 +1,10 @@
+﻿.student-profile-details { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 24px; margin: 24px 0; }
+.student-profile-details dt { font-size: 13px; color: #64748b; margin-bottom: 8px; }
+.student-profile-details dd { margin: 0; overflow-wrap: anywhere; }
+.student-profile-totals { display: flex; flex-wrap: wrap; gap: 16px; margin: 20px 0; }
+.student-profile-totals > div { background: #f1f5fb; border-radius: 10px; padding: 18px 24px; min-width: 140px; display: grid; gap: 8px; }
+@media print {
+ body:has(.student-profile-receipt) * { visibility: hidden !important; }
+ body .student-profile-receipt, body .student-profile-receipt * { visibility: visible !important; }
+ .student-profile-receipt { position: fixed; inset: 0; background: white; padding: 28px; }
+}

@@ -5,6 +5,8 @@ import { useToastMessageState } from '../components/Toast/Toast';
 import Modal from './Modal';
 import './StaffList.css';
 import './ManagementTabs.css';
+import { VehicleIcon, DriverIcon, ConductorIcon, RouteIcon, AssignmentIcon, PaymentIcon, FuelIcon, MaintenanceIcon, AddStudentIcon, AddCircleIcon, PreviewIcon, RemoveIcon, CloseIcon } from '../components/Icons/Icons';
+import '../components/Icons/CreateIconButton.css';
 
 type TransportTab = 'dashboard' | 'vehicleTypes' | 'vehicles' | 'drivers' | 'conductors' |
   'routes' | 'assignments' | 'allocations' | 'payments' | 'fuel' | 'maintenance';
@@ -123,6 +125,9 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({ se
 
   const headers = () => ({ accept: 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'application/json' });
   const config = TABS[tab];
+  const ActionIcon = { dashboard: VehicleIcon, vehicleTypes: AddCircleIcon, vehicles: VehicleIcon, drivers: DriverIcon,
+    conductors: ConductorIcon, routes: RouteIcon, assignments: AssignmentIcon, allocations: AddStudentIcon,
+    payments: PaymentIcon, fuel: FuelIcon, maintenance: MaintenanceIcon }[tab];
 
   useEffect(() => { if (selectedSchoolId) load(); }, [selectedSchoolId, tab]); // eslint-disable-line
   useEffect(() => {
@@ -277,7 +282,7 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({ se
       if (!value) return 'No bill uploaded';
       const url = new URL(String(value), `${API_BASE_URL.replace(/\/$/, '')}/`);
       if (!['http:', 'https:'].includes(url.protocol)) return 'Bill unavailable';
-      return <a className="btn" href={url.href} target="_blank" rel="noopener noreferrer">View Bill</a>;
+      return <a className="create-icon-button" title="View Bill" aria-label="View Bill" href={url.href} target="_blank" rel="noopener noreferrer"><PreviewIcon size={26} /></a>;
     }
     return display(value);
   };
@@ -357,7 +362,7 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({ se
     {loading ? <PageLoader label={`Loading ${config.label.toLowerCase()}...`} /> : tab === 'dashboard' ? <>
       {loadedTab === tab && dashboard.totalVehicles === 0 && <div className="staff-list-loading">
         <p>{EMPTY_MESSAGES.dashboard}</p>
-        <button type="button" className="btn btn-primary" onClick={() => { setTab('vehicles'); closeForm(); }}>Go to Vehicle</button>
+        <button type="button" className="create-icon-button" title="Go to Vehicle" aria-label="Go to Vehicle" onClick={() => { setTab('vehicles'); closeForm(); }}><VehicleIcon size={26} /></button>
       </div>}
       <div className="stats-grid">
       {[['Vehicles', dashboard.totalVehicles], ['Active Routes', dashboard.activeRoutes], ['Allocated Students', dashboard.allocatedStudents],
@@ -365,7 +370,7 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({ se
         .map(([label, value]) => <div className="stat-card" key={String(label)}><div className="stat-header"><span>{label}</span></div><div className="stat-value">{value ?? 0}</div></div>)}
     </div></> : <>
         {config.fields && <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
-          <button className="btn btn-primary" onClick={() => showForm ? closeForm() : (setAllocationRows([emptyAllocation()]), setShowForm(true))}>{showForm ? 'Close' : `+ Add ${config.label.replace(/s$/, '')}`}</button>
+          <button type="button" className="create-icon-button" title={showForm ? 'Close' : `Add ${config.label.replace(/s$/, '')}`} aria-label={showForm ? 'Close' : `Add ${config.label.replace(/s$/, '')}`} onClick={() => showForm ? closeForm() : (setAllocationRows([emptyAllocation()]), setShowForm(true))}>{showForm ? <CloseIcon size={26} /> : <ActionIcon size={26} />}</button>
         </div>}
         {rows.length === 0 ? loadedTab === tab && <div className="staff-list-loading">{EMPTY_MESSAGES[tab]}</div> :
           <div className="staff-table-wrapper"><table className="staff-table"><thead><tr>{columns.map(column => <th key={column}>{column === 'billAttachmentUrl' ? 'Bill' : pretty(column)}</th>)}</tr></thead>
@@ -386,13 +391,13 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({ se
     >
       {tab === 'allocations' && editingId === null ? <form id="transport-form" onSubmit={save} className="allocation-batch-form">
         {allocationRows.map((row,index) => { const student=lookups.students?.find(option=>Number(option.value)===Number(row.studentId)); return <fieldset className="allocation-row" key={index}>
-          <legend>Student {index+1}</legend>{index>0 && <button type="button" className="btn allocation-remove" onClick={()=>setAllocationRows(current=>current.filter((_,i)=>i!==index))}>Remove</button>}
+          <legend>Student {index+1}</legend>{index>0 && <button type="button" className="create-icon-button allocation-remove" title="Remove Student" aria-label={`Remove student row ${index+1}`} onClick={()=>setAllocationRows(current=>current.filter((_,i)=>i!==index))}><RemoveIcon size={26} /></button>}
           <div className="form-grid">
             <div className="form-group"><label>Student *</label><select required value={row.studentId} onChange={e=>updateAllocationRow(index,'studentId',e.target.value)}><option value="">Select Student</option>{allocationStudentOptions(index).map(option=><option key={option.value} value={option.value}>{option.label}</option>)}</select></div>
             <div className="form-group"><label>Class</label><input readOnly value={student?.className || ''}/></div><div className="form-group"><label>Section</label><input readOnly value={student?.sectionName || ''}/></div>
             {TABS.allocations.fields!.filter(field=>!['studentId','academicSessionId'].includes(field.key)).map(field=><div className="form-group" key={field.key}><label>{field.label}{field.required?' *':''}</label>{field.type==='select'?<select required={field.required} value={row[field.key]||''} onChange={e=>updateAllocationRow(index,field.key,e.target.value)}><option value="">Select {field.label}</option>{fieldOptions(field).map(option=><option key={option.value} value={option.value}>{option.label}</option>)}</select>:<input type={field.type||'text'} step={field.type==='number'?'any':undefined} required={field.required} value={row[field.key]||''} onChange={e=>updateAllocationRow(index,field.key,e.target.value)}/>}</div>)}
           </div></fieldset>})}
-        <button type="button" className="btn btn-primary allocation-add" onClick={()=>setAllocationRows(current=>[...current,emptyAllocation()])}>Add More</button>
+        <button type="button" className="create-icon-button allocation-add" title="Add More Students" aria-label="Add More Students" onClick={()=>setAllocationRows(current=>[...current,emptyAllocation()])}><AddStudentIcon size={26} /></button>
       </form> : config.fields && <form id="transport-form" onSubmit={save} className="form-grid">
         {config.fields.map(field => <div className="form-group" key={field.key}><label>{field.label}{field.required ? ' *' : ''}</label>
           {field.type === 'select' || field.type==='multiselect' ? <select multiple={field.type==='multiselect'} required={field.required} value={field.type==='multiselect'?(form[field.key]||'').split(',').filter(Boolean):form[field.key] || ''} onChange={event => updateFormField(field,field.type==='multiselect'?Array.from(event.target.selectedOptions).map(option=>option.value).join(','):event.target.value)}>

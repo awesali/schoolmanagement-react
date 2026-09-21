@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PageLoader } from '../components/Loader/Loader';
+import { AddClassIcon, SubjectsIcon, TimeTableIcon } from '../components/Icons/Icons';
+import '../components/Icons/CreateIconButton.css';
 import { API_BASE_URL } from '../config';
 import { useToastMessageState } from '../components/Toast/Toast';
 import AddClass from './AddClass';
@@ -129,8 +131,8 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId, onNavigate }) =
     <div className="staff-list-container">
       <div className="staff-list-header">
         <h2>Class List</h2>
-        {can('academics.classes','create')&&<button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>
-          + Add Class
+        {can('academics.classes','create')&&<button type="button" className="create-icon-button" title="Add Class" aria-label="Add Class" onClick={() => setIsAddModalOpen(true)}>
+          <AddClassIcon size={26} />
         </button>}
       </div>
       
@@ -176,24 +178,30 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId, onNavigate }) =
                   </td>
                   <td>
                     <button
-                      className="btn-view-docs"
+                      type="button"
+                      className="create-icon-button"
+                      title="Subjects"
+                      aria-label={`Subjects for ${classItem.className}`}
                       onClick={() => { if(!can('academics.classes','update'))return;
                         setSelectedClass(classItem);
                         setIsAssignSubjectsOpen(true);
                       }}
                     >
-                      Subjects
+                      <SubjectsIcon size={26} />
                     </button>
                   </td>
                   <td>
                     <button
-                      className="btn-view-docs timetable-btn"
+                      type="button"
+                      className="create-icon-button"
+                      title="Time Table"
+                      aria-label={`Time Table for ${classItem.className}`}
                       onClick={() => {
                         setSelectedClass(classItem);
                         setIsTimeTableOpen(true);
                       }}
                     >
-                      TimeTable
+                      <TimeTableIcon size={26} />
                     </button>
                   </td>
                   <td>

@@ -50,16 +50,22 @@
 }
 
 .school-edit-button {
-  padding: 6px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.75);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 8px;
+  border: none;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.16);
+  background: transparent;
+  box-shadow: none;
   color: white;
   font-weight: 600;
   cursor: pointer;
 }
 
-.school-edit-button:hover { background: rgba(255, 255, 255, 0.28); }
+.school-edit-button:hover, .school-edit-button:active { background: transparent; }
+.school-edit-button:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
 
 .school-card-header h3 {
   margin: 0;

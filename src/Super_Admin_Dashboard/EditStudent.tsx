@@ -1,3 +1,4 @@
+import { useToastMessageState } from '../components/Toast/Toast';
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import Modal from './Modal';
@@ -50,7 +51,7 @@ interface EditStudentProps {
 
 const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, schoolId, onSuccess }) => {
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
-  const [saveError, setSaveError] = useState('');
+  const [, setSaveError] = useToastMessageState('error');
   const [saving, setSaving] = useState(false);
   const [currentPictureUrl, setCurrentPictureUrl] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -266,7 +267,6 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
       formId="edit-student-form"
     >
       <form id="edit-student-form" onSubmit={handleSubmit}>
-        {saveError && <p role="alert" className="error-message">{saveError}</p>}
         <ProfilePictureInput id="edit-student-picture" currentUrl={currentPictureUrl} file={profilePicture} onChange={setProfilePicture} />
         <div className="form-grid">
           <div className="form-group full-width">

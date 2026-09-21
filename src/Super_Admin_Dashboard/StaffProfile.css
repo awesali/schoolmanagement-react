@@ -1,0 +1,29 @@
+.staff-profile { max-width: 1400px; margin: 0 auto; padding: 28px; color: #334155; }
+.staff-profile-header { display: flex; align-items: center; gap: 24px; background: white; border-radius: 14px; padding: 28px; margin: 20px 0; }
+.staff-profile-header h1 { margin: 0 0 8px; }
+.staff-profile-header p { margin: 8px 0; overflow-wrap: anywhere; }
+.staff-profile-header > button:last-child { margin-left: auto; }
+.staff-profile-header .staff-list-avatar { width: 80px; height: 80px; flex-shrink: 0; font-size: 26px; }
+.staff-profile-tabs { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 20px; }
+.staff-profile-tabs button { background: white; border: 1px solid #dbe3ee; padding: 12px 20px; border-radius: 8px; white-space: nowrap; cursor: pointer; }
+.staff-profile-tabs .selected { background: #4285ed; color: white; border-color: #4285ed; }
+.staff-profile-content { background: white; padding: 24px; border-radius: 14px; }
+.staff-profile-content h2 { margin-top: 0; }
+.staff-profile-content h3 { margin-top: 28px; }
+.staff-profile-content input { padding: 8px; margin: 0 0 16px 8px; }
+.staff-profile-table { overflow-x: auto; margin-top: 16px; }
+.staff-profile-table table { width: 100%; border-collapse: collapse; }
+.staff-profile-table th, .staff-profile-table td { padding: 14px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+.staff-profile-table th { background: #4285ed; color: white; }
+.staff-profile-empty { padding: 24px; background: #f8fafc; border-radius: 8px; }
+.staff-profile-photo { max-width: 100%; max-height: 70vh; object-fit: contain; display: block; margin: auto; }
+@media(max-width: 650px) { .staff-profile { padding: 14px; } .staff-profile-header { flex-wrap: wrap; padding: 18px; } .staff-profile-content { padding: 16px; } }
+
+@media print { body:has(.staff-payslip) * { visibility: hidden; } body .staff-payslip, body .staff-payslip * { visibility: visible; } .staff-payslip { position: fixed; inset: 0; background: white; padding: 24px; } }
+
+.staff-profile-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-left: auto; }
+
+.staff-profile-back, .staff-profile-meta span, .staff-profile-actions button, .staff-profile-tabs button, .staff-profile-content button, .staff-profile-table a { display: inline-flex; align-items: center; gap: 8px; }
+.staff-profile-meta { display: flex; flex-wrap: wrap; gap: 12px 20px; margin: 10px 0; }
+.staff-profile-meta span { min-width: 0; overflow-wrap: anywhere; }
+.staff-profile-meta svg { color: #64748b; }

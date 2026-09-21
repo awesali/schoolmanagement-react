@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+import { staffTemplateHeaders, staffTemplateExample, parseStaffDetailColumns } from './staffImportDetails';
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import AddStaff from './AddStaff';
@@ -18,6 +20,9 @@ import { useToast } from '../components/Toast/Toast';
 import { TOAST_MESSAGES } from '../constants/toastMessages';
 import { usePermissions } from '../security/Permissions';
 import './StaffList.css';
+import { StaffDetailRecord, StaffDetailSummary } from './StaffDetailSections';
+import { TemplateIcon, ImportIcon, ExportIcon, AddStaffIcon, PreviewIcon } from '../components/Icons/Icons';
+import '../components/Icons/CreateIconButton.css';
 
 interface Document {
   documentId: number;
@@ -25,7 +30,7 @@ interface Document {
   documentURL: string;
 }
 
-interface Staff {
+interface Staff extends StaffDetailRecord {
   id: number;
   employeeNumber: number;
   name: string;
@@ -48,6 +53,7 @@ interface StaffListProps {
 }
 
 const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
+  const importInputRef = React.useRef<HTMLInputElement>(null);
   const toast = useToast();
   const { can } = usePermissions();
   const [staff, setStaff] = useState<Staff[]>([]);
@@ -173,8 +179,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
   };
 
   const downloadStaffTemplate = () => downloadCsv('staff-import-template.csv',
-    ['Name', 'DOB', 'Gender', 'DOJ', 'Role', 'Email', 'Phone', 'Address'],
-    [['Example Teacher', '01-31-1990', 'Male', '04-01-2026', 'Teacher', 'teacher@example.com', '9876543210', 'Address']]);
+    staffTemplateHeaders, [staffTemplateExample]);
 
   const prepareStaffImport = async (file: File) => {
     if (!selectedSchoolId) return;
@@ -223,7 +228,10 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
         if (email) fileEmails.add(email);
         const role = roles.find((r: any) => r.roleName.trim().toLowerCase() === row.Role?.trim().toLowerCase());
         if (!role) errors.push(`Role "${row.Role}" was not found.`);
+        const details = parseStaffDetailColumns(row);
+        errors.push(...details.errors);
         const values: Record<string, string> = {
+          ...details.payload,
           Name: row.Name, DOB: toApiDate(row.DOB), GenderCode: genderCode, DOJ: toApiDate(row.DOJ), RoleId: String(role?.id || ''), SchoolId: String(selectedSchoolId),
           Email: row.Email, Phone: row.Phone, Address: row.Address
         };
@@ -292,12 +300,11 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
       <div className="staff-list-header">
         <h2>Staff List</h2>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {can('management.staff','create')&&<><button className="btn" disabled={transferring} onClick={downloadStaffTemplate}>Template</button>
-          <label className="btn" style={{ cursor: transferring ? 'not-allowed' : 'pointer' }}>
-            Import CSV<input type="file" accept=".csv,text/csv" hidden disabled={transferring} onChange={e => { const file = e.target.files?.[0]; if (file) prepareStaffImport(file); e.target.value = ''; }} />
-          </label></>}
-          <button className="btn" disabled={transferring} onClick={exportStaff}>Export CSV</button>
-          {can('management.staff','create')&&<button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>+ Add Staff</button>}
+          {can('management.staff','create')&&<><button type="button" className="create-icon-button" title="Download Template" aria-label="Download Template" disabled={transferring} onClick={downloadStaffTemplate}><TemplateIcon size={26} /></button>
+          <button type="button" className="create-icon-button" title="Import CSV" aria-label="Import CSV" disabled={transferring} onClick={() => importInputRef.current?.click()}><ImportIcon size={26} /></button>
+          <input ref={importInputRef} type="file" accept=".csv,text/csv" hidden disabled={transferring} onChange={e => { const file = e.target.files?.[0]; if (file) prepareStaffImport(file); e.target.value = ''; }} /></>}
+          <button type="button" className="create-icon-button" title="Export CSV" aria-label="Export CSV" disabled={transferring} onClick={exportStaff}><ExportIcon size={26} /></button>
+          {can('management.staff','create')&&<button type="button" className="create-icon-button" title="Add Staff" aria-label="Add Staff" onClick={() => setIsAddModalOpen(true)}><AddStaffIcon size={26} /></button>}
         </div>
       </div>
       <CsvImportHint />
@@ -327,15 +334,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
                 <tr key={member.id}>
                   <td><ProfileListAvatar name={member.name} pictureUrl={member.profilePictureUrl} onView={() => setPhotoPreview(member)} /></td>
                   <td>
-                    <span 
-                      className="staff-name-link"
-                      onClick={() => {
-                        setSelectedStaff(member);
-                        setShowIdCard(true);
-                      }}
-                    >
-                      {member.name}
-                    </span>
+                    <Link className="staff-name-link" to={`/dashboard/schools/${selectedSchoolId}/staff/${member.id}`}>{member.name}</Link>
                   </td>
                   <td>{member.email}</td>
                   <td>{member.phone}</td>
@@ -354,11 +353,14 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
                   </td>
                   <td>
                     <button 
-                      className="btn-view-docs"
+                      type="button"
+                      className="create-icon-button document-view-icon"
+                      title={member.documents.length ? `View Documents (${member.documents.length})` : 'No documents available'}
+                      aria-label={`View documents for ${member.name} (${member.documents.length})`}
                       onClick={() => { setSelectedStaff(member); setShowDocuments(true); }}
                       disabled={member.documents.length === 0}
                     >
-                      View ({member.documents.length})
+                      <PreviewIcon size={26} />
                     </button>
                   </td>
                 </tr>
@@ -402,6 +404,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
         showCancel={false}
       >
         {selectedStaff && (
+          <>
           <ProfileIdCard
             onEdit={() => {
               setShowIdCard(false);
@@ -425,6 +428,8 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
               { label: 'Address', value: selectedStaff.address },
             ]}
           />
+          <StaffDetailSummary record={selectedStaff} />
+          </>
         )}
       </Modal>
 

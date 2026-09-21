@@ -4,6 +4,8 @@ import { useToast } from '../components/Toast/Toast';
 import { TOAST_MESSAGES } from '../constants/toastMessages';
 import { LoadingButton, PageLoader } from '../components/Loader/Loader';
 import './StaffList.css';
+import { SearchIcon, ResetIcon } from '../components/Icons/Icons';
+import '../components/Icons/CreateIconButton.css';
 
 type AttendanceStatus = 'Present' | 'Absent' | null;
 type View = 'select' | 'mark' | 'history';
@@ -157,10 +159,9 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
             <span style={{ color: '#718096', fontWeight: 600 }}>to</span>
             <input type="date" value={adminToDate} min={adminFromDate} max={today} onChange={e => setAdminToDate(e.target.value)}
               style={{ padding: '8px 12px', borderRadius: '8px', border: '2px solid #e2e8f0', fontSize: '14px' }} />
-            <button className="btn btn-primary" onClick={() => { setIsFiltered(true); fetchAdminAttendance(adminFromDate, adminToDate); }} disabled={adminLoading}>Search</button>
+            <button type="button" className="create-icon-button" title="Search" aria-label="Search attendance" onClick={() => { setIsFiltered(true); fetchAdminAttendance(adminFromDate, adminToDate); }} disabled={adminLoading}><SearchIcon size={26} /></button>
             {isFiltered && (
-              <button className="btn" onClick={() => { setIsFiltered(false); setAdminFromDate(today); setAdminToDate(today); fetchAdminAttendance(today, today); }}
-                style={{ border: '1px solid #e2e8f0' }}>Reset</button>
+              <button type="button" className="create-icon-button" title="Reset" aria-label="Reset attendance filters" disabled={adminLoading} onClick={() => { setIsFiltered(false); setAdminFromDate(today); setAdminToDate(today); fetchAdminAttendance(today, today); }}><ResetIcon size={26} /></button>
             )}
           </div>
         </div>

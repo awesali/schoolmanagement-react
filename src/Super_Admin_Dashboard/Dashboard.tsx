@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CreateSchool from './CreateSchool';
-import { AddCircleIcon } from '../components/Icons/Icons';
+import { CreateSchoolIcon } from '../components/Icons/Icons';
 import '../components/Icons/CreateIconButton.css';
 import SchoolList from './SchoolList';
 import StaffList from './StaffList';
@@ -66,8 +66,8 @@ const Dashboard: React.FC = () => {
   const { can, loading: permissionsLoading, roleName } = usePermissions();
   const navigate = useNavigate();
   const [isCreateSchoolOpen, setIsCreateSchoolOpen] = useState(false);
-  const [activePage, setActivePage] = useState('Dashboard');
-  const [parentToOpen, setParentToOpen] = useState<number | null>(null);
+  const [activePage, setActivePage] = useState(() => { const page = new URLSearchParams(window.location.search).get('page'); return page && ['Staff List', 'Student List', 'Parent List'].includes(page) ? page : 'Dashboard'; });
+  const [parentToOpen, setParentToOpen] = useState<number | null>(() => { const id = Number(new URLSearchParams(window.location.search).get('parentId')); return id > 0 && Number.isInteger(id) ? id : null; });
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [schools, setSchools] = useState<School[]>([]);
   const [selectedSchoolId, setSelectedSchoolId] = useState<number | null>(null);
@@ -153,7 +153,8 @@ const Dashboard: React.FC = () => {
         if (result.success && result.data) {
           setSchools(result.data);
           if (result.data.length > 0) {
-            setSelectedSchoolId(result.data[0].id);
+            const requestedSchool = Number(new URLSearchParams(window.location.search).get('schoolId'));
+            setSelectedSchoolId(result.data.find((school: School) => school.id === requestedSchool)?.id || result.data[0].id);
           }
         }
       }
@@ -290,7 +291,7 @@ const Dashboard: React.FC = () => {
           <span className="welcome-text">Welcome, <strong>{userName}</strong> 👋</span>
           {userRole === '1' && (
             <button type="button" className="create-icon-button" title="Create School" aria-label="Create School" onClick={() => setIsCreateSchoolOpen(true)}>
-              <AddCircleIcon />
+              <CreateSchoolIcon size={26} />
             </button>
           )}
           <div className="search-box">
@@ -313,7 +314,7 @@ const Dashboard: React.FC = () => {
         ) : activePage === 'Academic Year' ? (
           <AcademicYear selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Class List' ? (
-          <ClassList selectedSchoolId={selectedSchoolId} onNavigate={handleNavigate} />
+          <ClassList selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'My Classes' ? (
           <TeacherClassManagement onNavigate={handleNavigate} />
         ) : activePage === 'Staff List' ? (

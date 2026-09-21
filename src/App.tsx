@@ -1,3 +1,5 @@
+import StudentProfile from './Super_Admin_Dashboard/StudentProfile';
+import StaffProfile from './Super_Admin_Dashboard/StaffProfile';
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './Login/Login';
@@ -12,6 +14,8 @@ function App() {
       <PermissionProvider><BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/dashboard/schools/:schoolId/students/:studentId" element={<StudentProfile />} />
+          <Route path="/dashboard/schools/:schoolId/staff/:staffId" element={<StaffProfile />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/" element={<Navigate to="/login" replace />} />
         </Routes>

@@ -6,6 +6,8 @@ import EditSubject from './EditSubject';
 import Pagination from './Pagination';
 import './StaffList.css';
 import { usePermissions } from '../security/Permissions';
+import { SubjectsIcon } from '../components/Icons/Icons';
+import '../components/Icons/CreateIconButton.css';
 
 interface Subject {
   id: number;
@@ -101,8 +103,8 @@ const SubjectList: React.FC<SubjectListProps> = ({ selectedSchoolId }) => {
     <div className="staff-list-container">
       <div className="staff-list-header">
         <h2>Subject List</h2>
-        {can('academics.subjects','create')&&<button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>
-          + Add Subject
+        {can('academics.subjects','create')&&<button type="button" className="create-icon-button" title="Add Subject" aria-label="Add Subject" onClick={() => setIsAddModalOpen(true)}>
+          <SubjectsIcon size={26} />
         </button>}
       </div>
       {subjects.length === 0 ? (
@@ -116,8 +118,8 @@ const SubjectList: React.FC<SubjectListProps> = ({ selectedSchoolId }) => {
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>📚</div>
           <h3 style={{ margin: '0 0 8px 0', color: '#2d3748', fontSize: '20px', fontWeight: '600' }}>No Subjects Found</h3>
           <p style={{ margin: '0 0 24px 0', color: '#718096', fontSize: '14px' }}>Start by adding your first subject to the system</p>
-          {can('academics.subjects','create')&&<button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>
-            + Add First Subject
+          {can('academics.subjects','create')&&<button type="button" className="create-icon-button" title="Add First Subject" aria-label="Add First Subject" onClick={() => setIsAddModalOpen(true)}>
+            <SubjectsIcon size={26} />
           </button>}
         </div>
       ) : (

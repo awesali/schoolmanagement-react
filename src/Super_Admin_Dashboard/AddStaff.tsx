@@ -4,6 +4,7 @@ import { importDateError, formatImportDate } from '../utils/importDate';
 import { useToastMessageState } from '../components/Toast/Toast';
 import Modal from './Modal';
 import './AddStaff.css';
+import StaffDetailSections, { staffDetailValues, appendStaffDetails, validateStaffDetails } from './StaffDetailSections';
 import { GENDER_OPTIONS } from '../utils/gender';
 
 interface AddStaffProps {
@@ -27,13 +28,13 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
     roleId: 0,
     email: '',
     phone: '',
-    address: ''
+    ...staffDetailValues()
   });
   const [roles, setRoles] = useState<Role[]>([]);
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const [profilePreview, setProfilePreview] = useState('');
   const [documents, setDocuments] = useState<Array<{ name: string; file: File }>>([]);
-  const [error, setError] = useToastMessageState('error');
+  const [, setError] = useToastMessageState('error');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -66,6 +67,8 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const detailError = validateStaffDetails(formData);
+    if (detailError) { setError(detailError); return; }
     const dateError = importDateError('Date of Birth', formatImportDate(formData.dob)) || importDateError('Date of Joining', formatImportDate(formData.doj));
     if (dateError) { setError(dateError); return; }
     if (submitting) return;
@@ -79,6 +82,7 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
       formDataToSend.append('Email', formData.email);
       formDataToSend.append('Phone', formData.phone);
       formDataToSend.append('Address', formData.address);
+      appendStaffDetails(formDataToSend, formData);
       formDataToSend.append('DOB', formData.dob);
       formDataToSend.append('GenderCode', formData.genderCode);
       formDataToSend.append('DOJ', formData.doj);
@@ -146,7 +150,7 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
       roleId: roles.length > 0 ? roles[0].id : 2,
       email: '',
       phone: '',
-      address: ''
+      ...staffDetailValues()
     });
     setProfilePicture(null);
     setProfilePreview('');
@@ -187,11 +191,6 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
       submitLoading={submitting}
       loadingText="Adding staff..."
     >
-      {error && (
-        <div className="error-message">
-          {error}
-        </div>
-      )}
       <form id="add-staff-form" onSubmit={handleSubmit}>
         <div className="profile-upload-area">
           <input id="staff-profile-picture" type="file" accept="image/jpeg,image/png,image/webp"
@@ -293,15 +292,9 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
                 ))}
               </select>
             </div>
-            <div className="form-group full-width">
-              <label>Address *</label>
-              <textarea
-                required
-                value={formData.address}
-                onChange={(e) => setFormData({...formData, address: e.target.value})}
-              />
-            </div>
           </div>
+
+          <StaffDetailSections values={formData} disabled={submitting} onChange={(key, value) => setFormData(current => ({ ...current, [key]: value }))} />
 
           <div className="documents-section">
             <div className="documents-header">

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import { sortStudentsByClass } from '../utils/studentOrder';
@@ -19,6 +20,8 @@ import { useToast } from '../components/Toast/Toast';
 import { TOAST_MESSAGES } from '../constants/toastMessages';
 import { usePermissions } from '../security/Permissions';
 import './StudentList.css';
+import { TemplateIcon, ImportIcon, ExportIcon, AddStudentIcon, PreviewIcon } from '../components/Icons/Icons';
+import '../components/Icons/CreateIconButton.css';
 
 interface Document {
   documentId: number;
@@ -52,6 +55,7 @@ interface StudentListProps {
 }
 
 const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId, onViewParent }) => {
+  const importInputRef = React.useRef<HTMLInputElement>(null);
   const toast = useToast();
   const { can } = usePermissions();
   const [students, setStudents] = useState<Student[]>([]);
@@ -296,12 +300,11 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId, onViewParen
       <div className="staff-list-header student-list-header">
         <h2>Student List</h2>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {can('management.students','create')&&<><button className="btn" disabled={transferring} onClick={downloadStudentTemplate}>Template</button>
-          <label className="btn" style={{ cursor: transferring ? 'not-allowed' : 'pointer' }}>
-            Import CSV<input type="file" accept=".csv,text/csv" hidden disabled={transferring} onChange={e => { const file = e.target.files?.[0]; if (file) prepareStudentImport(file); e.target.value = ''; }} />
-          </label></>}
-          <button className="btn" disabled={transferring} onClick={exportStudents}>Export CSV</button>
-          {can('management.students','create')&&<button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>+ Add Student</button>}
+          {can('management.students','create')&&<><button type="button" className="create-icon-button" title="Download Template" aria-label="Download Template" disabled={transferring} onClick={downloadStudentTemplate}><TemplateIcon size={26} /></button>
+          <button type="button" className="create-icon-button" title="Import CSV" aria-label="Import CSV" disabled={transferring} onClick={() => importInputRef.current?.click()}><ImportIcon size={26} /></button>
+          <input ref={importInputRef} type="file" accept=".csv,text/csv" hidden disabled={transferring} onChange={e => { const file = e.target.files?.[0]; if (file) prepareStudentImport(file); e.target.value = ''; }} /></>}
+          <button type="button" className="create-icon-button" title="Export CSV" aria-label="Export CSV" disabled={transferring} onClick={exportStudents}><ExportIcon size={26} /></button>
+          {can('management.students','create')&&<button type="button" className="create-icon-button" title="Add Student" aria-label="Add Student" onClick={() => setIsAddModalOpen(true)}><AddStudentIcon size={26} /></button>}
         </div>
       </div>
       <CsvImportHint />
@@ -332,12 +335,7 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId, onViewParen
                 <tr key={student.id}>
                   <td><ProfileListAvatar name={student.studentName} pictureUrl={student.profilePictureUrl} onView={() => setPhotoPreview(student)} /></td>
                   <td>
-                    <span
-                      className="staff-name-link"
-                      onClick={() => { setSelectedStudent(student); setShowIdCard(true); }}
-                    >
-                      {student.studentName}
-                    </span>
+                    <Link className="staff-name-link" to={`/dashboard/schools/${selectedSchoolId}/students/${student.id}`}>{student.studentName}</Link>
                   </td>
                   <td>{student.email}</td>
                   <td>{student.phoneNumber}</td>
@@ -353,11 +351,14 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId, onViewParen
                   </td>
                   <td>
                     <button
-                      className="btn-view-docs"
+                      type="button"
+                      className="create-icon-button document-view-icon"
+                      title={student.documents.length ? `View Documents (${student.documents.length})` : 'No documents available'}
+                      aria-label={`View documents for ${student.studentName} (${student.documents.length})`}
                       onClick={() => { setSelectedStudent(student); setShowDocuments(true); }}
                       disabled={student.documents.length === 0}
                     >
-                      View ({student.documents.length})
+                      <PreviewIcon size={26} />
                     </button>
                   </td>
                 </tr>

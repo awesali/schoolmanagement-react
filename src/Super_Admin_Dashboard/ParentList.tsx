@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
 import { API_BASE_URL } from '../config';
 import { PageLoader } from '../components/Loader/Loader';
@@ -11,6 +12,8 @@ import ProfileListAvatar from './ProfileListAvatar';
 import { profilePictureUrl } from './ProfilePictureInput';
 import { genderLabel } from '../utils/gender';
 import './StaffList.css';
+import { SearchIcon, PreviewIcon } from '../components/Icons/Icons';
+import '../components/Icons/CreateIconButton.css';
 
 interface ParentStudent {
   id: number;
@@ -112,11 +115,6 @@ const ParentList: React.FC<{ selectedSchoolId: number | null; initialParentId?: 
     return () => controller.abort();
   }, [studentId, setError]);
 
-  const openStudentProfile = (id: number) => {
-    setStudentProfile(null);
-    setLoadingStudent(true);
-    setStudentId(id);
-  };
 
   useEffect(() => {
     if (selectedSchoolId) fetchParents(1, pageSize, search);
@@ -219,7 +217,7 @@ const ParentList: React.FC<{ selectedSchoolId: number | null; initialParentId?: 
             aria-label="Search parents"
             style={{ padding: '9px 12px', minWidth: '240px', border: '1px solid #e2e8f0', borderRadius: '8px' }}
           />
-          <button type="submit" className="btn btn-primary">Search</button>
+          <button type="submit" className="create-icon-button" title="Search" aria-label="Search parents"><SearchIcon size={26} /></button>
         </form>
       </div>
 
@@ -246,7 +244,7 @@ const ParentList: React.FC<{ selectedSchoolId: number | null; initialParentId?: 
                   <td>{parent.phoneNumber || '-'}</td>
                   <td>{parent.students.length}</td>
                   <td><span className={`status-badge ${parent.isActive ? 'active' : 'inactive'}`}>{parent.isActive ? 'Active' : 'Inactive'}</span></td>
-                  <td><button className="btn-view-docs" onClick={() => setSelectedParent(parent)}>View</button></td>
+                  <td><button type="button" className="create-icon-button" title="View Parent" aria-label={`View parent ${parent.name}`} onClick={() => setSelectedParent(parent)}><PreviewIcon size={26} /></button></td>
                 </tr>
               ))}
             </tbody>
@@ -299,9 +297,7 @@ const ParentList: React.FC<{ selectedSchoolId: number | null; initialParentId?: 
                     <tr key={student.id}>
                       <td><ProfileListAvatar name={student.studentName} pictureUrl={student.profilePictureUrl}
                         onView={() => setPhotoPreview(student)} /></td><td>
-                      {can('management.students', 'read') ? <button type="button"
-                        style={{ border: 0, background: 'none', padding: 0, color: '#4a90e2', font: 'inherit', cursor: 'pointer' }}
-                        onClick={() => openStudentProfile(student.id)}>{student.studentName}</button> : student.studentName}
+                      {can('management.students', 'read') ? <Link className="staff-name-link" to={`/dashboard/schools/${selectedSchoolId}/students/${student.id}`}>{student.studentName}</Link> : student.studentName}
                     </td><td>{student.rollNumber || '-'}</td><td>{student.className || '-'}</td><td>{student.sectionName || '-'}</td></tr>
                   ))}</tbody>
                 </table>

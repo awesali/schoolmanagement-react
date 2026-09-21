@@ -7,6 +7,8 @@ import './FeeReceipt.css';
 import Modal from './Modal';
 import { useToast } from '../components/Toast/Toast';
 import { usePermissions } from '../security/Permissions';
+import { FeeTypeIcon, RemoveIcon, LoadIcon, AssignmentIcon, PreviewIcon, ReceiptIcon, PrintIcon, CloseIcon } from '../components/Icons/Icons';
+import '../components/Icons/CreateIconButton.css';
 
 type FinanceView = 'feeTypes' | 'assign' | 'pending' | 'history';
 
@@ -111,7 +113,8 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
   const [showAddFeeType, setShowAddFeeType] = useState(false);
   const [newFeeTypeName, setNewFeeTypeName] = useState('');
   const [savingFeeType, setSavingFeeType] = useState(false);
-  const [feeTypeMsg, setFeeTypeMsg] = useState<{ text: string; ok: boolean } | null>(null);
+  const [deleteFeeTypeId, setDeleteFeeTypeId] = useState<number | null>(null);
+  const [deletingFeeType, setDeletingFeeType] = useState(false);
 
   // Enrollment dropdowns
   const [sessions, setSessions] = useState<SessionItem[]>([]);
@@ -130,7 +133,6 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
   const [feeTypeId, setFeeTypeId] = useState('');
   const [amount, setAmount] = useState('');
   const [assigning, setAssigning] = useState(false);
-  const [assignMsg, setAssignMsg] = useState<{ text: string; ok: boolean } | null>(null);
 
   // Pay fee modal
   const [payModal, setPayModal] = useState<FeeRecord | null>(null);
@@ -142,6 +144,8 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
   // Pending fees
   const [pendingFees, setPendingFees] = useState<FeeRecord[]>([]);
   const [pendingLoading, setPendingLoading] = useState(false);
+  const [feeDetailsStudentId, setFeeDetailsStudentId] = useState<number | null>(null);
+  useEffect(() => { setFeeDetailsStudentId(null); }, [selectedSchoolId, selectedSession, selectedClass, selectedSection, view]);
   const pendingStudents = React.useMemo<StudentPendingFees[]>(() => {
     const grouped = new Map<number, StudentPendingFees>();
     pendingFees.forEach(f => {
@@ -153,6 +157,7 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
     });
     return Array.from(grouped.values());
   }, [pendingFees]);
+  const feeDetailsStudent = pendingStudents.find(student => student.studentId === feeDetailsStudentId);
 
   // History
   const [historyStudentId, setHistoryStudentId] = useState('');
@@ -166,6 +171,11 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
   const token = () => localStorage.getItem('token');
   const headers = () => ({ 'accept': '*/*', 'Authorization': `Bearer ${token()}` });
   const jsonHeaders = () => ({ ...headers(), 'Content-Type': 'application/json' });
+  const readResponse = async (response: Response, fallback: string) => {
+    const result = await response.json().catch(() => null);
+    if (!response.ok || result?.success === false) throw new Error(result?.message || fallback);
+    return result;
+  };
 
   useEffect(() => {
     if (selectedSchoolId) {
@@ -178,52 +188,55 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
     try {
       setFeeTypesLoading(true);
       const res = await fetch(`${API_BASE_URL}/api/Student/GetFeeTypes?schoolId=${selectedSchoolId}`, { headers: headers() });
-      if (res.ok) {
-        const data = await res.json();
+      {
+        const data = await readResponse(res, 'Unable to complete this fee request.');
         setFeeTypes(Array.isArray(data) ? data : (data?.data ?? []));
       }
-    } catch { } finally { setFeeTypesLoading(false); }
+    } catch (error) { toast.error(error instanceof Error ? error.message : 'Unable to load fee types.'); } finally { setFeeTypesLoading(false); }
   };
 
   const handleAddFeeType = async () => {
     if (!newFeeTypeName.trim()) { toast.error('Fee type name is required.'); return; }
     try {
       setSavingFeeType(true);
-      setFeeTypeMsg(null);
+
       const res = await fetch(`${API_BASE_URL}/api/Student/CreateFeeType`, {
         method: 'POST',
         headers: jsonHeaders(),
         body: JSON.stringify({ id: 0, name: newFeeTypeName.trim(), schoolId: selectedSchoolId, isActive: true, studentFees: [] }),
       });
-      const result = await res.json();
-      if (res.ok) {
-        setFeeTypeMsg({ text: result.message || 'Fee type created!', ok: true });
+      const result = await readResponse(res, 'Unable to complete this fee request.');
+      {
+        toast.success(result.message || 'Fee type created successfully.');
         setNewFeeTypeName('');
         setShowAddFeeType(false);
         fetchFeeTypes();
-      } else {
-        toast.error(result.message || 'Failed to create fee type.');
       }
-    } catch { toast.error('Error creating fee type.'); }
+    } catch (error) { toast.error(error instanceof Error ? error.message : 'Unable to create fee type.'); }
     finally { setSavingFeeType(false); }
   };
 
   const handleDeleteFeeType = async (id: number) => {
-    if (!window.confirm('Delete this fee type?')) return;
+    if (deletingFeeType) return;
+    setDeletingFeeType(true);
     try {
       const res = await fetch(`${API_BASE_URL}/api/Student/DeleteFeeType?id=${id}`, {
         method: 'DELETE', headers: headers(),
       });
-      if (res.ok) fetchFeeTypes();
-    } catch { }
+      await readResponse(res, 'Unable to delete fee type.');
+      toast.success('Fee type deleted successfully.');
+      setDeleteFeeTypeId(null);
+      fetchFeeTypes();
+    } catch (error) { toast.error(error instanceof Error ? error.message : 'Unable to delete fee type.'); }
+    finally { setDeletingFeeType(false); }
   };
 
   const fetchEnrollmentInfo = async () => {
     setPendingLoads(count => count + 1);
     try {
       const res = await fetch(`${API_BASE_URL}/api/Student/enrollment-info?schoolId=${selectedSchoolId}`, { headers: headers() });
-      if (res.ok) {
-        const result = await res.json();
+      {
+        const result = await readResponse(res, 'Unable to complete this fee request.');
         if (result.success && result.data) {
           setSessions(result.data.sessions || []);
           setClasses(result.data.classes || []);
@@ -233,7 +246,7 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
           else if (result.data.sessions?.length === 1) setSelectedSession(result.data.sessions[0].id.toString());
         }
       }
-    } catch { } finally {
+    } catch (error) { toast.error(error instanceof Error ? error.message : 'Unable to load fee details.'); } finally {
       setPendingLoads(count => count - 1);
     }
   };
@@ -255,21 +268,21 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
         `${API_BASE_URL}/api/Student/GetStudentsForFees?schoolId=${selectedSchoolId}&classId=${selectedClass}&sectionId=${selectedSection}&sessionId=${selectedSession}`,
         { headers: headers() }
       );
-      if (res.ok) {
-        const data = await res.json();
+      {
+        const data = await readResponse(res, 'Unable to complete this fee request.');
         setStudents(Array.isArray(data) ? data : []);
       }
-    } catch { } finally { setStudentsLoading(false); }
+    } catch (error) { toast.error(error instanceof Error ? error.message : 'Unable to load students.'); } finally { setStudentsLoading(false); }
   };
 
   const handleAssignFees = async () => {
-    if (!selectedStudentIds.length || !feeTypeId || !amount) {
-      setAssignMsg({ text: 'Select students, fee type and amount.', ok: false });
+    if (!selectedStudentIds.length || !feeTypeId || !Number.isFinite(Number(amount)) || Number(amount) <= 0) {
+      toast.warning('Select students, fee type and a positive amount.');
       return;
     }
     try {
       setAssigning(true);
-      setAssignMsg(null);
+
       const res = await fetch(`${API_BASE_URL}/api/Student/AssignStudentFees`, {
         method: 'POST',
         headers: jsonHeaders(),
@@ -281,10 +294,10 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
           schoolId: selectedSchoolId,
         }),
       });
-      const result = await res.json();
-      setAssignMsg({ text: result.message || (res.ok ? 'Fees assigned!' : 'Failed'), ok: res.ok && result.success !== false });
-      if (res.ok) { setSelectedStudentIds([]); setFeeTypeId(''); setAmount(''); }
-    } catch { setAssignMsg({ text: 'Error assigning fees', ok: false }); }
+      const result = await readResponse(res, 'Unable to complete this fee request.');
+      toast.success(result.message || 'Fees assigned successfully.');
+      { setSelectedStudentIds([]); setFeeTypeId(''); setAmount(''); }
+    } catch (error) { toast.error(error instanceof Error ? error.message : 'Unable to assign fees.'); }
     finally { setAssigning(false); }
   };
 
@@ -297,16 +310,17 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
         `${API_BASE_URL}/api/Student/GetPendingFees?schoolId=${selectedSchoolId}&classId=${selectedClass}&sectionId=${selectedSection}&sessionId=${selectedSession}&includePaid=true`,
         { headers: headers() }
       );
-      if (res.ok) {
-        const data = await res.json();
+      {
+        const data = await readResponse(res, 'Unable to complete this fee request.');
         setPendingFees(Array.isArray(data) ? data : []);
       }
-    } catch { } finally { setPendingLoading(false); }
+    } catch (error) { toast.error(error instanceof Error ? error.message : 'Unable to load assigned fees.'); } finally { setPendingLoading(false); }
   };
 
   const handlePayFee = async () => {
-    if (!payModal || !amountPaid || paying) return;
-    if ((paymentMode === 'Online' || paymentMode === 'Cheque') && !acknowledgementId.trim()) return;
+    if (!payModal || paying) return;
+    if (!Number.isFinite(Number(amountPaid)) || Number(amountPaid) <= 0 || Number(amountPaid) > payModal.balance) { toast.warning('Enter a positive payment amount within the outstanding balance.'); return; }
+    if ((paymentMode === 'Online' || paymentMode === 'Cheque') && !acknowledgementId.trim()) { toast.warning('Enter the acknowledgement or cheque number.'); return; }
     try {
       setPaying(true);
       const res = await fetch(`${API_BASE_URL}/api/Student/PayFee`, {
@@ -320,13 +334,15 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
           schoolId: selectedSchoolId,
         }),
       });
-      if (res.ok) {
+      {
+        const result = await readResponse(res, 'Unable to collect payment.');
+        toast.success(result?.message || 'Payment collected successfully.');
         setPayModal(null);
         setAmountPaid('');
         setAcknowledgementId('');
         loadPendingFees();
       }
-    } catch { } finally { setPaying(false); }
+    } catch (error) { toast.error(error instanceof Error ? error.message : 'Unable to load fee details.'); } finally { setPaying(false); }
   };
 
   const loadHistory = async (studentId?: number | string) => {
@@ -336,19 +352,19 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
       setHistoryLoading(true);
       setPaymentHistory([]);
       const res = await fetch(`${API_BASE_URL}/api/Student/GetPaymentHistory?studentId=${targetStudentId}`, { headers: headers() });
-      if (res.ok) {
-        const data = await res.json();
+      {
+        const data = await readResponse(res, 'Unable to complete this fee request.');
         setPaymentHistory(Array.isArray(data) ? data : []);
       }
-    } catch { } finally { setHistoryLoading(false); }
+    } catch (error) { toast.error(error instanceof Error ? error.message : 'Unable to load payment history.'); } finally { setHistoryLoading(false); }
   };
 
   const fetchReceipt = async (paymentId: number) => {
     setPendingLoads(count => count + 1);
     try {
       const res = await fetch(`${API_BASE_URL}/api/Student/GetReceipt?paymentId=${paymentId}`, { headers: headers() });
-      if (res.ok) setReceipt(await res.json());
-    } catch { } finally {
+      setReceipt(await readResponse(res, 'Unable to complete this fee request.'));
+    } catch (error) { toast.error(error instanceof Error ? error.message : 'Unable to load fee details.'); } finally {
       setPendingLoads(count => count - 1);
     }
   };
@@ -390,6 +406,12 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
 
   return (
     <div className="staff-list-container">
+      <Modal isOpen={deleteFeeTypeId !== null} title="Delete Fee Type" showCancel={false}
+        onClose={() => { if (!deletingFeeType) setDeleteFeeTypeId(null); }}
+        onSubmit={() => { if (deleteFeeTypeId !== null) handleDeleteFeeType(deleteFeeTypeId); }}
+        submitLabel="Delete" submitLoading={deletingFeeType} loadingText="Deleting fee type...">
+        <p style={{ padding: '24px', textAlign: 'center' }}>Are you sure you want to delete this fee type?</p>
+      </Modal>
       {(pendingLoads > 0 || feeTypesLoading || studentsLoading || pendingLoading || historyLoading) && <PageLoader label="Loading fee data..." />}
       {/* Header + Tabs */}
       <div className="staff-list-header">
@@ -415,17 +437,10 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
       {view === 'feeTypes' && (
         <>
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
-            <button className="btn btn-primary" onClick={() => { setShowAddFeeType(true); setFeeTypeMsg(null); }}>
-              + Add Fee Type
+            <button type="button" className="create-icon-button" title="Add Fee Type" aria-label="Add Fee Type" onClick={() => { setShowAddFeeType(true);  }}>
+              <FeeTypeIcon size={26} />
             </button>
           </div>
-
-          {feeTypeMsg && (
-            <div style={{ marginBottom: '12px', padding: '10px 16px', borderRadius: '8px', fontWeight: 600, fontSize: '14px',
-              background: feeTypeMsg.ok ? '#c6f6d5' : '#fed7d7', color: feeTypeMsg.ok ? '#22543d' : '#742a2a' }}>
-              {feeTypeMsg.ok ? '✅' : '⚠️'} {feeTypeMsg.text}
-            </div>
-          )}
 
           {feeTypesLoading ? (
             null
@@ -444,9 +459,8 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
                       <td style={{ fontWeight: 600 }}>{ft.name}</td>
                       <td><span style={statusStyle(ft.isActive ? 'Paid' : 'Pending')}>{ft.isActive ? 'Active' : 'Inactive'}</span></td>
                       <td>
-                        <button className="btn-delete" onClick={() => handleDeleteFeeType(ft.id)}
-                          style={{ padding: '5px 14px', fontSize: '12px' }}>
-                          Delete
+                        <button type="button" className="create-icon-button" title={`Delete ${ft.name}`} aria-label={`Delete ${ft.name}`} onClick={() => setDeleteFeeTypeId(ft.id)}>
+                          <RemoveIcon size={26} />
                         </button>
                       </td>
                     </tr>
@@ -459,7 +473,7 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
           {/* Add Fee Type Modal */}
           <Modal isOpen={showAddFeeType} title="Add Fee Type" showCancel={false}
             formId="add-fee-type-form" submitLabel="Save" submitLoading={savingFeeType} loadingText="Saving fee type..."
-            onClose={() => { if (!savingFeeType) { setShowAddFeeType(false); setNewFeeTypeName(''); setFeeTypeMsg(null); } }}>
+            onClose={() => { if (!savingFeeType) { setShowAddFeeType(false); setNewFeeTypeName('');  } }}>
             <form id="add-fee-type-form" style={{ padding: 24 }} onSubmit={event => { event.preventDefault(); if (!savingFeeType) handleAddFeeType(); }}>
               <div className="form-group">
                 <label htmlFor="fee-type-name">Name *</label>
@@ -477,8 +491,8 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
         <>
           {filterBar}
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '16px' }}>
-            <button className="btn btn-primary" onClick={loadStudents} disabled={!selectedSession || !selectedClass || !selectedSection || studentsLoading}>
-              {studentsLoading ? 'Loading...' : 'Load Students'}
+            <button type="button" className="create-icon-button" title="Load Students" aria-label="Load Students" onClick={loadStudents} disabled={!selectedSession || !selectedClass || !selectedSection || studentsLoading}>
+              <LoadIcon size={26} />
             </button>
           </div>
 
@@ -524,17 +538,10 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
                   <input type="number" min="1" value={amount} onChange={e => setAmount(e.target.value)}
                     style={{ ...selectStyle, minWidth: '120px' }} placeholder="0.00" />
                 </div>
-                <button className="btn btn-primary" onClick={handleAssignFees} disabled={assigning || !selectedStudentIds.length}>
-                  {assigning ? 'Assigning...' : `Assign to ${selectedStudentIds.length} Student(s)`}
+                <button type="button" className="create-icon-button" title={`Assign to ${selectedStudentIds.length} Student(s)`} aria-label={`Assign to ${selectedStudentIds.length} Student(s)`} onClick={handleAssignFees} disabled={assigning || !selectedStudentIds.length}>
+                  <AssignmentIcon size={26} />
                 </button>
               </div>
-
-              {assignMsg && (
-                <div style={{ marginTop: '12px', padding: '10px 16px', borderRadius: '8px', fontWeight: 600, fontSize: '14px',
-                  background: assignMsg.ok ? '#c6f6d5' : '#fed7d7', color: assignMsg.ok ? '#22543d' : '#742a2a' }}>
-                  {assignMsg.ok ? '✅' : '⚠️'} {assignMsg.text}
-                </div>
-              )}
             </>
           )}
 
@@ -549,8 +556,8 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
         <>
           {filterBar}
           <div style={{ marginBottom: '16px' }}>
-            <button className="btn btn-primary" onClick={loadPendingFees} disabled={!selectedSession || !selectedClass || !selectedSection || pendingLoading}>
-              {pendingLoading ? 'Loading...' : 'Load Assigned Fees'}
+            <button type="button" className="create-icon-button" title="Load Assigned Fees" aria-label="Load Assigned Fees" onClick={loadPendingFees} disabled={!selectedSession || !selectedClass || !selectedSection || pendingLoading}>
+              <LoadIcon size={26} />
             </button>
           </div>
 
@@ -558,7 +565,7 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
             <div className="staff-table-wrapper">
               <table className="staff-table">
                 <thead>
-                   <tr><th>S. No.</th><th>Student</th><th>Roll No.</th><th>Class</th><th>Section</th><th>Fee Type</th><th>Amount</th><th>Paid</th><th>Balance</th><th>Status</th><th>Action</th></tr>
+                   <tr><th>S. No.</th><th>Student</th><th>Roll No.</th><th>Class</th><th>Section</th><th>Fee Types</th><th>Amount</th><th>Paid</th><th>Balance</th><th>Status</th><th>View</th></tr>
                 </thead>
                 <tbody>
                   {pendingStudents.map((student, i) => (
@@ -568,22 +575,12 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
                       <td>{student.items[0]?.rollNumber || '-'}</td>
                       <td>{student.className}</td>
                       <td>{student.sectionName}</td>
-                       <td>{student.items.map(item => <div key={item.studentFeeId} style={{padding:'5px 0',fontWeight:600}}>{item.feeType || feeTypes.find(ft => ft.id === item.feeTypeId)?.name || `Type ${item.feeTypeId}`}</div>)}</td>
-                      <td>{student.items.map(item => <div key={item.studentFeeId} style={{padding:'5px 0'}}>₹{item.amount?.toLocaleString()}</div>)}<strong>Total: ₹{student.amount.toLocaleString()}</strong></td>
-                      <td>{student.items.map(item => <div key={item.studentFeeId} style={{padding:'5px 0'}}>₹{item.paid?.toLocaleString()}</div>)}<strong>Total: ₹{student.paid.toLocaleString()}</strong></td>
-                      <td>{student.items.map(item => <div key={item.studentFeeId} style={{padding:'5px 0'}}>₹{item.balance?.toLocaleString()}</div>)}<strong>Total: ₹{student.balance.toLocaleString()}</strong></td>
+                      <td>{new Set(student.items.map(item => item.feeTypeId)).size}</td>
+                      <td>₹{student.amount.toLocaleString('en-IN')}</td>
+                      <td>₹{student.paid.toLocaleString('en-IN')}</td>
+                      <td>₹{student.balance.toLocaleString('en-IN')}</td>
                       <td><span style={statusStyle(student.status)}>{student.status}</span></td>
-                      <td>
-                        <details>
-                          <summary className="btn btn-primary" style={{padding:'6px 12px',fontSize:'13px',cursor:'pointer'}}>Manage ({student.items.length})</summary>
-                          <div style={{display:'grid',gap:'8px',marginTop:'8px',minWidth:'170px'}}>
-                            {can('finance.fees', 'update') && student.items.map(item => <button key={`edit-${item.studentFeeId}`} className="btn" onClick={() => { setEditFee(item); setEditAmount(String(item.amount)); }}>
-                              Edit {item.feeType || feeTypes.find(ft => ft.id === item.feeTypeId)?.name || 'Fee'}
-                            </button>)}
-                            {student.items.filter(item=>item.balance>0).map(item=><button key={item.studentFeeId} className="btn" style={{padding:'6px 8px',fontSize:'12px',border:'1px solid #cbd5e1'}} onClick={()=>{setPayModal(item);setAmountPaid(item.balance.toString())}}>Collect {feeTypes.find(ft=>ft.id===item.feeTypeId)?.name||`Type #${item.feeTypeId}`}</button>)}
-                          </div>
-                        </details>
-                      </td>
+                      <td><button type="button" className="create-icon-button" title="View Fee Details" aria-label={`View fee details for ${student.studentName}`} onClick={() => setFeeDetailsStudentId(student.studentId)}><PreviewIcon size={26} /></button></td>
                     </tr>
                   ))}
                 </tbody>
@@ -611,8 +608,8 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
               <option value="">Select Section</option>
               {filteredSections.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
-            <button className="btn btn-primary" onClick={async () => { setHistoryStudentId(''); setHistoryStudentSearch(''); setPaymentHistory([]); await loadStudents(); }} disabled={!selectedSession || !selectedClass || !selectedSection || studentsLoading}>
-              {studentsLoading ? 'Loading...' : 'Load Students'}
+            <button type="button" className="create-icon-button" title="Load Students" aria-label="Load Students" onClick={async () => { setHistoryStudentId(''); setHistoryStudentSearch(''); setPaymentHistory([]); await loadStudents(); }} disabled={!selectedSession || !selectedClass || !selectedSection || studentsLoading}>
+              <LoadIcon size={26} />
             </button>
           </div>
           <div style={{ maxWidth: '520px', marginBottom: '16px' }}>
@@ -642,12 +639,13 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
                       <td>
                         <button
                           type="button"
-                          className="btn btn-primary"
+                          className="create-icon-button"
+                          title="View Payment History"
+                          aria-label={`View Payment History for ${student.studentName}`}
                           onClick={() => { setHistoryStudentId(String(student.studentId)); loadHistory(student.studentId); }}
                           disabled={historyLoading}
-                          style={{ padding: '5px 12px', fontSize: '12px' }}
                         >
-                          {historyLoading && historyStudentId === String(student.studentId) ? 'Loading...' : 'View Payment History'}
+                          <PreviewIcon size={26} />
                         </button>
                       </td>
                     </tr>
@@ -674,9 +672,9 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
                       <td>{p.acknowledgementId || '-'}</td>
                       <td>{p.paymentDate ? new Date(p.paymentDate).toLocaleDateString() : '-'}</td>
                       <td>
-                        <button className="btn" style={{ padding: '5px 12px', fontSize: '12px', border: '1px solid #e2e8f0' }}
+                        <button type="button" className="create-icon-button" title="View Receipt" aria-label="View Receipt"
                           onClick={() => fetchReceipt(p.paymentId)}>
-                          Receipt
+                          <ReceiptIcon size={26} />
                         </button>
                       </td>
                     </tr>
@@ -700,6 +698,33 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
       )}
 
       {/* ── PAY FEE MODAL ── */}
+      <Modal isOpen={!!feeDetailsStudent && !editFee && !payModal && !pendingLoading} onClose={() => setFeeDetailsStudentId(null)}
+        title="Student Fee Details" size="large" showSubmit={false} showCancel={false}>
+        {feeDetailsStudent && <div style={{ padding: 24 }}>
+          <h3 style={{ margin: '0 0 16px' }}>{feeDetailsStudent.studentName}</h3>
+          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 20 }}>
+            <span><strong>Roll No.:</strong> {feeDetailsStudent.items[0]?.rollNumber || '-'}</span>
+            <span><strong>Class:</strong> {feeDetailsStudent.className}</span>
+            <span><strong>Section:</strong> {feeDetailsStudent.sectionName}</span>
+            <span><strong>Session:</strong> {sessions.find(s => String(s.id) === selectedSession) ? sessionLabel(sessions.find(s => String(s.id) === selectedSession)!) : '-'}</span>
+          </div>
+          <div className="staff-table-wrapper"><table className="staff-table">
+            <thead><tr><th>Fee Type</th><th>Amount</th><th>Paid</th><th>Balance</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>{feeDetailsStudent.items.map(item => <tr key={item.studentFeeId}>
+              <td>{item.feeType || feeTypes.find(ft => ft.id === item.feeTypeId)?.name || `Type ${item.feeTypeId}`}</td>
+              <td>₹{Number(item.amount).toLocaleString('en-IN')}</td>
+              <td>₹{Number(item.paid).toLocaleString('en-IN')}</td>
+              <td>₹{Number(item.balance).toLocaleString('en-IN')}</td>
+              <td><span style={statusStyle(item.status)}>{item.status}</span></td>
+              <td><div style={{ display: 'flex', gap: 8 }}>
+                {can('finance.fees', 'update') && <button type="button" className="btn" onClick={() => { setEditFee(item); setEditAmount(String(item.amount)); }}>Edit</button>}
+                {item.balance > 0 && <button type="button" className="btn" onClick={() => { setPayModal(item); setAmountPaid(String(item.balance)); }}>Collect</button>}
+              </div></td>
+            </tr>)}</tbody>
+            <tfoot><tr><th>Total</th><th>₹{feeDetailsStudent.amount.toLocaleString('en-IN')}</th><th>₹{feeDetailsStudent.paid.toLocaleString('en-IN')}</th><th>₹{feeDetailsStudent.balance.toLocaleString('en-IN')}</th><td colSpan={2}><span style={statusStyle(feeDetailsStudent.status)}>{feeDetailsStudent.status}</span></td></tr></tfoot>
+          </table></div>
+        </div>}
+      </Modal>
       <Modal isOpen={!!editFee} onClose={() => { if (!savingFee) setEditFee(null); }} title="Edit Assigned Fee"
         formId="edit-assigned-fee" submitLabel="Update Fee" showCancel={false} submitLoading={savingFee} loadingText="Updating fee...">
         {editFee && <form id="edit-assigned-fee" onSubmit={updateAssignedFee} style={{ padding: 24 }}>
@@ -755,8 +780,8 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
               ))}
             </div>
             <div className="school-fee-receipt-actions" style={{ display: 'flex', gap: 12 }}>
-              <button type="button" className="btn btn-primary" style={{ flex: 1 }} onClick={() => window.print()}>Print Receipt</button>
-              <button type="button" className="btn" style={{ flex: 1 }} onClick={() => setReceipt(null)}>Close</button>
+              <button type="button" className="create-icon-button" title="Print Receipt" aria-label="Print Receipt" onClick={() => window.print()}><PrintIcon size={26} /></button>
+              <button type="button" className="create-icon-button" title="Close Receipt" aria-label="Close Receipt" onClick={() => setReceipt(null)}><CloseIcon size={26} /></button>
             </div>
           </div>
         </div>

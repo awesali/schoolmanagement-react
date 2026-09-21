@@ -1,8 +1,10 @@
+import { useToastMessageState } from '../components/Toast/Toast';
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import Modal from './Modal';
 import ProfilePictureInput from './ProfilePictureInput';
 import './AddStaff.css';
+import StaffDetailSections, { staffDetailValues, appendStaffDetails, validateStaffDetails, StaffDetailRecord } from './StaffDetailSections';
 import { GENDER_OPTIONS } from '../utils/gender';
 
 interface Document {
@@ -11,7 +13,7 @@ interface Document {
   documentURL: string;
 }
 
-interface Staff {
+interface Staff extends StaffDetailRecord {
   id: number;
   name: string;
   email: string;
@@ -42,7 +44,7 @@ interface Role {
 
 const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess }) => {
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
-  const [saveError, setSaveError] = useState('');
+  const [, setSaveError] = useToastMessageState('error');
   const [saving, setSaving] = useState(false);
   const [currentPictureUrl, setCurrentPictureUrl] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -53,7 +55,7 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
     roleId: 0,
     email: '',
     phone: '',
-    address: '',
+    ...staffDetailValues(),
     isActive: true
   });
   const [roles, setRoles] = useState<Role[]>([]);
@@ -72,7 +74,7 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
         roleId: staff.roleId,
         email: staff.email,
         phone: staff.phone,
-        address: staff.address || '',
+        ...staffDetailValues(staff),
         isActive: staff.isActive
       });
       setExistingDocuments(staff.documents.map(doc => ({
@@ -111,6 +113,8 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const detailError = validateStaffDetails(formData);
+    if (detailError) { setSaveError(detailError); return; }
     if (!staff || saving) return;
     setSaving(true);
     setSaveError('');
@@ -125,6 +129,7 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
       formDataToSend.append('Email', formData.email);
       formDataToSend.append('Phone', formData.phone);
       formDataToSend.append('Address', formData.address);
+      appendStaffDetails(formDataToSend, formData);
       formDataToSend.append('DOB', new Date(formData.dob).toISOString());
       formDataToSend.append('GenderCode', formData.genderCode);
       formDataToSend.append('DOJ', new Date(formData.doj).toISOString());
@@ -256,7 +261,6 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
       formId="edit-staff-form"
     >
       <form id="edit-staff-form" onSubmit={handleSubmit}>
-        {saveError && <p role="alert" className="error-message">{saveError}</p>}
         <ProfilePictureInput id="edit-staff-picture" currentUrl={currentPictureUrl} file={profilePicture} onChange={setProfilePicture} />
         <div className="form-grid">
           <div className="form-group">
@@ -339,14 +343,6 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
               ))}
             </select>
           </div>
-          <div className="form-group full-width">
-            <label>Address *</label>
-            <textarea
-              required
-              value={formData.address}
-              onChange={(e) => setFormData({...formData, address: e.target.value})}
-            />
-          </div>
           <div className="form-group">
             <label>Status</label>
             <div className="toggle-container">
@@ -365,7 +361,9 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
           </div>
         </div>
 
-        <div className="documents-section">
+        <StaffDetailSections values={formData} disabled={saving} onChange={(key, value) => setFormData(current => ({ ...current, [key]: value }))} />
+
+          <div className="documents-section">
           <div className="documents-header">
             <label>Existing Documents ({existingDocuments.length})</label>
           </div>
