@@ -10,6 +10,7 @@ interface AssignSubjectsProps {
   classData: Class | null;
   schoolId: number | null;
   onSuccess: () => void;
+  onNavigateToSubjects?: () => void;
 }
 
 interface Class {
@@ -39,7 +40,8 @@ const AssignSubjects: React.FC<AssignSubjectsProps> = ({
   onClose, 
   classData, 
   schoolId, 
-  onSuccess 
+  onSuccess,
+  onNavigateToSubjects
 }) => {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [selectedSubjects, setSelectedSubjects] = useState<number[]>([]);
@@ -191,6 +193,14 @@ const AssignSubjects: React.FC<AssignSubjectsProps> = ({
           
           <div className="form-group full-width">
             <label>Select Subjects *</label>
+            {subjects.length === 0 ? (
+              <div style={{ padding: '16px', textAlign: 'center', color: '#666' }}>
+                <p>No subjects found for this school.</p>
+                <button type="button" className="btn btn-primary" onClick={() => { onClose(); onNavigateToSubjects?.(); }}>
+                  + Add Subject
+                </button>
+              </div>
+            ) : (
             <div className="subjects-checkbox-list">
               {subjects.map((subject) => (
                 <div key={subject.id} className="checkbox-item">
@@ -207,6 +217,7 @@ const AssignSubjects: React.FC<AssignSubjectsProps> = ({
                 </div>
               ))}
             </div>
+            )}
           </div>
         </div>
       </form>

@@ -115,6 +115,11 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({ se
   const emptyAllocation = (): AllocationRow => ({ academicSessionId:'', studentId:'', vehicleAssignmentId:'', pickupStop:'', dropStop:'', seatNumber:'', pickupShift:'', dropShift:'', monthlyFee:'', startDate:'', feeType:'Monthly' });
   const [allocationRows, setAllocationRows] = useState<AllocationRow[]>([emptyAllocation()]);
   const [lookupRefresh, setLookupRefresh] = useState(0);
+  const [confirmPayment, setConfirmPayment] = useState(false);
+  const [savingPayment, setSavingPayment] = useState(false);
+  const paymentSaving = React.useRef(false);
+  useEffect(() => { setConfirmPayment(false); }, [selectedSchoolId, tab]);
+  const [assignedStudentIds, setAssignedStudentIds] = useState<Set<number>>(new Set());
 
   const headers = () => ({ accept: 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'application/json' });
   const config = TABS[tab];
@@ -138,6 +143,7 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({ se
       get(`/api/Transport/eligible-students?schoolId=${selectedSchoolId}`)
     ]).then(([types, vehicles, drivers, conductors, routes, assignments, allocations, fees, feeStudents, sessions, students]) => {
       const active = (items: any[]) => items.filter(item => item.isActive !== false);
+      setAssignedStudentIds(new Set(active(allocations).map(item => Number(item.studentId))));
       setLookups({
         bloodGroups: ['A+','A-','B+','B-','AB+','AB-','O+','O-','Unknown / Not Provided'].map(label => ({ value: label, label })),
         paymentModes: ['Cash','UPI','Card','Bank Transfer','Cheque','Other'].map(label => ({ value: label, label })),
@@ -182,12 +188,19 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({ se
     finally { setLoading(false); }
   };
 
-  const save = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const save = async (event?: React.FormEvent, confirmed = false) => {
+    event?.preventDefault();
+    if (paymentSaving.current) return;
     if (!selectedSchoolId || !config.fields) return;
     if (tab === 'payments' && Number(form.amount || 0) > Number(form.availableAmount || form.dueAmount || 0)) {
       setMessage(`Paid Amount cannot exceed the available fee balance of Rs. ${Number(form.availableAmount || form.dueAmount || 0).toLocaleString()}.`);
       return;
+    }
+    if (tab === 'payments') {
+      if (Number(form.amount || 0) <= 0) { setMessage('Enter a payment amount greater than zero.'); return; }
+      if (!confirmed) { setConfirmPayment(true); return; }
+      paymentSaving.current = true;
+      setSavingPayment(true);
     }
     const body: any = tab === 'allocations' && editingId === null
       ? { schoolId:selectedSchoolId, items:allocationRows.map(row => ({...row, studentId:Number(row.studentId), academicSessionId:Number(row.academicSessionId), vehicleAssignmentId:Number(row.vehicleAssignmentId), monthlyFee:Number(row.monthlyFee), pickupShift:row.pickupShift ? `${row.pickupShift}:00` : null, dropShift:row.dropShift ? `${row.dropShift}:00` : null})) }
@@ -218,10 +231,11 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({ se
       if (!response.ok) throw new Error(apiError(result, 'Unable to save.'));
       setShowForm(false); setEditingId(null); setEditingRow(null); setForm({}); setAllocationRows([emptyAllocation()]); setMessage(result.message); setLookupRefresh(value=>value+1); await load();
     } catch (error) { setMessage(error instanceof Error ? error.message : 'Unable to save.'); }
+    finally { setConfirmPayment(false); paymentSaving.current = false; setSavingPayment(false); }
   };
 
   const startEdit = (row: any) => {
-    if (!config.fields) return;
+    if (!config.fields || tab === 'payments') return;
     if (tab === 'allocations' && row.studentId) {
       setLookups(current => {
         const students=current.students || [];
@@ -259,10 +273,24 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({ se
   const closeForm = () => { setShowForm(false); setEditingId(null); setEditingRow(null); setForm({}); setBillFile(null); };
 
   const displayCell = (column: string, value: any) => {
+    if (column === 'billAttachmentUrl') {
+      if (!value) return 'No bill uploaded';
+      const url = new URL(String(value), `${API_BASE_URL.replace(/\/$/, '')}/`);
+      if (!['http:', 'https:'].includes(url.protocol)) return 'Bill unavailable';
+      return <a className="btn" href={url.href} target="_blank" rel="noopener noreferrer">View Bill</a>;
+    }
     return display(value);
   };
 
   const updateFormField = (field: FieldConfig, value: string) => {
+    if (tab === 'drivers' && field.key === 'licenseNumber') {
+      setForm(current => ({ ...current, licenseNumber: value.toUpperCase() }));
+      return;
+    }
+    if (tab === 'drivers' && field.key === 'mobile') {
+      setForm(current => ({ ...current, mobile: value.replace(/\D/g, '').slice(0, 10) }));
+      return;
+    }
     if (tab === 'payments' && field.key === 'transportFeeId') {
       const fee = lookups.fees?.find(option => option.value === Number(value));
       setForm(current => ({
@@ -284,6 +312,10 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({ se
 
   const fieldOptions = (field: FieldConfig) => {
     const options = lookups[field.optionsKey || ''] || [];
+    if (tab === 'allocations' && field.key === 'studentId') {
+      return options.filter(option => !assignedStudentIds.has(Number(option.value))
+        || Number(option.value) === Number(editingRow?.studentId));
+    }
     if (tab !== 'assignments' || !['vehicleId','driverId','conductorId'].includes(field.key)) return options;
     const used = new Set((lookups.assignments || []).filter(x => Number(x.value) !== editingId).map(x => field.key === 'vehicleId' ? x.vehicleId : field.key === 'driverId' ? x.driverId : x.conductorId));
     return options.filter(option => !used.has(Number(option.value)));
@@ -300,14 +332,16 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({ se
 
   const allocationStudentOptions = (rowIndex:number) => {
     const selected = new Set(allocationRows.filter((_,index)=>index!==rowIndex).map(row=>Number(row.studentId)).filter(Boolean));
-    return (lookups.students || []).filter(option=>!selected.has(Number(option.value)));
+    return (lookups.students || []).filter(option=>!selected.has(Number(option.value)) && !assignedStudentIds.has(Number(option.value)));
   };
 
   const columns = useMemo(() => {
     if (!rows.length) return [];
     if (tab === 'allocations') return ['studentName', 'vehicleName', 'vehicleNumber', 'routeName', 'driverName', 'seatNumber', 'pickupStop', 'dropStop', 'monthlyFee'];
+    if (tab === 'maintenance') return ['serviceDate', 'nextServiceDate', 'cost', 'workshop', 'remarks', 'billAttachmentUrl'];
     if (tab === 'vehicles') return ['vehicleTypeName','defaultCapacity','description','vehicleName','vehicleNumber','registrationNumber','insuranceExpiry','fitnessExpiry','pollutionExpiry','isActive'];
-    return Object.keys(rows[0]).filter(key => !key.toLowerCase().endsWith('id') && key !== 'schoolId').slice(0, 8);
+    return Object.keys(rows[0]).filter(key => !key.toLowerCase().endsWith('id') && key !== 'schoolId'
+      && !(tab === 'assignments' && key.toLowerCase() === 'enddate')).slice(0, 8);
   }, [rows, tab]);
   if (!selectedSchoolId) return <div className="staff-list-loading">Please select a school</div>;
 
@@ -334,15 +368,15 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({ se
           <button className="btn btn-primary" onClick={() => showForm ? closeForm() : (setAllocationRows([emptyAllocation()]), setShowForm(true))}>{showForm ? 'Close' : `+ Add ${config.label.replace(/s$/, '')}`}</button>
         </div>}
         {rows.length === 0 ? loadedTab === tab && <div className="staff-list-loading">{EMPTY_MESSAGES[tab]}</div> :
-          <div className="staff-table-wrapper"><table className="staff-table"><thead><tr>{columns.map(column => <th key={column}>{pretty(column)}</th>)}</tr></thead>
+          <div className="staff-table-wrapper"><table className="staff-table"><thead><tr>{columns.map(column => <th key={column}>{column === 'billAttachmentUrl' ? 'Bill' : pretty(column)}</th>)}</tr></thead>
             <tbody>{rows.map((row, index) => <tr key={row.id ?? index}>{columns.map((column, columnIndex) => <td key={column}>
-              {config.fields && columnIndex === 0
+              {config.fields && tab !== 'payments' && columnIndex === 0
                 ? <span className="staff-name-link" onClick={() => startEdit(row)}>{displayCell(column, row[column])}</span>
                 : displayCell(column, row[column])}
             </td>)}</tr>)}</tbody></table></div>}
       </>}
     <Modal
-      isOpen={showForm}
+      isOpen={showForm && !confirmPayment}
       onClose={closeForm}
       title={`${editingId === null ? 'Add' : 'Edit'} ${config.label.replace(/s$/, '')}`}
       submitLabel={editingId === null ? 'Save' : 'Update'}
@@ -363,8 +397,20 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({ se
         {config.fields.map(field => <div className="form-group" key={field.key}><label>{field.label}{field.required ? ' *' : ''}</label>
           {field.type === 'select' || field.type==='multiselect' ? <select multiple={field.type==='multiselect'} required={field.required} value={field.type==='multiselect'?(form[field.key]||'').split(',').filter(Boolean):form[field.key] || ''} onChange={event => updateFormField(field,field.type==='multiselect'?Array.from(event.target.selectedOptions).map(option=>option.value).join(','):event.target.value)}>
             <option value="">Select {field.label}</option>{fieldOptions(field).map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select> : field.type==='file' ? <input type="file" accept=".jpg,.jpeg,.pdf,image/jpeg,application/pdf" required={field.required&&editingId===null} onChange={event=>setBillFile(event.target.files?.[0]||null)} /> : <input type={field.type || 'text'} step={field.type === 'number' ? 'any' : undefined} min={field.key==='amount'?0:undefined} max={field.key==='amount'&&tab==='payments'?Number(form.availableAmount||0):undefined} readOnly={['endDate','dueAmount','totalAmount'].includes(field.key)} required={field.required} value={form[field.key] || ''} onChange={event => updateFormField(field, event.target.value)} />}</div>)}
+          </select> : field.type==='file' ? <input type="file" accept=".jpg,.jpeg,.pdf,image/jpeg,application/pdf" required={field.required&&editingId===null} onChange={event=>setBillFile(event.target.files?.[0]||null)} /> : <input maxLength={tab === 'drivers' && field.key === 'mobile' ? 10 : undefined} inputMode={tab === 'drivers' && field.key === 'mobile' ? 'numeric' : undefined} pattern={tab === 'drivers' && field.key === 'mobile' ? '[0-9]{10}' : undefined} title={tab === 'drivers' && field.key === 'mobile' ? 'Enter a 10-digit mobile number' : undefined} type={field.type || 'text'} step={field.type === 'number' ? 'any' : undefined} min={field.key==='amount'?0:undefined} max={field.key==='amount'&&tab==='payments'?Number(form.availableAmount||0):undefined} readOnly={['endDate','dueAmount','totalAmount'].includes(field.key)} required={field.required} value={form[field.key] || ''} onChange={event => updateFormField(field, event.target.value)} />}</div>)}
       </form>}
+    </Modal>
+    <Modal isOpen={confirmPayment && showForm && tab === 'payments'} title="Confirm Fee Collection"
+      onClose={() => { if (!paymentSaving.current) setConfirmPayment(false); }}
+      onSubmit={() => save(undefined, true)} submitLabel="Confirm Payment" showCancel={false}
+      submitLoading={savingPayment} loadingText="Saving payment...">
+      <div style={{ padding: 24, lineHeight: 1.6 }}>
+        <p>Please confirm these payment details before saving.</p>
+        <p><strong>Student:</strong> {lookups.fees?.find(option => Number(option.value) === Number(form.transportFeeId))?.label}</p>
+        <p><strong>Amount:</strong> Rs. {Number(form.amount || 0).toLocaleString('en-IN')}</p>
+        <p><strong>Payment Mode:</strong> {form.paymentMode}</p>
+        <p>This transaction cannot be edited after saving.</p>
+      </div>
     </Modal>
   </div>;
 };

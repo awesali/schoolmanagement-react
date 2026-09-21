@@ -310,3 +310,53 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+.academic-session-add-icon,
+.academic-session-add-icon:hover,
+.academic-session-add-icon:active {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: #4285ed;
+  cursor: pointer;
+}
+
+.academic-session-add-icon:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+.academic-session-status-toggle {
+  display: inline-flex;
+  align-items: center;
+  width: 44px;
+  height: 24px;
+  padding: 2px;
+  border: 1px solid #64748b;
+  border-radius: 999px;
+  background: #64748b;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: background-color 150ms;
+}
+.academic-session-status-toggle[aria-checked="true"] {
+  background: #16a34a;
+  border-color: #16a34a;
+}
+.academic-session-toggle-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 150ms;
+}
+.academic-session-status-toggle[aria-checked="true"] .academic-session-toggle-thumb {
+  transform: translateX(20px);
+}
+.academic-session-status-toggle:disabled { opacity: .6; cursor: wait; }
+.academic-session-status-toggle:focus-visible { outline: 2px solid #2563eb; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  .academic-session-status-toggle, .academic-session-toggle-thumb { transition: none; }
+}

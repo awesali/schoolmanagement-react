@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CreateSchool from './CreateSchool';
+import { AddCircleIcon } from '../components/Icons/Icons';
+import '../components/Icons/CreateIconButton.css';
 import SchoolList from './SchoolList';
 import StaffList from './StaffList';
 import StudentList from './StudentList';
@@ -287,8 +289,8 @@ const Dashboard: React.FC = () => {
         <div className="header-right">
           <span className="welcome-text">Welcome, <strong>{userName}</strong> 👋</span>
           {userRole === '1' && (
-            <button className="btn btn-primary" onClick={() => setIsCreateSchoolOpen(true)}>
-              + Create School
+            <button type="button" className="create-icon-button" title="Create School" aria-label="Create School" onClick={() => setIsCreateSchoolOpen(true)}>
+              <AddCircleIcon />
             </button>
           )}
           <div className="search-box">
@@ -311,7 +313,7 @@ const Dashboard: React.FC = () => {
         ) : activePage === 'Academic Year' ? (
           <AcademicYear selectedSchoolId={selectedSchoolId} />
         ) : activePage === 'Class List' ? (
-          <ClassList selectedSchoolId={selectedSchoolId} />
+          <ClassList selectedSchoolId={selectedSchoolId} onNavigate={handleNavigate} />
         ) : activePage === 'My Classes' ? (
           <TeacherClassManagement onNavigate={handleNavigate} />
         ) : activePage === 'Staff List' ? (

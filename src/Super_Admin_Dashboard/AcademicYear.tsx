@@ -3,6 +3,7 @@ import { API_BASE_URL } from '../config';
 import { PageLoader } from '../components/Loader/Loader';
 import { useToastMessageState } from '../components/Toast/Toast';
 import Modal from './Modal';
+import { AddCircleIcon } from '../components/Icons/Icons';
 import './ClassList.css';
 
 interface AcademicYearProps {
@@ -199,8 +200,8 @@ const AcademicYear: React.FC<AcademicYearProps> = ({ selectedSchoolId }) => {
     <div className="class-list-container">
       <div className="class-list-header">
         <h2>Academic Sessions</h2>
-        <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
-          + Create Session
+        <button type="button" className="academic-session-add-icon" title="Create Session" aria-label="Create Session" onClick={() => setIsModalOpen(true)}>
+          <AddCircleIcon />
         </button>
       </div>
       
@@ -236,13 +237,16 @@ const AcademicYear: React.FC<AcademicYearProps> = ({ selectedSchoolId }) => {
                   <td>
                     <button
                       type="button"
-                      className={`session-status-button ${session.isActive ? 'deactivate' : 'activate'}`}
+                      className="academic-session-status-toggle"
+                      role="switch"
+                      aria-checked={session.isActive}
+                      aria-label={`Academic session ${formatDate(session.yearStart)} to ${formatDate(session.yearEnd)} active`}
+                      title={session.isActive ? 'Deactivate session' : 'Activate session'}
+                      aria-busy={updatingSessionId === session.id}
                       disabled={updatingSessionId !== null}
                       onClick={() => setPendingSession(session)}
                     >
-                      {updatingSessionId === session.id
-                        ? 'Updating...'
-                        : session.isActive ? 'Make Inactive' : 'Make Active'}
+                      <span className="academic-session-toggle-thumb" aria-hidden="true" />
                     </button>
                   </td>
                 </tr>

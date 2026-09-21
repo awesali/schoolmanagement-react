@@ -37,7 +37,7 @@ interface ClassListProps {
   selectedSchoolId: number | null;
 }
 
-const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId }) => {
+const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId, onNavigate }) => {
   const { can } = usePermissions();
   const [classes, setClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(false);
@@ -240,6 +240,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId }) => {
         onClose={() => setIsAssignSubjectsOpen(false)}
         classData={selectedClass}
         schoolId={selectedSchoolId}
+        onNavigateToSubjects={() => { setIsAssignSubjectsOpen(false); onNavigate?.("Subject List"); }}
         onSuccess={() => {
           fetchClasses(currentPage);
           console.log('Subjects assigned successfully');
