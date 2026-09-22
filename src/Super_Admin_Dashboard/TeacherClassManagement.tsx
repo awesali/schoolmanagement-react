@@ -1,77 +1,179 @@
-import React, { useEffect, useState } from 'react';
-import { API_BASE_URL } from '../config';
-import './ClassList.css';
+﻿import React, { useEffect, useState } from "react";
+import { usePermissions } from "../security/Permissions";
+import { SchoolIcon, teacherRequest } from "./TeacherWorkspace";
+import "./TeacherWorkspace.css";
 
-type Subject = { subjectId: number; subjectName: string };
-type Section = { id: number; sectionName: string; subjects: Subject[] };
+type Section = {
+  id: number;
+  sectionName: string;
+  isClassTeacher: boolean;
+  subjects: { subjectId: number; subjectName: string }[];
+};
 type AssignedClass = { id: number; className: string; sections: Section[] };
-
-interface Props {
-  onNavigate: (page: string, attendanceType?: 'student' | 'staff') => void;
-}
-
-const TeacherClassManagement: React.FC<Props> = ({ onNavigate }) => {
+type Props = {
+  onNavigate: (
+    page: string,
+    type?: "student" | "staff",
+    sectionId?: number,
+  ) => void;
+};
+export default function TeacherClassManagement({ onNavigate }: Props) {
+  const { can } = usePermissions();
   const [classes, setClasses] = useState<AssignedClass[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
+  const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
+  const [expanded, setExpanded] = useState<number | null>(null);
+  const [revision, setRevision] = useState(0);
   useEffect(() => {
-    const load = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`${API_BASE_URL}/api/Class/my-classes`, {
-          headers: { accept: 'application/json', Authorization: `Bearer ${token}` },
-          cache: 'no-store',
-        });
-        const result = await response.json();
-        if (!response.ok || !result.success) throw new Error(result.message || 'Unable to load assigned classes');
-        setClasses(result.data || []);
-      } catch (err: any) {
-        setError(err.message || 'Unable to load assigned classes');
-      } finally {
-        setLoading(false);
-      }
+    let alive = true;
+    setLoading(true);
+    setError("");
+    teacherRequest("/api/Teacher/classes")
+      .then((result) => {
+        if (alive) setClasses(result.classes || []);
+      })
+      .catch((e) => {
+        if (alive) setError(e.message);
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => {
+      alive = false;
     };
-    load();
-  }, []);
-
-  if (loading) return <div className="staff-list-loading">Loading your classes...</div>;
-  if (error) return <div className="staff-list-loading">{error}</div>;
-
+  }, [revision]);
+  const sections = classes.flatMap((c) =>
+    c.sections.map((section) => ({ ...section, className: c.className })),
+  );
+  const filtered = sections.filter((s) =>
+    (
+      s.className +
+      " " +
+      s.sectionName +
+      " " +
+      s.subjects.map((v) => v.subjectName).join(" ")
+    )
+      .toLowerCase()
+      .includes(query.toLowerCase()),
+  );
   return (
-    <div className="staff-list-container">
-      <div className="staff-list-header">
+    <div className="tw">
+      <section className="tw-hero">
         <div>
-          <h2>My Classes</h2>
-          <p style={{ color: '#718096', margin: '6px 0 0' }}>Only classes and sections assigned to you are shown here.</p>
+          <span className="tw-eyebrow">MY CLASSROOMS</span>
+          <h2>Every class, one workspace</h2>
+          <p>
+            Your assigned classes and subjects, with daily actions close at
+            hand.
+          </p>
         </div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button className="btn btn-primary" onClick={() => onNavigate('Attendance', 'student')}>Mark Attendance</button>
-          <button className="btn" onClick={() => onNavigate('Marks Entry')}>Enter Marks</button>
+        <div className="tw-emblem">
+          <SchoolIcon name="people" />
         </div>
+      </section>
+      <div className="tw-toolbar">
+        <label className="tw-search">
+          Find a class, section or subject
+          <input
+            placeholder="Search your classes…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </label>
+        <span className="tw-pill">
+          {loading ? "Loading…" : sections.length + " assigned sections"}
+        </span>
       </div>
-
-      {!classes.length ? (
-        <div className="staff-list-loading">No class or section is assigned to you. Please contact the admin.</div>
+      {error && (
+        <div className="tw-error" role="alert">
+          {error}{" "}
+          <button onClick={() => setRevision((v) => v + 1)}>Retry</button>
+        </div>
+      )}
+      {loading ? (
+        <p className="tw-empty">Loading your classes…</p>
+      ) : !filtered.length ? (
+        <p className="tw-empty">
+          {classes.length
+            ? "No classes match your search."
+            : "No classes assigned. Contact your school administrator."}
+        </p>
       ) : (
-        <div style={{ display: 'grid', gap: 16 }}>
-          {classes.map(item => (
-            <div key={item.id} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: 18 }}>
-              <h3 style={{ margin: '0 0 14px' }}>{item.className}</h3>
-              {item.sections.map(section => (
-                <div key={section.id} style={{ borderTop: '1px solid #edf2f7', padding: '12px 0' }}>
-                  <strong>Section {section.sectionName}</strong>
-                  <div style={{ color: '#718096', marginTop: 6 }}>
-                    Subjects: {section.subjects?.length ? section.subjects.map(s => s.subjectName).join(', ') : 'No subjects assigned'}
+        <div className="tw-roster">
+          {filtered.map((section) => (
+            <article className="tw-panel" key={section.id}>
+              <div className="tw-heading">
+                <span className="tw-class-icon">
+                  <SchoolIcon />
+                </span>
+                <span className="tw-pill">
+                  {section.isClassTeacher ? "Class teacher" : "Subject teacher"}
+                </span>
+              </div>
+              <h3>
+                {section.className} · {section.sectionName}
+              </h3>
+              <p style={{ marginTop: 12 }}>
+                {section.subjects.map((s) => s.subjectName).join(", ") ||
+                  "No teaching subjects assigned"}
+              </p>
+              <div className="tw-actions">
+                <button
+                  aria-expanded={expanded === section.id}
+                  onClick={() =>
+                    setExpanded(expanded === section.id ? null : section.id)
+                  }
+                >
+                  Class overview {expanded === section.id ? "−" : "+"}
+                </button>
+                {section.isClassTeacher &&
+                  can("attendance.students", "read") && (
+                    <button
+                      title="Open the daily register for this class"
+                      onClick={() =>
+                        onNavigate("Attendance", "student", section.id)
+                      }
+                    >
+                      <SchoolIcon name="check" />
+                      Attendance
+                    </button>
+                  )}
+              </div>
+              {expanded === section.id && (
+                <div>
+                  <p>
+                    <strong>Section:</strong> {section.sectionName}
+                  </p>
+                  <p>
+                    <strong>Your role:</strong>{" "}
+                    {section.isClassTeacher
+                      ? "Class teacher"
+                      : "Subject teacher"}
+                  </p>
+                  <p>
+                    <strong>Your subjects:</strong>{" "}
+                    {section.subjects.map((s) => s.subjectName).join(", ") ||
+                      "None assigned"}
+                  </p>
+                  <div className="tw-actions">
+                    {can("exams.academic-exam", "read") && (
+                      <button onClick={() => onNavigate("Marks Entry")}>
+                        Open gradebook
+                      </button>
+                    )}
+                    {can("academics.class-schedule", "read") && (
+                      <button onClick={() => onNavigate("My Timetable")}>
+                        My timetable
+                      </button>
+                    )}
                   </div>
                 </div>
-              ))}
-            </div>
+              )}
+            </article>
           ))}
         </div>
       )}
     </div>
   );
-};
-
-export default TeacherClassManagement;
+}

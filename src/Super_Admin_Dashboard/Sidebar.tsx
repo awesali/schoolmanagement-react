@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './Sidebar.css';
+import { SchoolIcon } from './TeacherWorkspace';
 import { PAGE_PERMISSIONS, usePermissions } from '../security/Permissions';
 import { SECURITY_UI_ENABLED } from '../security/features';
 import { profilePictureUrl } from './ProfilePictureInput';
@@ -11,14 +12,13 @@ interface SidebarProps {
   userRole?: string;
   schoolName?: string;
   schoolLogoUrl?: string | null;
+  attendanceType?: 'student' | 'staff' | null;
 }
 
 const teacherMenuGroups = [
   {
     group: 'Classes',
-    items: [
-      { label: 'Class Management', children: ['My Classes'] },
-    ],
+    items: [{ label: 'Class Management', children: ['My Classes'] }],
   },
   {
     group: 'Attendance',
@@ -29,9 +29,7 @@ const teacherMenuGroups = [
   },
   {
     group: 'Exams',
-    items: [
-      { label: 'Academic Exam', children: ['Unit Test', 'Marks Entry'] },
-    ],
+    items: [{ label: 'Academic Exam', children: ['Unit Test', 'Marks Entry'] }],
   },
 ];
 
@@ -67,51 +65,55 @@ const menuGroups = [
   },
   {
     group: 'Exams',
-    items: [
-      { label: 'Academic Exam', children: ['Exam Management'] },
-    ],
+    items: [{ label: 'Academic Exam', children: ['Exam Management'] }],
   },
 ];
 
-const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, userRole, schoolName, schoolLogoUrl }) => {
+const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, userRole, schoolName, schoolLogoUrl, attendanceType }) => {
   const { can } = usePermissions();
   const [openGroups, setOpenGroups] = useState<string[]>([]);
   const [openItems, setOpenItems] = useState<string[]>([]);
   const [failedLogo, setFailedLogo] = useState<string | null>(null);
   const resolvedLogo = profilePictureUrl(schoolLogoUrl);
-  const schoolInitials = (schoolName || 'School').trim().split(/\s+/).filter(Boolean)
-    .slice(0, 2).map(part => part[0]).join('').toUpperCase() || 'S';
+  const schoolInitials =
+    (schoolName || 'School')
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join('')
+      .toUpperCase() || 'S';
 
   const currentMenuGroups = userRole === '2' ? teacherMenuGroups : menuGroups;
 
   const toggleGroup = (group: string) => {
-    setOpenGroups((prev) =>
-      prev.includes(group) ? prev.filter((g) => g !== group) : [...prev, group]
-    );
+    setOpenGroups((prev) => (prev.includes(group) ? prev.filter((g) => g !== group) : [...prev, group]));
   };
 
   const toggleItem = (item: string) => {
-    setOpenItems((prev) =>
-      prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item]
-    );
+    setOpenItems((prev) => (prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item]));
   };
 
   const getFilteredMenuGroups = () => {
-    return currentMenuGroups.map(group => ({
-      ...group,
-      items: group.items.filter(item => SECURITY_UI_ENABLED || item.label !== 'Security').map(item => ({
-        ...item,
-        children: item.children.filter(child => {
-          if (userRole === '1' && item.label === 'Students' && child === 'Attendance') {
-            return false;
-          }
-          const permissionPage = child === 'Attendance'
-            ? (item.label === 'Students' ? 'attendance.students' : 'attendance.staff')
-            : PAGE_PERMISSIONS[child];
-          return !permissionPage || can(permissionPage, 'read');
-        })
-      })).filter(item => item.children.length > 0)
-    })).filter(group => group.items.length > 0);
+    return currentMenuGroups
+      .map((group) => ({
+        ...group,
+        items: group.items
+          .filter((item) => SECURITY_UI_ENABLED || item.label !== 'Security')
+          .map((item) => ({
+            ...item,
+            children: item.children.filter((child) => {
+              if (userRole === '1' && item.label === 'Students' && child === 'Attendance') {
+                return false;
+              }
+              const permissionPage = child === 'Attendance' ? (item.label === 'Students' ? 'attendance.students' : 'attendance.staff') : PAGE_PERMISSIONS[child];
+              return !permissionPage || can(permissionPage, 'read');
+            }),
+          }))
+          .filter((item) => item.children.length > 0),
+      }))
+      .filter((group) => group.items.length > 0);
   };
 
   const filteredMenuGroups = getFilteredMenuGroups();
@@ -125,25 +127,120 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, 
     }
   };
 
+  if (userRole === '2') {
+    const items: {
+      label: string;
+      page: string;
+      icon: string;
+      permission: string;
+      type?: 'student' | 'staff';
+    }[] = [
+      {
+        label: 'Daily workspace',
+        page: 'Dashboard',
+        icon: 'home',
+        permission: 'dashboard.dashboard',
+      },
+      {
+        label: 'My classes',
+        page: 'My Classes',
+        icon: 'people',
+        permission: 'academics.classes',
+      },
+      {
+        label: 'Student attendance',
+        page: 'Attendance',
+        icon: 'check',
+        permission: 'attendance.students',
+        type: 'student',
+      },
+      {
+        label: 'Exams & gradebook',
+        page: 'Marks Entry',
+        icon: 'book',
+        permission: 'exams.academic-exam',
+      },
+      {
+        label: 'Unit tests',
+        page: 'Unit Test',
+        icon: 'book',
+        permission: 'exams.academic-exam',
+      },
+      {
+        label: 'My timetable',
+        page: 'My Timetable',
+        icon: 'calendar',
+        permission: 'academics.class-schedule',
+      },
+      {
+        label: 'My attendance',
+        page: 'Attendance',
+        icon: 'clock',
+        permission: 'attendance.staff',
+        type: 'staff',
+      },
+      {
+        label: 'Homework & Assignments',
+        page: 'Homework & Assignments',
+        icon: 'assignment',
+        permission: 'academics.classes',
+      },
+      {
+        label: 'Calendar',
+        page: 'Calendar',
+        icon: 'calendar',
+        permission: 'academics.class-schedule',
+      },
+      {
+        label: 'Study Material',
+        page: 'Study Material',
+        icon: 'material',
+        permission: 'academics.classes',
+      },
+      {
+        label: 'My Profile',
+        page: 'My Profile',
+        icon: 'profile',
+        permission: 'dashboard.dashboard',
+      },
+    ];
+    return (
+      <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
+        <div className="sidebar-logo">
+          <span className="logo-icon" title={schoolName || 'School'} aria-label={(schoolName || 'School') + ' logo'}>
+            {resolvedLogo && failedLogo !== resolvedLogo ? <img src={resolvedLogo} alt={(schoolName || 'School') + ' logo'} onError={() => setFailedLogo(resolvedLogo)} /> : <span>{schoolInitials}</span>}
+          </span>
+          <span className="logo-text">Teacher Desk</span>
+        </div>
+        <nav className="sidebar-nav" aria-label="Teacher navigation">
+          {items
+            .filter((item) => can(item.permission, 'read'))
+            .map((item) => (
+              <button key={item.label} title={item.label} className={`nav-item ${activePage === item.page && (!item.type || attendanceType === item.type) ? 'active' : ''}`} onClick={() => onNavigate(item.page, item.type)}>
+                <SchoolIcon name={item.icon} />
+                <span>{item.label}</span>
+              </button>
+            ))}
+        </nav>
+      </aside>
+    );
+  }
   return (
     <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-logo">
         <span className="logo-icon" aria-label={`${schoolName || 'School'} logo`}>
-          {resolvedLogo && failedLogo !== resolvedLogo
-            ? <img src={resolvedLogo} alt={`${schoolName || 'School'} logo`} onError={() => setFailedLogo(resolvedLogo)} />
-            : <span>{schoolInitials}</span>}
+          {resolvedLogo && failedLogo !== resolvedLogo ? <img src={resolvedLogo} alt={`${schoolName || 'School'} logo`} onError={() => setFailedLogo(resolvedLogo)} /> : <span>{schoolInitials}</span>}
         </span>
         <span className="logo-text">SchoolAdmin</span>
       </div>
 
       <nav className="sidebar-nav">
-        {can('dashboard.dashboard', 'read') && <button
-          className={`nav-item ${activePage === 'Dashboard' ? 'active' : ''}`}
-          onClick={() => onNavigate('Dashboard')}
-        >
-          <span className="nav-icon">📊</span>
-          <span>Dashboard</span>
-        </button>}
+        {can('dashboard.dashboard', 'read') && (
+          <button className={`nav-item ${activePage === 'Dashboard' ? 'active' : ''}`} onClick={() => onNavigate('Dashboard')}>
+            <span className="nav-icon">📊</span>
+            <span>Dashboard</span>
+          </button>
+        )}
 
         {filteredMenuGroups.map(({ group, items }) => (
           <div key={group} className="nav-group">
@@ -162,11 +259,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, 
                     {openItems.includes(label) && (
                       <div className="nav-leaf-items">
                         {children.map((child) => (
-                          <button
-                            key={child}
-                            className={`nav-leaf-item ${activePage === child ? 'active' : ''}`}
-                            onClick={() => handleAttendanceClick(child, label)}
-                          >
+                          <button key={child} className={`nav-leaf-item ${activePage === child ? 'active' : ''}`} onClick={() => handleAttendanceClick(child, label)}>
                             {child}
                           </button>
                         ))}

@@ -18,12 +18,12 @@ beforeEach(() => { localStorage.setItem('token', 'test'); mockCan = () => true; 
 test('direct profile URL loads the requested school and staff and supports returning to the list', async () => {
   mount(); expect(await screen.findByRole('heading', { name: 'Test Teacher' })).toBeInTheDocument();
   expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('schoolId=2&staffId=7'), expect.anything());
-  expect(screen.getByText('? Back to Staff List')).toHaveAttribute('href', '/dashboard?schoolId=2&page=Staff%20List');
+  expect(screen.getByRole('link', { name: 'Back to Staff List' })).toHaveAttribute('href', '/dashboard?schoolId=2&page=Staff%20List');
 });
 test('attendance uses staff ID and never mixes another staff with the same name', async () => {
   (global.fetch as jest.Mock).mockImplementation((url: string) => url.includes('GetStaffAttendance') ? response([{ staffId: 7, status: 'Present', attendanceDate: '2026-09-01' }, { staffId: 8, status: 'Absent', attendanceDate: '2026-09-01' }]) : response({ data: [member] }));
   mount(); await screen.findByRole('heading', { name: 'Test Teacher' }); fireEvent.click(screen.getByRole('button', { name: 'Attendance' }));
-  expect(await screen.findByText('1 Present � 0 Absent � 1 recorded days')).toBeInTheDocument();
+  expect(await screen.findByText('1 Present - 0 Absent - 1 recorded days')).toBeInTheDocument();
 });
 test('empty attendance is an empty state and failures use the common toaster', async () => {
   (global.fetch as jest.Mock).mockImplementation((url: string) => url.includes('GetStaffAttendance') ? response({}, 404) : response({ data: [member] }));
