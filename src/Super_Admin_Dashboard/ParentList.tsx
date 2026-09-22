@@ -8,6 +8,7 @@ import Modal from './Modal';
 import Pagination from './Pagination';
 import ProfileIdCard from './ProfileIdCard';
 import RelationshipSelect from './RelationshipSelect';
+import ParentAddressFields, { parentAddressValues } from './ParentAddressFields';
 import ProfileListAvatar from './ProfileListAvatar';
 import { profilePictureUrl } from './ProfilePictureInput';
 import { genderLabel } from '../utils/gender';
@@ -30,6 +31,13 @@ interface Parent {
   email: string;
   phoneNumber: string;
   address: string;
+  addressLine2?: string;
+  landmark?: string;
+  city?: string;
+  district?: string;
+  state?: string;
+  country?: string;
+  pinCode?: string;
   relationship: string;
   isActive: boolean;
   students: ParentStudent[];
@@ -166,7 +174,7 @@ const ParentList: React.FC<{ selectedSchoolId: number | null; initialParentId?: 
   const saveParent = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!editingParent || saving || !can('management.parents', 'update')) return;
-    const { id, name, email, phoneNumber, address, relationship } = editingParent;
+    const { id, name, email, phoneNumber, address, addressLine2, landmark, city, district, state, country, pinCode, relationship } = editingParent;
     if (!name.trim() || !email.trim() || !phoneNumber.trim() || !relationship.trim()) {
       toast.error('Please enter the parent name, email, phone and relationship.');
       return;
@@ -177,7 +185,7 @@ const ParentList: React.FC<{ selectedSchoolId: number | null; initialParentId?: 
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
         body: JSON.stringify({ id, schoolId: selectedSchoolId, name: name.trim(), email: email.trim(),
-          phoneNumber: phoneNumber.trim(), address: address.trim(), relationship: relationship.trim() }),
+          phoneNumber: phoneNumber.trim(), address: address.trim(), addressLine2, landmark, city, district, state, country, pinCode, relationship: relationship.trim() }),
       });
       const result = await response.json();
       if (!response.ok || !result.success) throw new Error(result.message || 'Unable to update parent. Please check the details and try again.');
@@ -261,9 +269,9 @@ const ParentList: React.FC<{ selectedSchoolId: number | null; initialParentId?: 
         {editingParent && <form id="edit-parent-form" onSubmit={saveParent}>
           <fieldset disabled={saving} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
             <div className="form-grid">
-              {(['name', 'email', 'phoneNumber', 'relationship', 'address'] as const).map(field => (
+              {(['name', 'email', 'phoneNumber', 'relationship'] as const).map(field => (
                 <div className="form-group" key={field}>
-                  <label htmlFor={`parent-${field}`}>{({ name: 'Name', email: 'Email', phoneNumber: 'Phone', relationship: 'Relationship', address: 'Address' })[field]}</label>
+                  <label htmlFor={`parent-${field}`}>{({ name: 'Name', email: 'Email', phoneNumber: 'Phone', relationship: 'Relationship' })[field]}</label>
                   {field === 'relationship' ? (
                     <RelationshipSelect id="parent-relationship" value={editingParent.relationship || ''}
                       onChange={event => setEditingParent({ ...editingParent, relationship: event.target.value })} />
@@ -273,7 +281,11 @@ const ParentList: React.FC<{ selectedSchoolId: number | null; initialParentId?: 
                     onChange={event => setEditingParent({ ...editingParent, [field]: event.target.value })} />}
                 </div>
               ))}
-            </div>
+            </div>            <ParentAddressFields values={parentAddressValues(editingParent)} disabled={saving}
+              onChange={(name, value) => {
+                const key = name === 'parentAddress' ? 'address' : name.replace(/^parent/, '').replace(/^./, letter => letter.toLowerCase());
+                setEditingParent({ ...editingParent, [key]: value });
+              }} />
           </fieldset>
         </form>}
       </Modal>
@@ -286,7 +298,14 @@ const ParentList: React.FC<{ selectedSchoolId: number | null; initialParentId?: 
               <div className="form-group"><label>Email</label><div>{selectedParent.email || '-'}</div></div>
               <div className="form-group"><label>Phone</label><div>{selectedParent.phoneNumber || '-'}</div></div>
               <div className="form-group"><label>Relationship</label><div>{selectedParent.relationship || '-'}</div></div>
-              <div className="form-group"><label>Address</label><div>{selectedParent.address || '-'}</div></div>
+              <div className="form-group"><label>Address Line 1</label><div>{selectedParent.address || '-'}</div></div>
+              <div className="form-group"><label>Address Line 2</label><div>{selectedParent.addressLine2 || '-'}</div></div>
+              <div className="form-group"><label>Landmark</label><div>{selectedParent.landmark || '-'}</div></div>
+              <div className="form-group"><label>City</label><div>{selectedParent.city || '-'}</div></div>
+              <div className="form-group"><label>District</label><div>{selectedParent.district || '-'}</div></div>
+              <div className="form-group"><label>State</label><div>{selectedParent.state || '-'}</div></div>
+              <div className="form-group"><label>Country</label><div>{selectedParent.country || '-'}</div></div>
+              <div className="form-group"><label>PIN Code</label><div>{selectedParent.pinCode || '-'}</div></div>
             </div>
             <h3 style={{ marginBottom: '12px' }}>Students</h3>
             {selectedParent.students.length === 0 ? <p>No linked students.</p> : (

@@ -94,3 +94,8 @@
 .info-value {
   color: #718096;
 }
+.school-card-title { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.school-card-title img, .school-card-title > span {
+  width: 42px; height: 42px; border-radius: 50%; flex: 0 0 42px; object-fit: cover;
+}
+.school-card-title > span { display: inline-flex; align-items: center; justify-content: center; background: #eaf2ff; color: #2563eb; font-weight: 700; }

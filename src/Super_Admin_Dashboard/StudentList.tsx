@@ -11,6 +11,7 @@ import { downloadCsv, parseCsv } from '../utils/csv';
 import { formatImportDate, toApiDate, importDateError } from '../utils/importDate';
 import { genderLabel, parseGenderCode } from '../utils/gender';
 import BulkImportPreview, { ImportPreviewRow } from './BulkImportPreview';
+import { startBulkImportJob, updateBulkImportJob } from './bulkImportJobs';
 import ProfileIdCard from './ProfileIdCard';
 import CsvImportHint from './CsvImportHint';
 import ImportResults, { ImportFailure, ImportResult } from './ImportResults';
@@ -254,7 +255,10 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId, onViewParen
 
   const confirmStudentImport = async () => {
     const validRows = importPreview.filter(row => row.errors.length === 0);
-    setTransferring(true);
+    const jobId = startBulkImportJob('Student', validRows.length);
+    setImportPreview([]);
+    setTransferring(false);
+    void (async () => {
     const errors: ImportFailure[] = [];
     setImportResult(null);
     let imported = 0;
@@ -278,18 +282,20 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId, onViewParen
           .filter(result => !result.ok)
           .map(result => ({ rowNumber: result.previewRow.rowNumber, name: result.previewRow.values.StudentName || '', email: result.previewRow.values.Email || '', message: result.message || 'Import failed. Please try again.' })));
       }
+      updateBulkImportJob(jobId, imported, errors, imported + errors.length);
       await fetchStudents(1, pageSize);
       setImportPreview([]);
       const importMessage = `${imported} students imported${errors.length ? `, ${errors.length} failed` : ' successfully'}.`;
       if (errors.length) {
-        setImportResult({ imported, errors });
+
         if (imported > 0) toast.warning(importMessage, 10000);
         else toast.error(importMessage, 10000);
       } else {
         toast.success(importMessage);
       }
-    } catch (error: any) { toast.error(error.message || 'Unable to import students.'); }
-    finally { setTransferring(false); }
+      updateBulkImportJob(jobId, imported, errors, validRows.length, true);
+    } catch (error: any) { errors.push({ rowNumber: 0, name: '', email: '', message: error.message || 'Unable to import students.' }); updateBulkImportJob(jobId, imported, errors, validRows.length, true); }
+    })();
   };
 
   if (!selectedSchoolId) return <div className="staff-list-loading">Please select a school</div>;
@@ -412,7 +418,7 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId, onViewParen
             name={selectedStudent.studentName}
             type="Student"
             identifier={`Student ID: ${selectedStudent.id}`}
-            subtitle={`${selectedStudent.className || 'Class not assigned'} • Section ${selectedStudent.sectionName || '—'}`}
+            subtitle={`${selectedStudent.className || 'Class not assigned'} \u2022 Section ${selectedStudent.sectionName || '\u2014'}`}
             status={selectedStudent.isActive}
             fields={[
               { label: 'Roll Number', value: selectedStudent.rollNumber },

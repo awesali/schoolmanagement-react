@@ -5,7 +5,7 @@ import { useToastResultState } from '../components/Toast/Toast';
 import './StaffList.css';
 import './ManagementTabs.css';
 
-type SalaryTab = 'dashboard' | 'assign' | 'generate' | 'pay' | 'history' | 'pending';
+type SalaryTab = 'dashboard' | 'assign' | 'pay' | 'history' | 'pending';
 
 interface Staff {
   id: number;
@@ -56,6 +56,7 @@ interface AssignedSalary {
   basicSalary: number;
   salaryType: string;
   effectiveFrom: string;
+  salaryGenerationDay: number;
 }
 
 interface DashboardData {
@@ -72,7 +73,6 @@ interface SalaryManagementProps {
 const TAB_LABELS: Record<SalaryTab, string> = {
   dashboard: 'Dashboard',
   assign: 'Assign Salary',
-  generate: 'Generate Salary',
   pay: 'Pay Salary',
   history: 'Salary History',
   pending: 'Pending Salaries',
@@ -227,13 +227,13 @@ const SalaryManagement: React.FC<SalaryManagementProps> = ({ selectedSchoolId })
     }
   };
 
-  const assignSalary = async (staffId: number, basicSalary: number, salaryType: string, isUpdate: boolean) => {
+  const assignSalary = async (staffId: number, basicSalary: number, salaryType: string, salaryGenerationDay: number, isUpdate: boolean) => {
     try {
       setActionMsg(null);
       const response = await fetch(`${API_BASE_URL}/api/Staff/assign`, {
         method: 'POST',
         headers: jsonHeaders(),
-        body: JSON.stringify({ staffId, basicSalary, salaryType, isUpdate }),
+        body: JSON.stringify({ staffId, basicSalary, salaryType, salaryGenerationDay, isUpdate }),
       });
       const result = await response.json();
       const succeeded = response.ok && result.success !== false;
@@ -250,28 +250,6 @@ const SalaryManagement: React.FC<SalaryManagementProps> = ({ selectedSchoolId })
     }
   };
 
-  const generateSalary = async (month: number, year: number) => {
-    try {
-      setActionMsg(null);
-      const response = await fetch(`${API_BASE_URL}/api/Staff/generate?month=${month}&year=${year}&schoolId=${selectedSchoolId}`, {
-        method: 'POST',
-        headers: headers(),
-      });
-      setActionMsg({
-        text: response.ok ? 'Salary generated successfully.' : 'Failed to generate salary.',
-        ok: response.ok,
-      });
-      if (response.ok) {
-        fetchDashboardData();
-        fetchPendingSalaries();
-      }
-      return response.ok;
-    } catch (error) {
-      console.error('Failed to generate salary:', error);
-      setActionMsg({ text: 'Error generating salary.', ok: false });
-      return false;
-    }
-  };
 
   const payMultipleSalaries = async (
     staffIds: number[],
@@ -355,9 +333,6 @@ const SalaryManagement: React.FC<SalaryManagementProps> = ({ selectedSchoolId })
         <AssignSalaryForm staffList={staffList} onAssign={assignSalary} />
       )}
 
-      {activeTab === 'generate' && (
-        <GenerateSalaryForm onGenerate={generateSalary} />
-      )}
 
       {activeTab === 'pay' && (
         <PaySalaryForm pendingSalaries={pendingSalaries} onRefresh={fetchPendingSalaries} onPay={payMultipleSalaries} />
@@ -402,13 +377,13 @@ const DashboardCards: React.FC<{ dashboardData: DashboardData }> = ({ dashboardD
 
 const AssignSalaryForm: React.FC<{
   staffList: Staff[];
-  onAssign: (staffId: number, basicSalary: number, salaryType: string, isUpdate: boolean) => Promise<boolean>;
+  onAssign: (staffId: number, basicSalary: number, salaryType: string, salaryGenerationDay: number, isUpdate: boolean) => Promise<boolean>;
 }> = ({ staffList, onAssign }) => {
   const [department, setDepartment] = useState('');
-  const [employeeSearch, setEmployeeSearch] = useState('');
   const [staffId, setStaffId] = useState('');
   const [basicSalary, setBasicSalary] = useState('');
   const [salaryType, setSalaryType] = useState('monthly');
+  const [salaryGenerationDay, setSalaryGenerationDay] = useState(1);
   const [saving, setSaving] = useState(false);
   const [formMsg, setFormMsg] = useState('');
   const [assignedSalary, setAssignedSalary] = useState<AssignedSalary | null>(null);
@@ -423,17 +398,10 @@ const AssignSalaryForm: React.FC<{
 
   const departmentStaff = staffList.filter(staff =>
     staff.isActive !== false && staff.roleName === department);
-  const normalizedSearch = employeeSearch.trim().toLowerCase();
-  const matchingStaff = normalizedSearch
-    ? departmentStaff.filter(staff =>
-        staff.name.toLowerCase().includes(normalizedSearch) ||
-        String(staff.employeeNumber).includes(normalizedSearch))
-    : [];
   const selectedStaff = staffList.find(staff => staff.id === Number(staffId));
 
   const selectDepartment = (value: string) => {
     setDepartment(value);
-    setEmployeeSearch('');
     setStaffId('');
     setAssignedSalary(null);
     setEditingSalary(false);
@@ -442,7 +410,6 @@ const AssignSalaryForm: React.FC<{
 
   const selectEmployee = async (staff: Staff) => {
     setStaffId(String(staff.id));
-    setEmployeeSearch(`${staff.name} (${staff.employeeNumber || 'ID unavailable'})`);
     setFormMsg('');
     setAssignedSalary(null);
     setEditingSalary(false);
@@ -457,13 +424,15 @@ const AssignSalaryForm: React.FC<{
           setAssignedSalary(result.data);
           setBasicSalary(String(result.data.basicSalary));
           setSalaryType(result.data.salaryType || 'monthly');
+          setSalaryGenerationDay(Number(result.data.salaryGenerationDay || 1));
         } else {
           setBasicSalary('');
           setSalaryType('monthly');
+          setSalaryGenerationDay(1);
         }
       }
     } catch {
-      setFormMsg('Unable to check the employee’s current salary.');
+      setFormMsg("Unable to check the employee's current salary.");
     } finally {
       setCheckingSalary(false);
     }
@@ -476,7 +445,7 @@ const AssignSalaryForm: React.FC<{
       return;
     }
     if (!staffId) {
-      setFormMsg('Please search for and select an employee.');
+      setFormMsg('Please select an employee.');
       return;
     }
     if (assignedSalary && !editingSalary) {
@@ -490,13 +459,13 @@ const AssignSalaryForm: React.FC<{
 
     setSaving(true);
     setFormMsg('');
-    const ok = await onAssign(Number(staffId), Number(basicSalary), salaryType, editingSalary);
+    const ok = await onAssign(Number(staffId), Number(basicSalary), salaryType, salaryGenerationDay, editingSalary);
     setSaving(false);
     if (ok) {
       setDepartment('');
-      setEmployeeSearch('');
-      setStaffId('');
+        setStaffId('');
       setBasicSalary('');
+      setSalaryGenerationDay(1);
       setAssignedSalary(null);
       setEditingSalary(false);
     }
@@ -512,40 +481,32 @@ const AssignSalaryForm: React.FC<{
           {departments.map(item => <option key={item} value={item}>{item}</option>)}
         </select>
       </div>
-      <div style={{ ...fieldStyle, position: 'relative' }}>
-        <label style={labelStyle}>Search Employee (Name or Employee ID) *</label>
-        <input
-          type="search"
-          value={employeeSearch}
+      <div style={fieldStyle}>
+        <label style={labelStyle}>Employee *</label>
+        <select
+          value={staffId}
           onChange={e => {
-            setEmployeeSearch(e.target.value);
-            setStaffId('');
-            setAssignedSalary(null);
-            setEditingSalary(false);
-            setFormMsg('');
+            const staff = departmentStaff.find(item => item.id === Number(e.target.value));
+            if (staff) selectEmployee(staff);
+            else {
+              setStaffId('');
+              setAssignedSalary(null);
+              setEditingSalary(false);
+              setFormMsg('');
+            }
           }}
-          placeholder={department ? 'Enter employee name or ID' : 'Select a department first'}
-          disabled={!department}
-          autoComplete="off"
+          required
+          disabled={!department || checkingSalary}
           style={{ ...selectStyle, width: '100%' }}
-        />
-        {department && normalizedSearch && !selectedStaff && (
-          <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', marginTop: '6px', maxHeight: '180px', overflowY: 'auto' }}>
-            {matchingStaff.length > 0 ? matchingStaff.map(staff => (
-              <button
-                key={staff.id}
-                type="button"
-                onClick={() => selectEmployee(staff)}
-                style={{ width: '100%', padding: '10px 12px', border: 0, borderBottom: '1px solid #edf2f7', background: 'white', textAlign: 'left', cursor: 'pointer' }}
-              >
-                <strong>{staff.name}</strong>
-                <span style={{ color: '#718096', marginLeft: '8px' }}>Employee ID: {staff.employeeNumber || 'Unavailable'}</span>
-              </button>
-            )) : (
-              <div style={{ padding: '12px', color: '#718096', fontSize: '13px' }}>No employee found in this department.</div>
-            )}
-          </div>
-        )}
+        >
+          <option value="">{department ? 'Select Employee' : 'Select Department First'}</option>
+          {departmentStaff.map(staff => (
+            <option key={staff.id} value={staff.id}>
+              {staff.name} ({staff.employeeNumber || 'ID unavailable'})
+            </option>
+          ))}
+        </select>
+        {department && departmentStaff.length === 0 && <div style={{ color: '#718096', fontSize: '12px', marginTop: '6px' }}>No active employees found in this department.</div>}
       </div>
       {selectedStaff && (
         <div style={{ background: '#f7fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '14px', marginBottom: '16px', fontSize: '13px', color: '#4a5568' }}>
@@ -561,7 +522,7 @@ const AssignSalaryForm: React.FC<{
       {assignedSalary && (
         <div style={{ padding: '14px', marginBottom: '16px', borderRadius: '10px', background: '#fffbeb', border: '1px solid #fcd34d', color: '#78350f' }}>
           <div style={{ fontWeight: 700, marginBottom: '6px' }}>Salary Already Assigned</div>
-          <div>Current salary: <strong>{money(assignedSalary.basicSalary)}</strong> ({assignedSalary.salaryType})</div>
+          <div>Current salary: <strong>{money(assignedSalary.basicSalary)}</strong> ({assignedSalary.salaryType})</div><div>Automatic generation date: <strong>{assignedSalary.salaryGenerationDay || 1}</strong> of every month</div>
           <button
             type="button"
             className="btn"
@@ -584,49 +545,23 @@ const AssignSalaryForm: React.FC<{
           <option value="yearly">Yearly</option>
         </select>
       </div>
-      {formMsg && <div style={messageStyle(false)}>{formMsg}</div>}
-      <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={saving || checkingSalary || !selectedStaff || (!!assignedSalary && !editingSalary)}>
-        {saving ? 'Saving...' : editingSalary ? 'Update Salary' : 'Assign Salary'}
-      </button>
-    </form>
-  );
-};
-
-const GenerateSalaryForm: React.FC<{
-  onGenerate: (month: number, year: number) => Promise<boolean>;
-}> = ({ onGenerate }) => {
-  const [month, setMonth] = useState(new Date().getMonth() + 1);
-  const [year, setYear] = useState(new Date().getFullYear());
-  const [saving, setSaving] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    await onGenerate(month, year);
-    setSaving(false);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} style={panelStyle}>
-      <h3 style={{ marginBottom: '20px', color: '#1e2a3a' }}>Generate Salary</h3>
-      <div style={fieldStyle}>
-        <label style={labelStyle}>Month *</label>
-        <select value={month} onChange={e => setMonth(Number(e.target.value))} style={{ ...selectStyle, width: '100%' }}>
-          {Array.from({ length: 12 }, (_, i) => (
-            <option key={i + 1} value={i + 1}>{monthName(i + 1)}</option>
-          ))}
-        </select>
-      </div>
       <div style={{ ...fieldStyle, marginBottom: '20px' }}>
-        <label style={labelStyle}>Year *</label>
-        <input type="number" value={year} onChange={e => setYear(Number(e.target.value))} style={{ ...selectStyle, width: '100%' }} />
+        <label style={labelStyle}>Monthly Salary Generation Date *</label>
+        <select value={salaryGenerationDay} onChange={e => setSalaryGenerationDay(Number(e.target.value))} disabled={!selectedStaff || checkingSalary || (!!assignedSalary && !editingSalary)} style={{ ...selectStyle, width: '100%' }}>
+          {Array.from({ length: 28 }, (_, index) => index + 1).map(day => <option key={day} value={day}>{day}</option>)}
+        </select>
+        <div style={{ color: '#718096', fontSize: '12px', marginTop: '6px' }}>Pending salary will be created automatically on this date every month while the employee is active.</div>
       </div>
-      <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={saving}>
-        {saving ? 'Generating...' : 'Generate Salary'}
-      </button>
+      {formMsg && <div style={messageStyle(false)}>{formMsg}</div>}
+      {(!assignedSalary || editingSalary) && (
+        <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={saving || checkingSalary || !selectedStaff}>
+          {saving ? 'Saving...' : editingSalary ? 'Update Salary' : 'Assign Salary'}
+        </button>
+      )}
     </form>
   );
 };
+
 
 const PaySalaryForm: React.FC<{
   pendingSalaries: PendingSalary[];
@@ -680,7 +615,7 @@ const PaySalaryForm: React.FC<{
     }
     if (selectedRecords.some(record =>
       Number(record.netSalary || record.basicSalary) + adjustmentPerEmployee < 0)) {
-      setFormMsg('Deduction cannot be greater than an employee’s payable amount.');
+      setFormMsg("Deduction cannot be greater than an employee's payable amount.");
       return;
     }
     if (paymentMethod !== 'cash' && !paymentReference.trim()) {

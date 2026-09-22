@@ -3,6 +3,7 @@ import { API_BASE_URL } from '../config';
 import { useToast, useToastMessageState } from '../components/Toast/Toast';
 import { TOAST_MESSAGES } from '../constants/toastMessages';
 import Modal from './Modal';
+import ProfilePictureInput from './ProfilePictureInput';
 import './CreateSchool.css';
 
 interface CreateSchoolProps {
@@ -26,6 +27,7 @@ export interface SchoolDetails {
   longitude?: number;
   phone: string;
   email: string;
+  logoUrl?: string | null;
 }
 
 const CreateSchool: React.FC<CreateSchoolProps> = ({ isOpen, onClose, school, onSuccess }) => {
@@ -48,6 +50,8 @@ const CreateSchool: React.FC<CreateSchoolProps> = ({ isOpen, onClose, school, on
   });
   const [mapCenter, setMapCenter] = useState(defaultLocation);
   const [loading, setLoading] = useState(false);
+  const [logo, setLogo] = useState<File | null>(null);
+  const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(null);
   const [error, setError] = useToastMessageState('error');
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationStatus, setLocationStatus] = useState('Default location selected. Click map or use current location.');
@@ -55,6 +59,9 @@ const CreateSchool: React.FC<CreateSchoolProps> = ({ isOpen, onClose, school, on
   const isEditing = Boolean(school);
 
   useEffect(() => {
+    if (!isOpen) return;
+    setLogo(null);
+    setCurrentLogoUrl(school?.logoUrl || null);
     if (!isOpen || !school) return;
     const latitude = school.latitude ?? defaultLocation.lat;
     const longitude = school.longitude ?? defaultLocation.lng;
@@ -273,14 +280,17 @@ const CreateSchool: React.FC<CreateSchoolProps> = ({ isOpen, onClose, school, on
         longitude,
       };
 
+      const body = new FormData();
+      Object.entries(payload).forEach(([key, value]) => body.append(key[0].toUpperCase() + key.slice(1), String(value ?? '')));
+      if (logo) body.append('Logo', logo);
+
       const response = await fetch(`${API_BASE_URL}/api/Admin/${isEditing ? 'update-school' : 'create'}`, {
         method: isEditing ? 'PUT' : 'POST',
         headers: {
           'accept': '*/*',
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(payload),
+        body,
       });
 
       const result = await response.json();
@@ -303,6 +313,8 @@ const CreateSchool: React.FC<CreateSchoolProps> = ({ isOpen, onClose, school, on
         });
         setMapCenter(defaultLocation);
         setMapZoom(17);
+        setLogo(null);
+        setCurrentLogoUrl(null);
       } else {
         setError(result.message || `Failed to ${isEditing ? 'update' : 'create'} school`);
       }
@@ -321,6 +333,7 @@ const CreateSchool: React.FC<CreateSchoolProps> = ({ isOpen, onClose, school, on
       formId="create-school-form" submitLabel={isEditing ? 'Save Changes' : 'Create School'}
       showCancel={false} submitLoading={loading} loadingText={isEditing ? 'Saving...' : 'Creating...'}>
         <form id="create-school-form" onSubmit={handleSubmit} style={{ padding: 24 }}>
+          <ProfilePictureInput id="school-logo" currentUrl={currentLogoUrl} file={logo} onChange={setLogo} label="School Logo" undoAsIcon />
           <div className="form-group">
             <label>School Name *</label>
             <input

@@ -23,6 +23,13 @@ export const CloseIcon = transportIcon('m6 6 12 12M6 18 18 6');
 export const FeeTypeIcon = transportIcon('M13 3H3v10l8 8L21 11l-8-8ZM7 7h.01M16 2v6M13 5h6');
 export const ReceiptIcon = transportIcon('M5 3l2 1 2-1 3 1 3-1 2 1 2-1v18l-2-1-2 1-3-1-3 1-2-1-2 1V3ZM8 8h8M8 12h8M8 16h5');
 export const PrintIcon = transportIcon('M7 8V3h10v5M7 17H3V8h18v9h-4M7 14h10v7H7v-7ZM17 11h.01');
+export const MenuIcon = transportIcon('M4 6h16M4 12h16M4 18h16');
+export const BellIcon = transportIcon('M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4');
+export const TeacherIcon = transportIcon('M9 7a4 4 0 1 0 8 0 4 4 0 0 0-8 0ZM4 21v-2a7 7 0 0 1 14 0v2M19 4h3v10h-3M19 8h3');
+export const StudentsIcon = transportIcon('M8 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM2 21v-2a6 6 0 0 1 12 0v2M17 11a4 4 0 0 0 0-8M17 15a6 6 0 0 1 5 6');
+export const EmployeesIcon = transportIcon('M8 7a4 4 0 1 0 8 0 4 4 0 0 0-8 0ZM4 21v-3a8 8 0 0 1 16 0v3M10 12h4l-1 5h-2l-1-5Z');
+export const LeaveIcon = transportIcon('M7 3v3M17 3v3M4 8h16v13H4V5h16M8 13h8M8 17h5');
+export const ClipboardIcon = transportIcon('M9 3h6v3H9V3ZM6 5H4v16h16V5h-2M8 11h8M8 15h8');
 
 export const AddStudentIcon: React.FC<IconProps> = ({ size = 20, style, ...props }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
@@ -153,3 +160,4 @@ export const PhoneIcon = transportIcon('M5 3h4l2 5-3 2a14 14 0 0 0 6 6l2-3 5 2v4
 export const SchoolIcon = transportIcon('M3 21V8l9-5 9 5v13H3ZM9 21v-6h6v6M7 10h2m6 0h2M11 7h2');
 export const ProfileIcon = transportIcon('M8 7a4 4 0 1 0 8 0 4 4 0 0 0-8 0ZM4 21v-3a8 8 0 0 1 16 0v3');
 export const IdCardIcon = transportIcon('M3 5h18v14H3V5ZM6 10a2 2 0 1 0 4 0 2 2 0 0 0-4 0ZM5 16a3 3 0 0 1 6 0M14 9h4m-4 4h4');
+export const LogoutIcon = transportIcon('M10 5V3H4v18h6v-2M14 8l4 4-4 4M8 12h10');

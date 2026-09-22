@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { API_BASE_URL } from '../config';
+import { CloseIcon } from '../components/Icons/Icons';
 
 export const profilePictureUrl = (url?: string | null) =>
   url ? (/^https?:\/\//i.test(url) ? url : `${API_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`) : '';
@@ -9,9 +10,11 @@ interface Props {
   currentUrl?: string | null;
   file: File | null;
   onChange: (file: File | null) => void;
+  label?: string;
+  undoAsIcon?: boolean;
 }
 
-const ProfilePictureInput: React.FC<Props> = ({ id, currentUrl, file, onChange }) => {
+const ProfilePictureInput: React.FC<Props> = ({ id, currentUrl, file, onChange, label = 'Profile Picture', undoAsIcon = false }) => {
   const [preview, setPreview] = useState('');
   const [error, setError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -22,12 +25,21 @@ const ProfilePictureInput: React.FC<Props> = ({ id, currentUrl, file, onChange }
     return () => URL.revokeObjectURL(url);
   }, [file]);
   const imageUrl = preview || profilePictureUrl(currentUrl);
+  const undoChange = () => {
+    onChange(null);
+    setError('');
+    if (inputRef.current) inputRef.current.value = '';
+  };
   return (
     <div className="profile-upload-area">
-      <button type="button" className="profile-upload-circle" style={{ padding: 0 }} aria-label="Choose profile picture" onClick={() => inputRef.current?.click()}>
-        {imageUrl ? <img src={imageUrl} alt="Profile preview" /> : <span aria-hidden="true">+</span>}
-      </button>
-      <label htmlFor={id} className="profile-upload-title">Change Profile Picture</label>
+      <div className="profile-upload-control">
+        <button type="button" className="profile-upload-circle" style={{ padding: 0 }} aria-label={`Choose ${label.toLowerCase()}`} onClick={() => inputRef.current?.click()}>
+          {imageUrl ? <img src={imageUrl} alt={`${label} preview`} /> : <span aria-hidden="true">+</span>}
+        </button>
+        {file && undoAsIcon && <button type="button" className="profile-upload-undo" title={`Undo ${label.toLowerCase()} change`}
+          aria-label={`Undo ${label.toLowerCase()} change`} onClick={undoChange}><CloseIcon size={16} /></button>}
+      </div>
+      <label htmlFor={id} className="profile-upload-title">{imageUrl ? `Change ${label}` : `Add ${label}`}</label>
       <input ref={inputRef} id={id} type="file" accept="image/jpeg,image/png,image/webp"
         onChange={event => {
           const selected = event.target.files?.[0];
@@ -41,11 +53,7 @@ const ProfilePictureInput: React.FC<Props> = ({ id, currentUrl, file, onChange }
           onChange(selected);
         }} />
       <small>JPG, PNG or WebP · Max 5 MB</small>
-      {file && <button type="button" className="btn" onClick={() => {
-        onChange(null);
-        setError('');
-        if (inputRef.current) inputRef.current.value = '';
-      }}>Undo picture change</button>}
+      {file && !undoAsIcon && <button type="button" className="btn" onClick={undoChange}>Undo {label.toLowerCase()} change</button>}
       {error && <p role="alert" className="error-message">{error}</p>}
     </div>
   );

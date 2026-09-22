@@ -7,6 +7,8 @@ import Modal from './Modal';
 import RelationshipSelect from './RelationshipSelect';
 import './AddStaff.css';
 import { GENDER_OPTIONS } from '../utils/gender';
+import StudentDetailSections, { appendStudentDetails, studentDetailValues } from './StudentDetailSections';
+import ParentAddressFields, { parentAddressValues } from './ParentAddressFields';
 
 interface AddStudentProps {
   isOpen: boolean;
@@ -40,6 +42,7 @@ const initialForm = {
   parentEmail: '',
   parentAddress: '',
   parentRelationship: '',
+  ...studentDetailValues(),
 };
 
 const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSuccess }) => {
@@ -134,9 +137,17 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
       formDataToSend.append('ClassId', formData.classId);
       formDataToSend.append('SectionId', formData.sectionId);
       formDataToSend.append('SessionId', formData.sessionId);
+      appendStudentDetails(formDataToSend, formData);
       formDataToSend.append('Parent.Name', formData.parentName);
       formDataToSend.append('Parent.PhoneNumber', formData.parentPhone);
       formDataToSend.append('Parent.Address', formData.parentAddress);
+      formDataToSend.append('Parent.AddressLine2', formData.parentAddressLine2);
+      formDataToSend.append('Parent.Landmark', formData.parentLandmark);
+      formDataToSend.append('Parent.City', formData.parentCity);
+      formDataToSend.append('Parent.District', formData.parentDistrict);
+      formDataToSend.append('Parent.State', formData.parentState);
+      formDataToSend.append('Parent.Country', formData.parentCountry);
+      formDataToSend.append('Parent.PinCode', formData.parentPinCode);
       formDataToSend.append('Parent.Email', formData.parentEmail);
       formDataToSend.append('Parent.Relationship', formData.parentRelationship);
 
@@ -305,6 +316,10 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
           </div>
 
           <div className="form-group full-width">
+            <StudentDetailSections values={formData} disabled={submitting}
+              onChange={(name, value) => setFormData(current => ({ ...current, [name]: value }))} />
+          </div>
+          <div className="form-group full-width">
             <label>— Parent Details —</label>
           </div>
 
@@ -336,8 +351,8 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
             <RelationshipSelect value={formData.parentRelationship} onChange={handleChange} />
           </div>
           <div className="form-group full-width">
-            <label>Parent Address *</label>
-            <textarea name="parentAddress" required value={formData.parentAddress} onChange={handleChange} />
+            <ParentAddressFields values={formData} disabled={submitting}
+              onChange={(name, value) => setFormData(current => ({ ...current, [name]: value }))} />
           </div>
         </div>
 

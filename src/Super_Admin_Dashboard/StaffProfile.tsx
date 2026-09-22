@@ -79,7 +79,7 @@ export default function StaffProfile() {
           const [assigned, history, pending] = await Promise.all([
             request(`Staff/assigned-salary/${staffId}`), request(`Staff/history?schoolId=${schoolId}&month=${m}&year=${year}`), request(`Staff/pending?schoolId=${schoolId}`)
           ]);
-          setData({ assigned: assigned.isAssigned ? assigned.data : null, history: history.filter((r: Row) => Number(r.staffId) === Number(staffId)), pending: pending.filter((r: Row) => Number(r.staffId) === Number(staffId)) });
+          setData({ assigned: assigned.isAssigned ? assigned.data : null, salaryRevisions: assigned.history || [], history: history.filter((r: Row) => Number(r.staffId) === Number(staffId)), pending: pending.filter((r: Row) => Number(r.staffId) === Number(staffId)) });
         } else if (tab === 'Classes & Subjects' || tab === 'Timetable') {
           const [classes, subjects] = await Promise.all([all(`Class/calss-list?schoolId=${schoolId}`), all(`Subject/subjects-by-school?schoolId=${schoolId}`)]);
           const owned = subjects.filter(s => Number(s.teacherId) === Number(staffId));
@@ -128,7 +128,8 @@ export default function StaffProfile() {
           {tab === 'Overview' && <><dl className="staff-detail-summary"><div><dt>Date of Birth</dt><dd>{date(staff.dob)}</dd></div><div><dt>Date of Joining</dt><dd>{date(staff.doj)}</dd></div><div><dt>Gender</dt><dd>{genderLabel(staff.genderCode)}</dd></div></dl><StaffDetailSummary record={staff} /></>}
           {tab === 'Attendance' && <><p>{(data.attendance || []).filter((r: Row) => r.status === 'Present').length} Present - {(data.attendance || []).filter((r: Row) => r.status === 'Absent').length} Absent - {(data.attendance || []).length} recorded days</p><Grid headings={['Date', 'Status']} rows={(data.attendance || []).map((r: Row) => [date(r.attendanceDate), r.status])} empty="No attendance recorded for this month." /></>}
           {tab === 'Salary' && <>
-            <h3>Salary Structure</h3>{data.assigned ? <p>{money(data.assigned.basicSalary)} - {data.assigned.salaryType} - Effective {date(data.assigned.effectiveFrom)}</p> : <p>No salary assigned.</p>}
+            <h3>Salary Structure</h3>{data.assigned ? <p>{money(data.assigned.basicSalary)} - {data.assigned.salaryType} - Generates on day {data.assigned.salaryGenerationDay || 1} every month - Effective {date(data.assigned.effectiveFrom)}</p> : <p>No salary assigned.</p>}
+            <h3>Salary Revision History</h3><Grid headings={['Effective Date', 'Basic Salary', 'Salary Type', 'Generation Day', 'Status']} rows={(data.salaryRevisions || []).map((r: Row) => [date(r.effectiveFrom), money(r.basicSalary), r.salaryType, r.salaryGenerationDay || 1, r.isActive ? 'Current' : 'Previous'])} empty="No salary revision history." />
             <h3>Payment History - {month}</h3><Grid headings={['Month', 'Basic', 'Bonus', 'Deduction', 'Net Salary', 'Status', 'Payment Date', 'Method', 'Remarks', 'Payslip']} rows={(data.history || []).map((r: Row) => [`${r.salaryMonth}/${r.salaryYear}`, money(r.basicSalary), money(r.bonus), money(r.deduction), money(r.netSalary), r.status, date(r.paymentDate), r.paymentMethod, r.remarks, r.status === 'Paid' ? <button className="btn btn-secondary" onClick={() => setPayslip(r)}><PreviewIcon />View Payslip</button> : '-'])} empty="No salary records for this month." />
             <h3>Pending Salary - All Months</h3><Grid headings={['Month', 'Amount', 'Status']} rows={(data.pending || []).map((r: Row) => [`${r.salaryMonth}/${r.salaryYear}`, money(r.netSalary), r.status])} empty="No pending salary." />
           </>}

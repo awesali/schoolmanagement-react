@@ -6,6 +6,7 @@ import Modal from './Modal';
 import './AddStaff.css';
 import StaffDetailSections, { staffDetailValues, appendStaffDetails, validateStaffDetails } from './StaffDetailSections';
 import { GENDER_OPTIONS } from '../utils/gender';
+import { EMPLOYMENT_TYPES } from '../utils/employmentTypes';
 
 interface AddStaffProps {
   isOpen: boolean;
@@ -26,6 +27,7 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
     genderCode: '',
     doj: '',
     roleId: 0,
+    employmentType: '',
     email: '',
     phone: '',
     ...staffDetailValues()
@@ -87,6 +89,7 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
       formDataToSend.append('GenderCode', formData.genderCode);
       formDataToSend.append('DOJ', formData.doj);
       formDataToSend.append('RoleId', formData.roleId.toString());
+      formDataToSend.append('EmploymentType', formData.employmentType);
       formDataToSend.append('SchoolId', schoolId?.toString() || '0');
 
       // The API stores the profile picture separately but receives it through
@@ -148,6 +151,7 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
       genderCode: '',
       doj: '',
       roleId: roles.length > 0 ? roles[0].id : 2,
+      employmentType: '',
       email: '',
       phone: '',
       ...staffDetailValues()
@@ -290,6 +294,14 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
                     {role.roleName}
                   </option>
                 ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Employment Type *</label>
+              <select required value={formData.employmentType}
+                onChange={(e) => setFormData({...formData, employmentType: e.target.value})}>
+                <option value="">Select Employment Type</option>
+                {EMPLOYMENT_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
               </select>
             </div>
           </div>

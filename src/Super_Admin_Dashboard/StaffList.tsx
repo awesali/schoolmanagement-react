@@ -11,6 +11,7 @@ import { downloadCsv, parseCsv } from '../utils/csv';
 import { formatImportDate, toApiDate, importDatesError, isValidImportDate } from '../utils/importDate';
 import { genderLabel, parseGenderCode } from '../utils/gender';
 import BulkImportPreview, { ImportPreviewRow } from './BulkImportPreview';
+import { startBulkImportJob, updateBulkImportJob } from './bulkImportJobs';
 import ProfileIdCard from './ProfileIdCard';
 import CsvImportHint from './CsvImportHint';
 import ImportResults, { ImportFailure, ImportResult } from './ImportResults';
@@ -22,6 +23,7 @@ import { usePermissions } from '../security/Permissions';
 import './StaffList.css';
 import { StaffDetailRecord, StaffDetailSummary } from './StaffDetailSections';
 import { TemplateIcon, ImportIcon, ExportIcon, AddStaffIcon, PreviewIcon } from '../components/Icons/Icons';
+import { EMPLOYMENT_TYPES, normalizeEmploymentType } from '../utils/employmentTypes';
 import '../components/Icons/CreateIconButton.css';
 
 interface Document {
@@ -41,6 +43,7 @@ interface Staff extends StaffDetailRecord {
   doj: string;
   roleId: number;
   roleName: string;
+  employmentType?: string | null;
   schoolName: string;
   address: string;
   isActive: boolean;
@@ -172,8 +175,8 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
       const response = await fetch(`${API_BASE_URL}/api/Admin/Staff-by-school?schoolId=${selectedSchoolId}&page=1&pageSize=100000`, { headers: authHeaders() });
       const result = await response.json();
       if (!response.ok || !result.success) throw new Error(result.message || 'Export failed');
-      downloadCsv('staff.csv', ['EmployeeNumber', 'Name', 'DOB', 'Gender', 'DOJ', 'Role', 'Email', 'Phone', 'Address', 'Status'],
-        (result.data || []).map((s: any) => [s.employeeNumber, s.name, formatImportDate(s.dob), genderLabel(s.genderCode), formatImportDate(s.doj), s.roleName, s.email, s.phone, s.address, s.isActive ? 'Active' : 'Inactive']));
+      downloadCsv('staff.csv', ['EmployeeNumber', 'Name', 'DOB', 'Gender', 'DOJ', 'Role', 'EmploymentType', 'Email', 'Phone', 'Address', 'Status'],
+        (result.data || []).map((s: any) => [s.employeeNumber, s.name, formatImportDate(s.dob), genderLabel(s.genderCode), formatImportDate(s.doj), s.roleName, s.employmentType || '', s.email, s.phone, s.address, s.isActive ? 'Active' : 'Inactive']));
     } catch (error: any) { toast.error(error.message || 'Unable to export staff.'); }
     finally { setTransferring(false); }
   };
@@ -206,7 +209,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
       const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       const preview = rows.map((row, index): ImportPreviewRow => {
         const errors: string[] = [], warnings: string[] = [];
-        ['Name', 'DOB', 'Gender', 'DOJ', 'Role', 'Email', 'Phone', 'Address'].forEach(field => {
+        ['Name', 'DOB', 'Gender', 'DOJ', 'Role', 'EmploymentType', 'Email', 'Phone', 'Address'].forEach(field => {
           if (!['DOB', 'DOJ'].includes(field) && !row[field]?.trim()) errors.push(`${field} is required.`);
         });
         const email = row.Email?.trim().toLowerCase();
@@ -227,12 +230,14 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
         if (email && fileEmails.has(email)) errors.push('Duplicate email in this file.');
         if (email) fileEmails.add(email);
         const role = roles.find((r: any) => r.roleName.trim().toLowerCase() === row.Role?.trim().toLowerCase());
+        const employmentType = normalizeEmploymentType(row.EmploymentType);
+        if (!employmentType) errors.push('Employment Type must be one of: ' + EMPLOYMENT_TYPES.join(', ') + '.');
         if (!role) errors.push(`Role "${row.Role}" was not found.`);
         const details = parseStaffDetailColumns(row);
         errors.push(...details.errors);
         const values: Record<string, string> = {
           ...details.payload,
-          Name: row.Name, DOB: toApiDate(row.DOB), GenderCode: genderCode, DOJ: toApiDate(row.DOJ), RoleId: String(role?.id || ''), SchoolId: String(selectedSchoolId),
+          Name: row.Name, DOB: toApiDate(row.DOB), GenderCode: genderCode, DOJ: toApiDate(row.DOJ), RoleId: String(role?.id || ''), EmploymentType: employmentType, SchoolId: String(selectedSchoolId),
           Email: row.Email, Phone: row.Phone, Address: row.Address
         };
         return { rowNumber: index + 2, values: row, errors, warnings, payload: values };
@@ -244,7 +249,10 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
 
   const confirmStaffImport = async () => {
     const validRows = importPreview.filter(row => row.errors.length === 0);
-    setTransferring(true);
+    const jobId = startBulkImportJob('Staff', validRows.length);
+    setImportPreview([]);
+    setTransferring(false);
+    void (async () => {
     const errors: ImportFailure[] = [];
     setImportResult(null);
     let imported = 0;
@@ -273,18 +281,20 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
           .filter(result => !result.ok)
           .map(result => ({ rowNumber: result.previewRow.rowNumber, name: result.previewRow.values.Name || '', email: result.previewRow.values.Email || '', message: result.message || 'Import failed. Please try again.' })));
       }
+      updateBulkImportJob(jobId, imported, errors, imported + errors.length);
       await fetchStaff(1, pageSize);
       setImportPreview([]);
       const importMessage = `${imported} staff members imported${errors.length ? `, ${errors.length} failed` : ' successfully'}.`;
       if (errors.length) {
-        setImportResult({ imported, errors });
+
         if (imported > 0) toast.warning(importMessage, 10000);
         else toast.error(importMessage, 10000);
       } else {
         toast.success(importMessage);
       }
-    } catch (error: any) { toast.error(error.message || 'Unable to import staff.'); }
-    finally { setTransferring(false); }
+      updateBulkImportJob(jobId, imported, errors, validRows.length, true);
+    } catch (error: any) { errors.push({ rowNumber: 0, name: '', email: '', message: error.message || 'Unable to import staff.' }); updateBulkImportJob(jobId, imported, errors, validRows.length, true); }
+    })();
   };
 
   if (loading) {
@@ -419,6 +429,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
             status={selectedStaff.isActive}
             fields={[
               { label: 'Role', value: selectedStaff.roleName },
+              { label: 'Employment Type', value: selectedStaff.employmentType || 'Not specified' },
               { label: 'Employee No.', value: selectedStaff.employeeNumber },
               { label: 'Gender', value: genderLabel(selectedStaff.genderCode) },
               { label: 'Date of Birth', value: new Date(selectedStaff.dob).toLocaleDateString() },
@@ -449,7 +460,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
 
       <BulkImportPreview
         title="Preview Staff Import"
-        columns={['Name', 'DOB', 'Gender', 'DOJ', 'Role', 'Email', 'Phone', 'Address']}
+        columns={['Name', 'DOB', 'Gender', 'DOJ', 'Role', 'EmploymentType', 'Email', 'Phone', 'Address']}
         rows={importPreview}
         importing={transferring}
         onClose={() => setImportPreview([])}

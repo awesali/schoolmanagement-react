@@ -2,12 +2,15 @@ import React, { useState } from 'react';
 import './Sidebar.css';
 import { PAGE_PERMISSIONS, usePermissions } from '../security/Permissions';
 import { SECURITY_UI_ENABLED } from '../security/features';
+import { profilePictureUrl } from './ProfilePictureInput';
 
 interface SidebarProps {
   activePage: string;
   onNavigate: (page: string, attendanceType?: 'student' | 'staff') => void;
   isCollapsed: boolean;
   userRole?: string;
+  schoolName?: string;
+  schoolLogoUrl?: string | null;
 }
 
 const teacherMenuGroups = [
@@ -70,10 +73,14 @@ const menuGroups = [
   },
 ];
 
-const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, userRole }) => {
+const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, userRole, schoolName, schoolLogoUrl }) => {
   const { can } = usePermissions();
   const [openGroups, setOpenGroups] = useState<string[]>([]);
   const [openItems, setOpenItems] = useState<string[]>([]);
+  const [failedLogo, setFailedLogo] = useState<string | null>(null);
+  const resolvedLogo = profilePictureUrl(schoolLogoUrl);
+  const schoolInitials = (schoolName || 'School').trim().split(/\s+/).filter(Boolean)
+    .slice(0, 2).map(part => part[0]).join('').toUpperCase() || 'S';
 
   const currentMenuGroups = userRole === '2' ? teacherMenuGroups : menuGroups;
 
@@ -121,7 +128,11 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, 
   return (
     <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-logo">
-        <span className="logo-icon">🏫</span>
+        <span className="logo-icon" aria-label={`${schoolName || 'School'} logo`}>
+          {resolvedLogo && failedLogo !== resolvedLogo
+            ? <img src={resolvedLogo} alt={`${schoolName || 'School'} logo`} onError={() => setFailedLogo(resolvedLogo)} />
+            : <span>{schoolInitials}</span>}
+        </span>
         <span className="logo-text">SchoolAdmin</span>
       </div>
 

@@ -1,11 +1,12 @@
 import { staffDetailGroups, staffDetailValues, appendStaffDetails, validateStaffDetails } from './StaffDetailSections';
 import { isValidImportDate, toApiDate } from '../utils/importDate';
 
+
 const columnName = (key: string) => key[0].toUpperCase() + key.slice(1);
-export const staffTemplateHeaders = ['Name', 'DOB', 'Gender', 'DOJ', 'Role', 'Email', 'Phone',
+export const staffTemplateHeaders = ['Name', 'DOB', 'Gender', 'DOJ', 'Role', 'EmploymentType', 'Email', 'Phone',
   ...staffDetailGroups.flatMap(group => group.fields.map(([key]) => columnName(key))),
   ...staffDetailGroups.slice(1).flatMap(group => group.fields.map(([key]) => columnName(key) + '2'))];
-const example: Record<string, string> = { Name: 'Example Teacher', DOB: '01-31-1990', Gender: 'Male', DOJ: '04-01-2026', Role: 'Teacher', Email: 'teacher@example.com', Phone: '9876543210', Address: '12 School Road', City: 'Amravati', State: 'Maharashtra', Country: 'India', PinCode: '444601', Qualification: 'B.Ed', PassingYear: '2012', Qualification2: 'M.Ed', PassingYear2: '2014', PreviousEmployer: 'Example School', ExperienceFrom: '04-01-2015', ExperienceTo: '03-31-2026', CertificationName: 'Teacher Training', CertificationDate: '06-01-2020' };
+const example: Record<string, string> = { Name: 'Example Teacher', DOB: '01-31-1990', Gender: 'Male', DOJ: '04-01-2026', Role: 'Teacher', EmploymentType: 'Permanent', Email: 'teacher@example.com', Phone: '9876543210', Address: '12 School Road', City: 'Amravati', State: 'Maharashtra', Country: 'India', PinCode: '444601', Qualification: 'B.Ed', PassingYear: '2012', Qualification2: 'M.Ed', PassingYear2: '2014', PreviousEmployer: 'Example School', ExperienceFrom: '04-01-2015', ExperienceTo: '03-31-2026', CertificationName: 'Teacher Training', CertificationDate: '06-01-2020' };
 export const staffTemplateExample = staffTemplateHeaders.map(header => example[header] || '');
 
 export const parseStaffDetailColumns = (row: Record<string, string>) => {

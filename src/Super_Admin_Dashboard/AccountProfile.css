@@ -1,0 +1,17 @@
+﻿.account-profile-page { min-height: 100vh; padding: 28px; background: #f4f7fb; color: var(--text-primary); }
+.account-profile-page > header { max-width: 1100px; margin: 22px auto; }
+.account-profile-page > header h1 { margin: 0 0 8px; }
+.account-profile-page > .staff-profile-back { max-width: 1100px; margin: 0 auto; display: flex; }
+.account-profile-grid { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.account-profile-card { padding: 28px; border-radius: 14px; background: var(--surface); box-shadow: 0 3px 16px rgba(15, 23, 42, .08); }
+.account-profile-card h2 { margin: 0 0 24px; }
+.account-profile-card .form-group { margin-bottom: 18px; }
+.account-profile-card label { display: block; margin-bottom: 7px; font-weight: 600; }
+.account-profile-card input { width: 100%; box-sizing: border-box; padding: 11px 12px; border: 1px solid var(--border); border-radius: 8px; font: inherit; }
+.account-profile-card input:focus { outline: 2px solid rgba(66, 133, 237, .22); border-color: #4285ed; }
+.account-profile-card input:disabled { background: #f1f5f9; color: #64748b; }
+.account-profile-card small { display: block; margin-top: 6px; color: #64748b; }
+.account-readonly { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 4px 0 22px; }
+.account-readonly > div { display: grid; gap: 5px; padding: 14px; border-radius: 8px; background: #f1f5f9; }
+.account-readonly span { color: #64748b; font-size: 12px; }
+@media (max-width: 760px) { .account-profile-page { padding: 16px; } .account-profile-grid { grid-template-columns: 1fr; } .account-profile-card { padding: 20px; } }

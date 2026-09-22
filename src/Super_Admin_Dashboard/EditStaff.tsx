@@ -6,6 +6,7 @@ import ProfilePictureInput from './ProfilePictureInput';
 import './AddStaff.css';
 import StaffDetailSections, { staffDetailValues, appendStaffDetails, validateStaffDetails, StaffDetailRecord } from './StaffDetailSections';
 import { GENDER_OPTIONS } from '../utils/gender';
+import { EMPLOYMENT_TYPES } from '../utils/employmentTypes';
 
 interface Document {
   documentId: number;
@@ -23,6 +24,7 @@ interface Staff extends StaffDetailRecord {
   doj: string;
   roleId: number;
   roleName: string;
+  employmentType?: string | null;
   schoolName: string;
   address: string;
   isActive: boolean;
@@ -53,6 +55,7 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
     genderCode: '',
     doj: '',
     roleId: 0,
+    employmentType: '',
     email: '',
     phone: '',
     ...staffDetailValues(),
@@ -72,6 +75,7 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
         genderCode: staff.genderCode || '',
         doj: staff.doj.split('T')[0],
         roleId: staff.roleId,
+        employmentType: staff.employmentType || '',
         email: staff.email,
         phone: staff.phone,
         ...staffDetailValues(staff),
@@ -134,6 +138,7 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
       formDataToSend.append('GenderCode', formData.genderCode);
       formDataToSend.append('DOJ', new Date(formData.doj).toISOString());
       formDataToSend.append('RoleId', formData.roleId.toString());
+      formDataToSend.append('EmploymentType', formData.employmentType);
       formDataToSend.append('IsActive', formData.isActive.toString());
       
       // Prepare arrays for proper alignment
@@ -341,6 +346,14 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
                   {role.roleName}
                 </option>
               ))}
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Employment Type *</label>
+            <select required value={formData.employmentType}
+              onChange={(e) => setFormData({...formData, employmentType: e.target.value})}>
+              <option value="">Select Employment Type</option>
+              {EMPLOYMENT_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
             </select>
           </div>
           <div className="form-group">

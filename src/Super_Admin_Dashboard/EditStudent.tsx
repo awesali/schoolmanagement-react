@@ -6,6 +6,7 @@ import RelationshipSelect from './RelationshipSelect';
 import ProfilePictureInput from './ProfilePictureInput';
 import './AddStaff.css';
 import { GENDER_OPTIONS } from '../utils/gender';
+import StudentDetailSections, { appendStudentDetails, studentDetailValues } from './StudentDetailSections';
 
 interface Document {
   documentId: number;
@@ -65,6 +66,7 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
     classId: '',
     sectionId: '',
     sessionId: '',
+    ...studentDetailValues(),
     isActive: true,
   });
   const [enrollment, setEnrollment] = useState<EnrollmentData>({ classes: [], sections: [], sessions: [] });
@@ -89,6 +91,7 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
         classId: '',
         sectionId: '',
         sessionId: '',
+        ...studentDetailValues(student),
         isActive: student.isActive,
       });
       fetchStudentAndEnrollment(student.id, schoolId);
@@ -134,6 +137,7 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
           classId: s.classId?.toString() ?? '',
           sectionId: s.sectionId?.toString() ?? '',
           sessionId: s.sessionId?.toString() ?? '',
+          ...studentDetailValues(s),
           isActive: s.isActive,
         }));
         setExistingDocuments((s.documents ?? []).map((doc: any) => ({
@@ -182,6 +186,7 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
       if (formData.classId) formDataToSend.append('ClassId', formData.classId);
       if (formData.sectionId) formDataToSend.append('SectionId', formData.sectionId);
       if (formData.sessionId) formDataToSend.append('SessionId', formData.sessionId);
+      appendStudentDetails(formDataToSend, formData);
 
       const documentIds: string[] = [];
       const documentNames: string[] = [];
@@ -365,6 +370,9 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
             </div>
           </div>
         </div>
+
+        <StudentDetailSections values={formData} disabled={saving}
+          onChange={(name, value) => setFormData(current => ({ ...current, [name]: value }))} />
 
         <div className="documents-section">
           <div className="documents-header">

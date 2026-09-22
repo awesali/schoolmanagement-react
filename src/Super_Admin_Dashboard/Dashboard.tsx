@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CreateSchool from './CreateSchool';
-import { CreateSchoolIcon } from '../components/Icons/Icons';
+import { CreateSchoolIcon, LogoutIcon, ProfileIcon, MenuIcon, BellIcon, TeacherIcon, StudentsIcon, EmployeesIcon, LeaveIcon, ClipboardIcon } from '../components/Icons/Icons';
 import '../components/Icons/CreateIconButton.css';
 import SchoolList from './SchoolList';
 import StaffList from './StaffList';
@@ -25,6 +25,9 @@ import PermissionManagement from './PermissionManagement';
 import StudentPromotion from './StudentPromotion';
 import Sidebar from './Sidebar';
 import { API_BASE_URL } from '../config';
+import { profilePictureUrl } from './ProfilePictureInput';
+import ImportResults from './ImportResults';
+import { BulkImportJob, getBulkImportJobs, subscribeBulkImportJobs } from './bulkImportJobs';
 import './Dashboard.css';
 import { PAGE_PERMISSIONS, usePermissions } from '../security/Permissions';
 import { SECURITY_UI_ENABLED } from '../security/features';
@@ -35,6 +38,7 @@ interface School {
   address: string;
   email: string;
   phone: string;
+  logoUrl?: string | null;
 }
 
 interface DashboardExam {
@@ -72,6 +76,12 @@ const Dashboard: React.FC = () => {
   const [schools, setSchools] = useState<School[]>([]);
   const [selectedSchoolId, setSelectedSchoolId] = useState<number | null>(null);
   const [userName, setUserName] = useState('User');
+  const [userProfilePicture, setUserProfilePicture] = useState<string | null>(null);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [importJobs, setImportJobs] = useState<BulkImportJob[]>(getBulkImportJobs);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [selectedImportJob, setSelectedImportJob] = useState<BulkImportJob | null>(null);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
   const [userRole, setUserRole] = useState<string>('');
   const [dashboardData, setDashboardData] = useState({
     teachersPresentToday: '0/0',
@@ -108,7 +118,36 @@ const Dashboard: React.FC = () => {
       }
     }
     fetchSchools();
+    fetchCurrentUserProfile();
   }, []);
+
+  useEffect(() => subscribeBulkImportJobs(setImportJobs), []);
+
+  const fetchCurrentUserProfile = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      });
+      if (!response.ok) return;
+      const profile = await response.json();
+      if (profile?.name) setUserName(profile.name);
+      setUserProfilePicture(profile?.profilePictureUrl || null);
+    } catch {
+      setUserProfilePicture(null);
+    }
+  };
+
+  const userInitials = userName.trim().split(/\s+/).filter(Boolean)
+    .slice(0, 2).map(part => part[0]).join('').toUpperCase() || 'U';
+
+  useEffect(() => {
+    if (!profileMenuOpen) return;
+    const closeMenu = (event: MouseEvent) => {
+      if (!profileMenuRef.current?.contains(event.target as Node)) setProfileMenuOpen(false);
+    };
+    document.addEventListener('mousedown', closeMenu);
+    return () => document.removeEventListener('mousedown', closeMenu);
+  }, [profileMenuOpen]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setDashboardClock(Date.now()), 60 * 1000);
@@ -244,6 +283,7 @@ const Dashboard: React.FC = () => {
     .slice(0, 5);
 
   const handleLogout = () => {
+    setProfileMenuOpen(false);
     localStorage.removeItem('token');
     navigate('/login');
   };
@@ -267,11 +307,13 @@ const Dashboard: React.FC = () => {
       {!isCollapsed && window.innerWidth <= 768 && (
         <div className="sidebar-overlay" onClick={() => setIsCollapsed(true)} />
       )}
-      <Sidebar activePage={activePage} onNavigate={handleNavigate} isCollapsed={isCollapsed} userRole={userRole} />
+      <Sidebar activePage={activePage} onNavigate={handleNavigate} isCollapsed={isCollapsed} userRole={userRole}
+        schoolName={schools.find(school => school.id === selectedSchoolId)?.schoolName}
+        schoolLogoUrl={schools.find(school => school.id === selectedSchoolId)?.logoUrl} />
       <div className={`dashboard-main ${isCollapsed ? 'sidebar-collapsed' : ''}`}>
       <header className="dashboard-header">
         <div className="header-left">
-          <button className="menu-toggle-btn" onClick={() => setIsCollapsed(p => !p)}>☰</button>
+          <button className="menu-toggle-btn" onClick={() => setIsCollapsed(p => !p)}><MenuIcon size={24} /></button>
           <h1>{activePage}</h1>
           {schools.length > 0 && (
             <select 
@@ -288,7 +330,7 @@ const Dashboard: React.FC = () => {
           )}
         </div>
         <div className="header-right">
-          <span className="welcome-text">Welcome, <strong>{userName}</strong> 👋</span>
+          <span className="welcome-text">Welcome, <strong>{userName}</strong></span>
           {userRole === '1' && (
             <button type="button" className="create-icon-button" title="Create School" aria-label="Create School" onClick={() => setIsCreateSchoolOpen(true)}>
               <CreateSchoolIcon size={26} />
@@ -297,13 +339,39 @@ const Dashboard: React.FC = () => {
           <div className="search-box">
             <input type="text" placeholder="Search" className="search-input" />
           </div>
-          <button className="icon-btn">🔔</button>
-          <div className="user-avatar"></div>
+                    <div className="import-notifications">
+            <button type="button" className="icon-btn import-notification-button" aria-label="Import notifications" onClick={() => setNotificationsOpen(open => !open)}>
+              <BellIcon size={22} />
+              {importJobs.some(job => job.status === 'running') && <span className="import-notification-loader" aria-label="Import in progress" />}
+              {importJobs.some(job => job.status === 'completed') && <span className="import-notification-count">{importJobs.filter(job => job.status === 'completed').length}</span>}
+            </button>
+            {notificationsOpen && <div className="import-notification-panel">
+              <strong>Import Notifications</strong>
+              {importJobs.length === 0 && <p>No import notifications.</p>}
+              {importJobs.map(job => <button type="button" key={job.id} disabled={job.status === 'running'} onClick={() => { setSelectedImportJob(job); setNotificationsOpen(false); }}>
+                <span>{job.type} import</span>
+                <small>{job.status === 'running' ? `Importing ${job.processed}/${job.total}...` : `${job.imported} passed, ${job.errors.length} failed`}</small>
+              </button>)}
+            </div>}
+          </div>
+          <div className="profile-menu" ref={profileMenuRef}>
+            <button type="button" className="user-avatar" title={userName} aria-label={`${userName} profile menu`}
+              aria-expanded={profileMenuOpen} onClick={() => setProfileMenuOpen(open => !open)}>
+              {userProfilePicture
+                ? <img src={profilePictureUrl(userProfilePicture)} alt={`${userName} profile`} onError={() => setUserProfilePicture(null)} />
+                : <span>{userInitials}</span>}
+            </button>
+            {profileMenuOpen && <div className="profile-dropdown" role="menu">
+              <button type="button" role="menuitem" onClick={() => { setProfileMenuOpen(false); navigate('/profile'); }}><ProfileIcon size={20} />Profile</button>
+              <button type="button" role="menuitem" onClick={handleLogout}><LogoutIcon size={20} />Logout</button>
+            </div>}
+          </div>
         </div>
       </header>
+      <ImportResults type={selectedImportJob?.type || 'Student'} result={selectedImportJob ? { imported: selectedImportJob.imported, errors: selectedImportJob.errors } : null} onClose={() => setSelectedImportJob(null)} />
 
       <div className="dashboard-content">
-        {permissionsLoading ? <div className="permission-empty">Loading access…</div> : (() => {
+        {permissionsLoading ? <div className="permission-empty">Loading access...</div> : (() => {
         const activePermission = activePage === 'Attendance' ? (attendanceType === 'student' ? 'attendance.students' : 'attendance.staff') : PAGE_PERMISSIONS[activePage];
         if (!SECURITY_UI_ENABLED && activePage === 'Role & Permissions') return null;
         const isRoleOnlyDashboard = activePage === 'Dashboard' && userRole !== '1' && userRole !== '2';
@@ -376,28 +444,28 @@ const Dashboard: React.FC = () => {
           <div className="stat-card">
             <div className="stat-header">
               <span>Teachers Present Today</span>
-              <span className="stat-icon">👨🏫</span>
+              <span className="stat-icon"><TeacherIcon size={28} /></span>
             </div>
             <div className="stat-value">{dashboardData.teachersPresentToday}</div>
           </div>
           <div className="stat-card">
             <div className="stat-header">
               <span>Students Present Today</span>
-              <span className="stat-icon">👥</span>
+              <span className="stat-icon"><StudentsIcon size={28} /></span>
             </div>
             <div className="stat-value">{dashboardData.studentsPresentToday}</div>
           </div>
           <div className="stat-card">
             <div className="stat-header">
               <span>Total Employees</span>
-              <span className="stat-icon">👔</span>
+              <span className="stat-icon"><EmployeesIcon size={28} /></span>
             </div>
             <div className="stat-value">{dashboardData.totalEmployees}</div>
           </div>
           <div className="stat-card">
             <div className="stat-header">
               <span>Employees On Leave</span>
-              <span className="stat-icon">🏖️</span>
+              <span className="stat-icon"><LeaveIcon size={28} /></span>
             </div>
             <div className="stat-value">{dashboardData.employeesOnLeave}</div>
           </div>
@@ -459,9 +527,9 @@ const Dashboard: React.FC = () => {
                   <div className="event-item" key={event.id}>
                     <div className="event-title">{event.examName}: {event.subjectName}</div>
                     <div className="event-time">
-                      {event.className} - {event.sectionName} · {new Date(event.examDate).toLocaleDateString('en-GB', {
+                      {event.className} - {event.sectionName} &middot; {new Date(event.examDate).toLocaleDateString('en-GB', {
                         day: '2-digit', month: 'short', year: 'numeric'
-                      })}{event.startTime ? ` · ${event.startTime.substring(0, 5)}` : ''}
+                      })}{event.startTime ? ' ' + String.fromCharCode(183) + ' ' + event.startTime.substring(0, 5) : ''}
                     </div>
                   </div>
                 ))}
@@ -476,7 +544,6 @@ const Dashboard: React.FC = () => {
         </>})()}
       </div>
 
-      <button onClick={handleLogout} className="logout-btn">Logout</button>
       <CreateSchool isOpen={isCreateSchoolOpen} onClose={() => setIsCreateSchoolOpen(false)} />
       </div>
 
@@ -486,7 +553,7 @@ const Dashboard: React.FC = () => {
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
         }}>
           <div className="card" style={{ width: '100%', maxWidth: '420px', padding: '36px 32px', textAlign: 'center', borderRadius: '16px' }}>
-            <div style={{ fontSize: '52px', marginBottom: '16px' }}>📋</div>
+            <div style={{ marginBottom: '16px' }}><ClipboardIcon size={52} /></div>
             <h2 style={{ color: 'var(--text-primary)', marginBottom: '10px' }}>Mark Your Attendance</h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '15px', lineHeight: '1.6', marginBottom: '28px' }}>
               You haven't marked your attendance for today,{' '}

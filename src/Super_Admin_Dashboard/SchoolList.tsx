@@ -3,6 +3,7 @@ import { PageLoader } from '../components/Loader/Loader';
 import { API_BASE_URL } from '../config';
 import CreateSchool, { SchoolDetails } from './CreateSchool';
 import { EditIcon } from '../components/Icons/Icons';
+import { profilePictureUrl } from './ProfilePictureInput';
 import './SchoolList.css';
 
 interface School extends SchoolDetails {
@@ -65,7 +66,10 @@ const SchoolList: React.FC<SchoolListProps> = ({ onSchoolsChanged }) => {
           {schools.map((school) => (
             <div key={school.id} className="school-card">
               <div className="school-card-header">
-                <h3>{school.schoolName}</h3>
+                <div className="school-card-title">
+                  {school.logoUrl ? <img src={profilePictureUrl(school.logoUrl)} alt={`${school.schoolName} logo`} /> : <span>{school.schoolName.trim()[0]?.toUpperCase() || 'S'}</span>}
+                  <h3>{school.schoolName}</h3>
+                </div>
                 <button type="button" className="school-edit-button" title="Edit School" aria-label={`Edit School: ${school.schoolName}`} onClick={() => setEditingSchool(school)}><EditIcon /></button>
               </div>
               <div className="school-card-body">

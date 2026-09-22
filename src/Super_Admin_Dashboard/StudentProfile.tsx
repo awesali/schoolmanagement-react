@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { API_BASE_URL } from '../config';
 import { usePermissions } from '../security/Permissions';
@@ -13,6 +13,7 @@ import { genderLabel } from '../utils/gender';
 import Modal from './Modal';
 import './StaffProfile.css';
 import './StudentProfile.css';
+import './TimeTable.css';
 import '../components/Icons/CreateIconButton.css';
 
 type Row = Record<string, any>;
@@ -21,6 +22,14 @@ const money = (v: unknown) => Number(v || 0).toLocaleString('en-IN', { style: 'c
 const rowsOf = (v: any): Row[] => Array.isArray(v) ? v : Array.isArray(v?.data) ? v.data : [];
 const Table = ({ headers, rows, empty }: { headers: string[]; rows: React.ReactNode[][]; empty: string }) => rows.length ? <div className="staff-profile-table"><table><thead><tr>{headers.map(h => <th key={h}>{h}</th>)}</tr></thead><tbody>{rows.map((r, i) => <tr key={i}>{r.map((v, j) => <td key={j}>{v ?? '-'}</td>)}</tr>)}</tbody></table></div> : <p className="staff-profile-empty">{empty}</p>;
 const IconButton = ({ label, onClick, children }: React.PropsWithChildren<{ label: string; onClick: () => void }>) => <button type="button" className="create-icon-button" title={label} aria-label={label} onClick={onClick}>{children}</button>;
+
+const ReadOnlyTimeTable = ({ slots, subjects }: { slots: Row[]; subjects: Row[] }) => {
+  const periods = Array.from(new Map(slots.filter(s => s.period).map(s => [String(s.period.periodNumber ?? s.period.id ?? s.periodId), s.period])).values())
+    .sort((a: Row, b: Row) => Number(a.periodNumber || 0) - Number(b.periodNumber || 0) || String(a.startTime).localeCompare(String(b.startTime)));
+  const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  if (!periods.length) return <p className="staff-profile-empty">No timetable published for this section.</p>;
+  return <div className="timetable-container student-profile-timetable"><table className="timetable"><thead><tr><th>Day</th>{periods.map((period: Row, index) => <th key={period.id ?? period.periodNumber}><div className="period-header"><div className="period-title">{period.isBreak ? 'Break' : `Period ${period.periodNumber ?? index + 1}`}</div></div></th>)}</tr><tr className="time-row"><th className="time-label">Time</th>{periods.map((period: Row) => <th key={`time-${period.id ?? period.periodNumber}`} className="time-config"><div className="time-inputs">{period.startTime?.slice(0, 5) || '-'} <span>-</span> {period.endTime?.slice(0, 5) || '-'}</div></th>)}</tr></thead><tbody>{dayNames.map((day, index) => { const dayOfWeek = index + 1; return <tr key={dayOfWeek}><td className="day-name">{day}</td>{periods.map((period: Row) => { const slot = slots.find(s => Number(s.dayOfWeek) === dayOfWeek && (Number(s.periodId) === Number(period.periodNumber) || Number(s.periodId) === Number(period.id))); return <td key={period.id ?? period.periodNumber}>{period.isBreak ? <span className="break-cell">BREAK</span> : <div className="period-cell"><span>{slot?.subjectName || subjects.find(subject => Number(subject.subjectId ?? subject.id) === Number(slot?.subjectId))?.subjectName || '-'}</span></div>}</td>; })}</tr>; })}</tbody></table></div>;
+};
 
 export default function StudentProfile() {
   const { schoolId, studentId } = useParams();
@@ -106,7 +115,7 @@ export default function StudentProfile() {
           }
           if (timetableAllowed) {
             const timetable = await request(`Timetable/get-timetable?sectionId=${record.sectionId}`);
-            next.slots = (timetable.data?.slots || []).map((slot: Row) => ({ ...slot, period: timetable.data.periods?.find((p: Row) => Number(p.id) === Number(slot.periodId)) })).sort((a: Row, b: Row) => a.dayOfWeek - b.dayOfWeek || String(a.period?.startTime).localeCompare(String(b.period?.startTime)));
+            next.slots = (timetable.data?.slots || []).map((slot: Row) => ({ ...slot, period: timetable.data.periods?.find((p: Row) => Number(p.id) === Number(slot.periodId) || Number(p.periodNumber) === Number(slot.periodId)) })).sort((a: Row, b: Row) => a.dayOfWeek - b.dayOfWeek || String(a.period?.startTime).localeCompare(String(b.period?.startTime)));
           }
         }
         if (!controller.signal.aborted) setData(next);
@@ -154,7 +163,7 @@ export default function StudentProfile() {
           {tab === 'Transport' && <><Table headers={['Vehicle', 'Route', 'Driver', 'Pickup / Drop', 'Pickup / Drop Time', 'Seat', 'Rate / Period', 'Start Date', 'Status']} rows={(data.allocations || []).map((a: Row) => [<>{a.vehicleName}<br />{a.vehicleNumber}</>, a.routeName, a.driverName, `${a.pickupStop || '-'} / ${a.dropStop || '-'}`, `${a.pickupShift?.slice(0, 5) || '-'} / ${a.dropShift?.slice(0, 5) || '-'}`, a.seatNumber || '-', `${money(a.monthlyFee)} / ${a.feeType}`, displayDate(a.startDate), a.isActive ? 'Active' : 'Inactive'])} empty="No transport assigned to this student." />
             {feesAllowed && <><h3>Transport Fees</h3><Table headers={['Month', 'Amount', 'Paid', 'Balance', 'Due Date', 'Status']} rows={(data.fees || []).map((f: Row) => [`${f.feeMonth}/${f.feeYear}`, money(f.amount), money(f.paidAmount), money(Number(f.amount) - Number(f.paidAmount)), displayDate(f.dueDate), f.status])} empty="No transport fees generated." /><h3>Transport Payments</h3><Table headers={['Date', 'Receipt', 'Amount', 'Mode', 'Reference']} rows={(data.payments || []).map((p: Row) => [displayDate(p.paymentDate), p.receiptNumber, money(p.amount), p.paymentMode, p.referenceNumber])} empty="No transport payments recorded." /></>}
           </>}
-          {tab === 'Class & Timetable' && <><h3>{student.className || 'Class not assigned'} / {student.sectionName || '-'}</h3><p>Session: {student.academicSession?.slice(0, 4) || '-'}</p><p>Class Teacher: {data.teacher ? <Link to={`/dashboard/schools/${schoolId}/staff/${data.teacher.id}`}>{data.teacher.name}</Link> : data.section?.staffId ? 'Assigned' : 'Not assigned'}</p><Table headers={['Subject']} rows={(data.section?.subjects || []).map((s: Row) => [s.subjectName])} empty="No subjects assigned." />{timetableAllowed && <><h3>Class Timetable</h3><Table headers={['Day', 'Time', 'Subject']} rows={(data.slots || []).map((s: Row) => [['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][s.dayOfWeek] || '-', `${s.period?.startTime?.slice(0, 5) || '-'} - ${s.period?.endTime?.slice(0, 5) || '-'}`, s.period?.isBreak ? 'Break' : s.subjectName || '-'])} empty="No timetable published for this section." /></>}</>}
+          {tab === 'Class & Timetable' && <><h3>{student.className || 'Class not assigned'} / {student.sectionName || '-'}</h3><p>Session: {student.academicSession?.slice(0, 4) || '-'}</p><p>Class Teacher: {data.teacher ? <Link to={`/dashboard/schools/${schoolId}/staff/${data.teacher.id}`}>{data.teacher.name}</Link> : data.section?.staffId ? 'Assigned' : 'Not assigned'}</p><Table headers={['Subject']} rows={(data.section?.subjects || []).map((s: Row) => [s.subjectName])} empty="No subjects assigned." />{timetableAllowed && <><h3>Class Timetable</h3><ReadOnlyTimeTable slots={data.slots || []} subjects={data.section?.subjects || []} /></>}</>}
           {tab === 'Documents' && <Table headers={['Document', 'View / Download']} rows={(student.documents || []).map((d: Row) => [d.documentName, <a className="create-icon-button" title="View Document" aria-label={`View ${d.documentName}`} href={profilePictureUrl(d.documentURL)} target="_blank" rel="noopener noreferrer"><PreviewIcon size={26} /></a>])} empty="No documents uploaded." />}
         </>}
       </section>
@@ -168,3 +177,7 @@ export default function StudentProfile() {
     {!student && (busy ? <PageLoader /> : <p>{failed ? 'Unable to load profile.' : 'Student not found in this school.'} <button onClick={() => setRefresh(r => r + 1)}>Retry</button></p>)}
   </main>;
 }
+
+
+
+

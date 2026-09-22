@@ -4,6 +4,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './Login/Login';
 import Dashboard from './Super_Admin_Dashboard/Dashboard';
+import AccountProfile from './Super_Admin_Dashboard/AccountProfile';
 import { ToastProvider } from './components/Toast/Toast';
 import { PermissionProvider } from './security/Permissions';
 import './theme.css';
@@ -17,6 +18,7 @@ function App() {
           <Route path="/dashboard/schools/:schoolId/students/:studentId" element={<StudentProfile />} />
           <Route path="/dashboard/schools/:schoolId/staff/:staffId" element={<StaffProfile />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/profile" element={<AccountProfile />} />
           <Route path="/" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter></PermissionProvider>
