@@ -20,6 +20,10 @@ import TeacherWorkspace from './TeacherWorkspace';
 import TeacherAttendance from './TeacherAttendance';
 import TeacherStudentAttendance from './TeacherStudentAttendance';
 import TeacherPortal, { TeacherPortalPage } from './TeacherPortal';
+import TeacherStudentContent, { TeacherContentPage } from './TeacherStudentContent';
+import TeacherExamContent from './TeacherExamContent';
+import HallTicketManagement from './HallTicketManagement';
+import StudentServicesManagement from './StudentServicesManagement';
 import AcademicYear from './AcademicYear';
 import FinanceManagement from './FinanceManagement';
 import SalaryManagement from './SalaryManagement';
@@ -536,6 +540,14 @@ const Dashboard: React.FC = () => {
                         <p>Please select an attendance type from the menu</p>
                       </div>
                     )
+                  ) : activePage === 'Hall Tickets' && selectedSchoolId ? (
+                    <HallTicketManagement schoolId={selectedSchoolId} />
+                  ) : activePage === 'Student Services' && selectedSchoolId ? (
+                    <StudentServicesManagement schoolId={selectedSchoolId} />
+                  ) : userRole === '2' && activePage === 'Exam Preparation' ? (
+                    <TeacherExamContent />
+                  ) : userRole === '2' && ['Class Diary', 'Submissions', 'Announcements', 'Messages'].includes(activePage) ? (
+                    <TeacherStudentContent page={activePage as TeacherContentPage} />
                   ) : userRole === '2' && ['Homework & Assignments', 'Calendar', 'Study Material', 'My Profile'].includes(activePage) ? (
                     <TeacherPortal page={activePage as TeacherPortalPage} onNavigate={handleNavigate} />
                   ) : userRole === '2' ? (
@@ -783,3 +795,8 @@ const Dashboard: React.FC = () => {
 };
 
 export default Dashboard;
+
+
+
+
+

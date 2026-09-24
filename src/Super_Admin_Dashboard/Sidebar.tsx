@@ -48,7 +48,7 @@ const menuGroups = [
       { label: 'Classes', children: ['Class List'] },
       { label: 'Staff', children: ['Staff List', 'Attendance'] },
       { label: 'Security', children: ['Role & Permissions'] },
-      { label: 'Students', children: ['Student List', 'Attendance'] },
+      { label: 'Students', children: ['Student List', 'Student Services', 'Hall Tickets', 'Attendance'] },
       { label: 'Parents', children: ['Parent List'] },
       { label: 'Transport', children: ['Transport Management'] },
       { label: 'Inventory', children: ['Inventory Management'] },
@@ -179,6 +179,11 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, 
         permission: 'attendance.staff',
         type: 'staff',
       },
+      { label: 'Exam Preparation', page: 'Exam Preparation', icon: 'book', permission: 'academics.classes' },
+      { label: 'Class Diary', page: 'Class Diary', icon: 'book', permission: 'academics.classes' },
+      { label: 'Submissions', page: 'Submissions', icon: 'assignment', permission: 'academics.classes' },
+      { label: 'Announcements', page: 'Announcements', icon: 'material', permission: 'academics.classes' },
+      { label: 'Messages', page: 'Messages', icon: 'material', permission: 'academics.classes' },
       {
         label: 'Homework & Assignments',
         page: 'Homework & Assignments',
@@ -277,3 +282,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, 
 };
 
 export default Sidebar;
+
+
+
+
+

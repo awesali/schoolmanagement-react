@@ -110,6 +110,9 @@ export const PAGE_PERMISSIONS: Record<string, string> = {
   Payroll: 'finance.salary',
   'Role & Permissions': 'security.roles',
   'Student List': 'management.students',
+  'Student Services': 'management.students',
+  'Hall Tickets': 'management.students',
+  'Exam Preparation': 'academics.classes',
   'Parent List': 'management.parents',
   'Transport Management': 'management.transport',
   'Inventory Management': 'management.inventory',
@@ -120,3 +123,5 @@ export const PAGE_PERMISSIONS: Record<string, string> = {
   'Exam Management': 'exams.academic-exam',
   'Marks Entry': 'exams.academic-exam',
 };
+
+
