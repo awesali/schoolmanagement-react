@@ -2,9 +2,10 @@ import React, { useEffect, useMemo, useState } from "react";
 import { profilePictureUrl } from "./ProfilePictureInput";
 import { localDate, SchoolIcon, teacherRequest } from "./TeacherWorkspace";
 import "./TeacherWorkspace.css";
+import SyllabusProgress from "./SyllabusProgress";
 
 export type TeacherPortalPage =
-  "Homework & Assignments" | "Calendar" | "Study Material" | "My Profile";
+  "Homework & Assignments" | "Syllabus Progress" | "Calendar" | "Study Material" | "My Profile";
 type Navigate = (page: string, type?: "student" | "staff") => void;
 type TeachingOption = {
   sectionId: number;
@@ -859,6 +860,7 @@ export default function TeacherPortal({
   page: TeacherPortalPage;
   onNavigate: Navigate;
 }) {
+  if (page === "Syllabus Progress") return <SyllabusProgress date={localDate()} teacher />;
   if (page === "Homework & Assignments") return <Homework />;
   if (page === "Calendar") return <Calendar />;
   if (page === "Study Material") return <StudyMaterial />;

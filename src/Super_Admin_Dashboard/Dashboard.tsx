@@ -17,6 +17,7 @@ import TeacherExamView from './TeacherExamView';
 import TeacherClassManagement from './TeacherClassManagement';
 import TeacherUnitTest from './TeacherUnitTest';
 import TeacherWorkspace from './TeacherWorkspace';
+import PrincipalDashboard from './PrincipalDashboard';
 import TeacherAttendance from './TeacherAttendance';
 import TeacherStudentAttendance from './TeacherStudentAttendance';
 import TeacherPortal, { TeacherPortalPage } from './TeacherPortal';
@@ -101,6 +102,7 @@ const Dashboard: React.FC = () => {
   const [selectedImportJob, setSelectedImportJob] = useState<BulkImportJob | null>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const [userRole, setUserRole] = useState<string>('');
+  const [profileRoleName, setProfileRoleName] = useState('');
   const [dashboardData, setDashboardData] = useState({
     teachersPresentToday: '0/0',
     studentsPresentToday: '0/0',
@@ -132,7 +134,7 @@ const Dashboard: React.FC = () => {
           } else {
             // Ensure popup is never shown for non-staff users
             setShowAttendancePopup(false);
-            fetchSchools();
+            if (roleId === '1') fetchSchools();
           }
         }
       } catch (error) {
@@ -157,6 +159,10 @@ const Dashboard: React.FC = () => {
       if (!response.ok) return;
       const profile = await response.json();
       if (profile?.name) setUserName(profile.name);
+      setProfileRoleName(profile?.roleName || '');
+      const token = localStorage.getItem('token');
+      const profileRoleId = token ? String(JSON.parse(atob(token.split('.')[1]))['RoleId'] || '') : '';
+      if (profileRoleId && !['1', '2'].includes(profileRoleId) && (profile?.roleName || '').trim().toLowerCase() !== 'principal') fetchSchools();
       setUserProfilePicture(profile?.profilePictureUrl || null);
       setTeacherSchool({
         schoolName: profile?.schoolName,
@@ -344,6 +350,9 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  if ((profileRoleName || roleName).trim().toLowerCase() === 'principal') {
+    return <PrincipalDashboard userName={userName} profilePicture={userProfilePicture} schoolName={teacherSchool.schoolName} schoolLogoUrl={teacherSchool.logoUrl} onLogout={handleLogout} onProfile={() => navigate('/profile')} />;
+  }
   return (
     <div className="dashboard-wrapper">
       {!isCollapsed && window.innerWidth <= 768 && <div className="sidebar-overlay" onClick={() => setIsCollapsed(true)} />}
@@ -548,7 +557,7 @@ const Dashboard: React.FC = () => {
                     <TeacherExamContent />
                   ) : userRole === '2' && ['Class Diary', 'Submissions', 'Announcements', 'Messages'].includes(activePage) ? (
                     <TeacherStudentContent page={activePage as TeacherContentPage} />
-                  ) : userRole === '2' && ['Homework & Assignments', 'Calendar', 'Study Material', 'My Profile'].includes(activePage) ? (
+                  ) : userRole === '2' && ['Homework & Assignments', 'Syllabus Progress', 'Calendar', 'Study Material', 'My Profile'].includes(activePage) ? (
                     <TeacherPortal page={activePage as TeacherPortalPage} onNavigate={handleNavigate} />
                   ) : userRole === '2' ? (
                     <TeacherWorkspace userName={userName} onNavigate={handleNavigate} timetable={activePage === 'My Timetable'} />

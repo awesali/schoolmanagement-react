@@ -185,6 +185,12 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, 
       { label: 'Announcements', page: 'Announcements', icon: 'material', permission: 'academics.classes' },
       { label: 'Messages', page: 'Messages', icon: 'material', permission: 'academics.classes' },
       {
+        label: 'Syllabus Progress',
+        page: 'Syllabus Progress',
+        icon: 'book',
+        permission: 'academics.classes',
+      },
+      {
         label: 'Homework & Assignments',
         page: 'Homework & Assignments',
         icon: 'assignment',
