@@ -94,6 +94,7 @@ export const PAGE_PERMISSIONS: Record<string, string> = {
   'My Classes': 'academics.classes',
   'My Timetable': 'academics.class-schedule',
   'Unit Test': 'exams.academic-exam',
+  'Syllabus Progress': 'academics.classes',
   'Homework & Assignments': 'academics.classes',
   Calendar: 'academics.class-schedule',
   'Study Material': 'academics.classes',

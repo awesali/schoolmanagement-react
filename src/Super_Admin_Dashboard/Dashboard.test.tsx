@@ -118,3 +118,25 @@ test.each(['1', '2'])('existing login authenticates role %s and opens the correc
     expect((global.fetch as jest.Mock).mock.calls.some(([url]) => String(url).includes('/api/Admin/'))).toBe(false);
   }
 });
+
+test('principal login opens the dedicated school overview without requesting admin school lists', async () => {
+  localStorage.setItem('token', token('6'));
+  const previousFetch = global.fetch;
+  global.fetch = jest.fn(async (url, options) => {
+    if (String(url).includes('/auth/profile')) return { ok: true, json: async () => ({ name: 'Principal User', roleName: 'Principal' }) } as Response;
+    if (String(url).includes('/api/principal/dashboard')) return { ok: true, json: async () => ({
+      schoolId: 7, schoolName: 'Principal School', academicYear: '2026–27', generatedAt: '2026-09-24T04:00:00Z',
+      students: null, staff: null, academics: null, finance: null, examinations: null, leaveRequests: null,
+    }) } as Response;
+    return previousFetch(url, options);
+  });
+  render(wrap(<Dashboard />));
+  expect(await screen.findByText('Principal School')).toBeInTheDocument();
+  expect(screen.getByRole('navigation', { name: 'Principal navigation' })).toBeInTheDocument();
+  expect((global.fetch as jest.Mock).mock.calls.some(([url]) => String(url).includes('/api/Admin/'))).toBe(false);
+  expect(screen.queryByText('Create School')).not.toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: /Good .*Principal User/ })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Principal User profile menu' }));
+  fireEvent.click(screen.getByRole('menuitem', { name: 'Logout' }));
+  expect(mockNavigate).toHaveBeenCalledWith('/login');
+});

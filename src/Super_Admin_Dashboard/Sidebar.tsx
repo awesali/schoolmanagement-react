@@ -180,6 +180,12 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, 
         type: 'staff',
       },
       {
+        label: 'Syllabus Progress',
+        page: 'Syllabus Progress',
+        icon: 'book',
+        permission: 'academics.classes',
+      },
+      {
         label: 'Homework & Assignments',
         page: 'Homework & Assignments',
         icon: 'assignment',
