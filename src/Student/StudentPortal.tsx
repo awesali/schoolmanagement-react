@@ -4,19 +4,21 @@ import { API_BASE_URL } from '../config';
 import { PageLoader } from '../components/Loader/Loader';
 import StudentAssignment from './StudentAssignment';
 import StudentExamPanel from './StudentExamPanel';
-import MissingWorkCenter from './MissingWorkCenter';
+import StudentReportCards from './StudentReportCards';
+import StudentTimetable from './StudentTimetable';
+import { downloadStudyMaterial, isUploadedStudyMaterial } from './studyMaterialFiles';
 import './StudentPortal.css';
 
 type Row = Record<string, any>;
 type Overview = {
   profile: Row; subjects: Row[]; timetable: Row[]; homework: Row[]; materials: Row[];
-  attendance: Row[]; exams: Row[]; results: Row[]; parent?: Row; teachers: Row[];
-  documents: Row[]; fees: Row[]; payments: Row[]; transport?: Row; diary: Row[]; submissions: Row[]; announcements: Row[]; libraryBooks: Row[]; borrowedBooks: Row[]; requests: Row[]; messages: Row[]; achievements: Row[]; schoolEvents: Row[]; gradeHistory: Row[]; examResources?: Row[]; hallTickets?: Row[]; onlineExams?: Row[]; onlineAttempts?: Row[];
+  attendance: Row[]; exams: Row[]; results: Row[]; resultSubjects?: Row[]; parent?: Row; teachers: Row[];
+  documents: Row[]; fees: Row[]; payments: Row[]; transport?: Row; diary: Row[]; submissions: Row[]; announcements: Row[]; libraryBooks: Row[]; borrowedBooks: Row[]; requests: Row[]; messages: Row[]; achievements: Row[]; schoolEvents: Row[]; gradeHistory: Row[]; examResources?: Row[]; hallTickets?: Row[];
 };
-type Page = 'Today' | 'My Classes' | 'Timetable' | 'Class Diary' | 'Homework' | 'Study Materials' | 'Announcements' | 'Notifications' | 'Attendance' | 'Exams' | 'Results' | 'My Grades' | 'Progress' | 'Calendar' | 'Events' | 'Library' | 'Teachers' | 'Messages' | 'Requests' | 'Achievements' | 'Fees' | 'Transport' | 'Documents' | 'Planner' | 'Goals' | 'Settings' | 'My Profile' | 'Missing Work';
+type Page = 'Today' | 'My Classes' | 'Timetable' | 'Class Diary' | 'Homework' | 'Study Materials' | 'Announcements' | 'Notifications' | 'Attendance' | 'Exams' | 'Results' | 'My Grades' | 'Progress' | 'Calendar' | 'Events' | 'Library' | 'Teachers' | 'Messages' | 'Requests' | 'Achievements' | 'Fees' | 'Transport' | 'Documents' | 'Planner' | 'Goals' | 'Settings' | 'My Profile';
 const pages: Page[] = ['Today', 'My Classes', 'Timetable', 'Homework', 'Study Materials', 'Attendance', 'Exams', 'Results', 'Calendar', 'Teachers', 'Fees', 'Transport', 'Documents', 'Planner', 'My Profile'];
 const groups: { title: string; items: Page[] }[] = [
-  { title: 'Daily', items: ['Today', 'My Classes', 'Timetable', 'Class Diary', 'Homework', 'Missing Work', 'Study Materials'] },
+  { title: 'Daily', items: ['Today', 'My Classes', 'Timetable', 'Class Diary', 'Homework', 'Study Materials'] },
   { title: 'Progress', items: ['Attendance', 'Exams', 'Results', 'My Grades', 'Progress', 'Calendar', 'Events'] },
   { title: 'School', items: ['Announcements', 'Notifications', 'Library', 'Teachers', 'Messages', 'Requests', 'Achievements', 'Fees', 'Transport', 'Documents'] },
   { title: 'Personal', items: ['Planner', 'Goals', 'Settings', 'My Profile'] },
@@ -137,7 +139,19 @@ export default function StudentPortal() {
     ...data.exams.map(x => ({ id: `e-${x.id}`, date: x.examDate, title: x.examName, type: 'Exam', detail: x.subjectName })),
     ...(data.schoolEvents || []).map(x => ({ id: 's-' + x.id, date: x.eventDate, title: x.title, type: 'School event', detail: x.description || '' })),
   ].filter(x => dateOnly(x.date).startsWith(month)).sort((a, b) => String(a.date).localeCompare(String(b.date)));
-  const filteredHomework = data.homework.filter(x => !filter || (filter === 'Upcoming' && dateOnly(x.dueDate) >= currentDate) || (filter === 'Past due' && dateOnly(x.dueDate) < currentDate));
+  const submissionFor = (assignment: Row) => (data.submissions || []).find(row => Number(row.assignmentId) === Number(assignment.id));
+  const isSubmitted = (assignment: Row) => {
+    const submission = submissionFor(assignment);
+    return Boolean(submission && submission.status !== 'Resubmission Required');
+  };
+  const filteredHomework = data.homework.filter(assignment => {
+    if (!filter) return true;
+    if (filter === 'Submitted') return isSubmitted(assignment);
+    if (isSubmitted(assignment)) return false;
+    if (filter === 'Upcoming') return dateOnly(assignment.dueDate) >= currentDate;
+    if (filter === 'Past due') return dateOnly(assignment.dueDate) < currentDate;
+    return false;
+  });
   const homeworkCard = (x: Row) => <article className="sp-record" key={x.id}><div className="sp-record-head"><span className="sp-tag">{x.subjectName}</span><span>{shortDate(x.dueDate)}</span></div><h3>{x.title}</h3><p>{x.description}</p><div className="sp-record-foot"><span>Due {shortDate(x.dueDate)}</span>{x.totalMarks != null && <span>{x.totalMarks} marks</span>}{link(x.resourceUrl || '')}<button onClick={() => setSelectedHomework(x)}>{(data.submissions || []).find(y => y.assignmentId === x.id)?.status || "Open assignment"} ?</button></div></article>;
   const notificationAnnouncements = notificationPrefs.Announcements === false ? [] : (data.announcements || []);
   const notificationHomework = notificationPrefs.Homework === false ? [] : due;
@@ -164,14 +178,45 @@ export default function StudentPortal() {
     {page === 'Announcements' && <>{sectionHeading('Announcements', 'Notices published by your school and teachers.')}{(data.announcements || []).length ? (data.announcements || []).map(x => panel(x.title, <><small>{shortDate(x.createdAt)}{x.isPinned ? ' · Pinned' : ''}</small><p className="sp-announcement-body">{x.body}</p></>)) : empty('No announcements yet.')}</>}
     {page === 'Notifications' && <>{sectionHeading('Notifications', 'New school notices, upcoming work and exams.')}{panel('Recent updates', <>{notificationAnnouncements.slice(0, 10).map(x => <div className="sp-line" key={'a-'+x.id}><span className="sp-tag">Notice</span><div><strong>{x.title}</strong><small>{shortDate(x.createdAt)}</small></div></div>)}{notificationHomework.slice(0, 10).map(x => <div className="sp-line" key={'h-'+x.id}><span className="sp-tag">Homework</span><div><strong>{x.title}</strong><small>Due {shortDate(x.dueDate)}</small></div></div>)}{notificationExams.slice(0, 10).map(x => <div className="sp-line" key={'e-'+x.id}><span className="sp-tag">Exam</span><div><strong>{x.examName} · {x.subjectName}</strong><small>{shortDate(x.examDate)}</small></div></div>)}{!notificationAnnouncements.length && !notificationHomework.length && !notificationExams.length && empty('Nothing new right now.')}</>)}</>}
     {page === 'My Classes' && <>{sectionHeading('My classes', 'Subjects assigned to your current section.')}{data.subjects.length ? <div className="sp-card-grid">{data.subjects.map(x => <article className="sp-record" key={x.id}><span className="sp-tag">SUBJECT</span><h3>{x.subjectName}</h3><p>Teacher: {data.teachers.find(t => t.subjectName === x.subjectName)?.name || 'Not assigned'}</p><div className="sp-record-foot"><button onClick={() => switchPage('Homework')}>Homework ?</button><button onClick={() => switchPage('Study Materials')}>Materials ?</button></div></article>)}</div> : empty('No subjects assigned yet.')}</>}
-    {page === 'Timetable' && <>{sectionHeading('Weekly timetable', 'Periods set by your school for your section.')}{[1,2,3,4,5,6,0].map(day => panel(['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][day], data.timetable.filter(x => Number(x.dayOfWeek) === day).length ? data.timetable.filter(x => Number(x.dayOfWeek) === day).sort((a,b) => Number(a.periodNumber)-Number(b.periodNumber)).map(x => <div className="sp-line" key={x.periodNumber}><span className="sp-line-date">{shortTime(x.startTime)}·{shortTime(x.endTime)}</span><strong>{x.subjectName}</strong><small>Period {x.periodNumber}</small></div>) : empty('No classes.')))}</>}
-    {page === 'Homework' && <>{sectionHeading('Homework & assignments', 'Work published by your teachers for this class.')}<div className="sp-filter">{['All','Upcoming','Past due'].map(x => <button className={filter === x || (!filter && x === 'All') ? 'active' : ''} onClick={() => setFilter(x === 'All' ? '' : x)} key={x}>{x}</button>)}</div>{filteredHomework.length ? <div className="sp-card-grid">{filteredHomework.map(homeworkCard)}</div> : empty('No assignments in this view.')}</>}
-    {page === 'Study Materials' && <>{sectionHeading('Study materials', 'Notes, worksheets and links shared by your teachers.')}<div className="sp-filter"><button className={!filter ? 'active' : ''} onClick={() => setFilter('')}>All</button><button className={filter === 'Saved' ? 'active' : ''} onClick={() => setFilter('Saved')}>Saved</button></div>{data.materials.filter(x => filter !== 'Saved' || bookmarks.includes(x.id)).length ? <div className="sp-card-grid">{data.materials.filter(x => filter !== 'Saved' || bookmarks.includes(x.id)).map(x => <article className="sp-record" key={x.id}><div className="sp-record-head"><span className="sp-tag">{x.resourceType}</span><button onClick={() => saveBookmarks(bookmarks.includes(x.id) ? bookmarks.filter(id => id !== x.id) : [...bookmarks, x.id])}>{bookmarks.includes(x.id) ? 'Saved' : 'Save'}</button></div><h3>{x.title}</h3><small>{x.subjectName}</small><p>{x.description}</p><div className="sp-record-foot">{link(x.resourceUrl)}</div></article>)}</div> : empty('No materials in this view.')}</>}
+    {page === 'Timetable' && <>{sectionHeading('Weekly timetable', `${data.profile.className} ${data.profile.sectionName} � Periods set by your school.`)}<StudentTimetable slots={data.timetable} formatTime={shortTime} /></>}
+    {page === 'Homework' && <>{sectionHeading('Homework & assignments', 'Work published by your teachers for this class.')}<div className="sp-filter">{['All','Upcoming','Past due','Submitted'].map(x => <button className={filter === x || (!filter && x === 'All') ? 'active' : ''} onClick={() => setFilter(x === 'All' ? '' : x)} key={x}>{x}</button>)}</div>{filteredHomework.length ? <div className="sp-card-grid">{filteredHomework.map(homeworkCard)}</div> : empty('No assignments in this view.')}</>}
+    {page === 'Study Materials' && <>
+      {sectionHeading('Study materials', 'Notes, worksheets and links shared by your teachers.')}
+      <div className="sp-filter">
+        <button className={!filter ? 'active' : ''} onClick={() => setFilter('')}>All</button>
+        <button className={filter === 'Saved' ? 'active' : ''} onClick={() => setFilter('Saved')}>Saved</button>
+      </div>
+      {data.materials.filter(x => filter !== 'Saved' || bookmarks.includes(x.id)).length ?
+        <div className="sp-card-grid sp-material-grid">
+          {data.materials.filter(x => filter !== 'Saved' || bookmarks.includes(x.id)).map(x =>
+            <article className="sp-record sp-material-card" key={x.id}>
+              <div className="sp-record-head">
+                <span className="sp-tag">{x.resourceType}</span>
+                <button className="sp-material-save" onClick={() => saveBookmarks(bookmarks.includes(x.id) ? bookmarks.filter(id => id !== x.id) : [...bookmarks, x.id])}>{bookmarks.includes(x.id) ? 'Saved' : 'Save'}</button>
+              </div>
+              <div className="sp-material-body">
+                <h3>{x.title}</h3>
+                <span className="sp-material-subject">{x.subjectName}</span>
+                {x.description && <p>{x.description}</p>}
+              </div>
+              <div className="sp-record-foot">
+                {isUploadedStudyMaterial(x.resourceUrl) ?
+                  <button className="sp-material-action" type="button" onClick={() => void downloadStudyMaterial(x.id, x.title).catch((failure: Error) => setError(failure.message))}>
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v3h16v-3" /></svg>
+                    Download file
+                  </button> : safeLink(x.resourceUrl) ?
+                  <a className="sp-material-action" href={x.resourceUrl} target="_blank" rel="noreferrer">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 5h5v5m0-5-9 9" /><path d="M19 13v6H5V5h6" /></svg>
+                    Open link
+                  </a> : null}
+              </div>
+            </article>)}
+        </div> : empty('No materials in this view.')}
+    </>}
     {page === 'Attendance' && <>{sectionHeading('My attendance', 'Your own attendance history for this enrollment.')}<div className="sp-stats sp-stats-three">{[['Present', present], ['Absent', absent], ['Attendance', attendancePercent == null ? '·' : `${attendancePercent}%`]].map(([label,value]) => <div key={String(label)}><small>{label}</small><strong>{value}</strong></div>)}</div>{attendancePercent !== null && attendancePercent < 75 && <div className="sp-notice"><strong>Attendance alert</strong><span>Your attendance is {attendancePercent}%. Please contact your school about its attendance requirement.</span></div>}{panel('Attendance history', data.attendance.length ? data.attendance.map((x,i) => <div className="sp-line" key={i}><strong>{shortDate(x.date)}</strong><span className="sp-tag">{x.status}</span></div>) : empty('No attendance recorded yet.'))}</>}
-    {page === 'Exams' && <>{sectionHeading('Exam schedule', 'Only published exams for your current session are shown.')}{panel('Upcoming exams', upcomingExams.length ? upcomingExams.map(x => <div className="sp-line" key={x.id}><span className="sp-line-date">{shortDate(x.examDate)}</span><div><strong>{x.subjectName}</strong><small>{x.examName} · {shortTime(x.startTime)}·{shortTime(x.endTime)}</small></div></div>) : empty('No upcoming exams.'))}{panel('Earlier exams', data.exams.filter(x => dateOnly(x.examDate) < currentDate).length ? data.exams.filter(x => dateOnly(x.examDate) < currentDate).map(x => <div className="sp-line" key={x.id}><span className="sp-line-date">{shortDate(x.examDate)}</span><div><strong>{x.subjectName}</strong><small>{x.examName}</small></div></div>) : empty('No earlier exams.'))}</>}
-    {page === 'Exams' && <StudentExamPanel data={data} refresh={() => { void load(); }}/>} 
-    {page === 'Missing Work' && <MissingWorkCenter homework={data.homework} submissions={data.submissions} onOpen={setSelectedHomework} />}
-    {page === 'Results' && <>{sectionHeading('Results', 'Only results released by your school are visible.')}<button className="btn sp-print-button" onClick={() => window.print()}>Print report card</button>{panel('Published results', data.results.length ? data.results.map((x,i) => <div className="sp-line" key={i}><div><strong>{x.examName}</strong><small>{x.grade} · {x.resultStatus}</small></div><b>{x.obtainedMarks} / {x.totalMarks} · {x.percentage}%</b></div>) : empty('No published results yet.'))}</>}
+    {page === 'Exams' && <>{sectionHeading('Exam schedule', 'Only published exams for your current session are shown.')}{panel('Upcoming exams', upcomingExams.length ? upcomingExams.map(x => <div className="sp-line" key={x.id}><span className="sp-line-date">{shortDate(x.examDate)}</span><div><strong>{x.subjectName}</strong><small>{x.examName} · {shortTime(x.startTime)}·{shortTime(x.endTime)}</small></div></div>) : empty('No upcoming exams.'))}</>}
+    {page === 'Exams' && <StudentExamPanel data={data}/>}
+    {page === 'Results' && <>{sectionHeading('Results', 'Only results released by your school are visible.')}<StudentReportCards results={data.results} gradeHistory={data.gradeHistory} resultSubjects={data.resultSubjects} profile={data.profile} parent={data.parent} /></>}
     {page === 'My Grades' && <>{sectionHeading('My grades', 'Subject marks released by your school.')}{panel('Marks history', data.gradeHistory.length ? data.gradeHistory.map((x,i) => <div className="sp-line" key={i}><div><strong>{x.subjectName}</strong><small>{x.examName} · {shortDate(x.enteredDate)}{x.remarks ? ' · ' + x.remarks : ''}</small></div><b>{x.obtainedMarks}{x.maxMarks != null ? ' / ' + x.maxMarks : ''}</b></div>) : empty('No subject marks published yet.'))}</>}
     {page === 'Progress' && <>{sectionHeading('My progress', 'A summary of published results and completed work.')}{panel('Academic snapshot', <div className="sp-stats sp-stats-three"><div><small>Published exams</small><strong>{data.results.length}</strong></div><div><small>Assignments submitted</small><strong>{data.submissions.length}</strong></div><div><small>Attendance</small><strong>{attendancePercent == null ? '·' : attendancePercent + '%'}</strong></div></div>)}{panel('Subject performance', data.gradeHistory.length ? Array.from(new Set(data.gradeHistory.map(x => x.subjectName))).map(name => { const marks = data.gradeHistory.filter(x => x.subjectName === name && Number(x.maxMarks) > 0); const percentage = marks.length ? Math.round(100 * marks.reduce((sum,x) => sum + Number(x.obtainedMarks),0) / marks.reduce((sum,x) => sum + Number(x.maxMarks),0)) : null; return <div className="sp-line" key={name}><strong>{name}</strong><b>{percentage == null ? 'Marks recorded' : percentage + '%'}</b></div>; }) : empty('No marks published yet.'))}</>}
     {page === 'Calendar' && <>{sectionHeading('Academic calendar', 'Published exam dates and homework deadlines.')}<label className="sp-month">Month <input type="month" value={month} onChange={e => setMonth(e.target.value)}/></label>{panel('Scheduled items', events.length ? events.map(x => <div className="sp-line" key={x.id}><span className="sp-line-date">{shortDate(x.date)}</span><div><strong>{x.title}</strong><small>{x.type} · {x.detail}</small></div></div>) : empty('Nothing scheduled this month.'))}</>}
@@ -194,15 +239,3 @@ export default function StudentPortal() {
     <nav className="sp-bottom" aria-label="Quick navigation">{(['Today','My Classes','Homework','Calendar','My Profile'] as Page[]).map(item => <button className={page === item ? 'active' : ''} key={item} onClick={() => switchPage(item)}>{item === 'My Classes' ? 'Classes' : item === 'My Profile' ? 'Profile' : item}</button>)}</nav>
   </div>;
 }
-
-
-
-
-
-
-
-
-
-
-
-

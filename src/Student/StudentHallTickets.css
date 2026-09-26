@@ -1,0 +1,11 @@
+.sht-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,390px),1fr));gap:22px;margin-top:20px}
+.sht-card{overflow:hidden;border:1px solid #d7e3ee;border-radius:18px;background:#fff;box-shadow:0 8px 24px rgba(24,53,81,.08);color:#20344e}
+.sht-header{display:flex;align-items:center;gap:16px;padding:23px 25px;background:#1d3149;color:#fff}
+.sht-header h3{margin:5px 0 0;font-size:21px;line-height:1.25}.sht-overline{font-size:10px;font-weight:800;letter-spacing:1.8px;color:#a9cbed}
+.sht-avatar{width:76px;height:88px;display:grid;place-items:center;flex:none;border-radius:12px;background:#dceafa;color:#204c7b;font-weight:800;font-size:23px;overflow:hidden}
+.sht-avatar img{width:100%;height:100%;object-fit:cover}.sht-logo{width:57px;height:57px;border-radius:13px;background:#fff;color:#1d3149;font-size:18px}
+.sht-exam{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:20px 25px;border-bottom:1px solid #e6edf4}.sht-exam>div,.sht-person>div{display:flex;flex-direction:column;gap:5px}.sht-exam strong{font-size:19px}.sht-label{font-size:10px;letter-spacing:1.2px;font-weight:800;color:#758aa0}.sht-status{border-radius:30px;padding:6px 10px;background:#e8f3ff;color:#215c9b;font-size:11px;font-weight:700;white-space:nowrap}
+.sht-person{display:flex;align-items:center;gap:18px;padding:23px 25px}.sht-person strong{font-size:20px}.sht-person>div>span:last-child{color:#687f98;font-size:13px}
+.sht-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin:0 25px 24px;border:1px solid #e1e9f1;border-radius:12px;overflow:hidden}.sht-details>div{padding:14px 16px;border-bottom:1px solid #e1e9f1}.sht-details>div:nth-child(odd){border-right:1px solid #e1e9f1}.sht-details dt{color:#74889b;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px}.sht-details dd{margin:5px 0 0;font-size:15px;font-weight:700;overflow-wrap:anywhere}.sht-details .sht-venue{grid-column:1/-1;border:0}
+.sht-footer{padding:0 25px 22px}.sht-footer a{font-size:13px;font-weight:700;color:#1769ac}
+@media(max-width:480px){.sht-header,.sht-exam,.sht-person{padding:18px}.sht-details{margin:0 18px 20px}.sht-header h3{font-size:18px}}

@@ -35,3 +35,54 @@ test('shows a useful error when the API returns plain text', async () => {
 
 
 
+
+test('Upcoming excludes submitted work and Submitted shows it', async () => {
+  const today = new Date();
+  const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).toISOString();
+  const withHomework = {
+    ...overview,
+    homework: [
+      { id: 1, title: 'Already sent', subjectName: 'Mathematics', description: 'Done', dueDate: tomorrow },
+      { id: 2, title: 'Still due', subjectName: 'Mathematics', description: 'Pending', dueDate: tomorrow },
+    ],
+    submissions: [{ id: 10, assignmentId: 1, status: 'Submitted', submittedAt: today.toISOString() }],
+  };
+  global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, text: async () => JSON.stringify({ success: true, data: withHomework }) }) as jest.Mock;
+  render(<StudentPortal />);
+  await screen.findByText(/Good .*Test/);
+  fireEvent.click(screen.getAllByRole('button', { name: 'Homework', exact: true })[0]);
+  fireEvent.click(screen.getByRole('button', { name: 'Upcoming' }));
+  expect(screen.queryByText('Already sent')).not.toBeInTheDocument();
+  expect(screen.getByText('Still due')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Submitted' }));
+  expect(screen.getByText('Already sent')).toBeInTheDocument();
+  expect(screen.queryByText('Still due')).not.toBeInTheDocument();
+});
+
+
+test('study materials show clear download and link actions', async () => {
+  const data = { ...overview, materials: [
+    { id: 3, resourceType: 'PDF', title: 'Algebra notes', subjectName: 'Mathematics', description: 'Chapter one', resourceUrl: 'upload:sample.pdf' },
+    { id: 4, resourceType: 'Link', title: 'Reading guide', subjectName: 'English', resourceUrl: 'https://example.com/guide' },
+  ] };
+  global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, text: async () => JSON.stringify({ success: true, data }) }) as jest.Mock;
+  render(<StudentPortal />);
+  await screen.findByText(/Good .*Test/);
+  fireEvent.click(screen.getByRole('navigation', { name: 'Student navigation' }).querySelectorAll('button')[5]);
+  expect(screen.getByText('Algebra notes')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Download file' })).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Open link' })).toHaveAttribute('href', 'https://example.com/guide');
+});
+
+test('Exams shows upcoming schedule without earlier or online exam sections', async () => {
+  const examDate = new Date(Date.now() + 86400000).toISOString();
+  const data = { ...overview, exams: [{ id: 9, examName: 'Annual', subjectName: 'Science', examDate, startTime: '09:00', endTime: '10:00' }], onlineExams: [{ id: 2, name: 'Old online exam' }] };
+  global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, text: async () => JSON.stringify({ success: true, data }) }) as jest.Mock;
+  render(<StudentPortal />);
+  await screen.findByText(/Good .*Test/);
+  fireEvent.click(screen.getByRole('navigation', { name: 'Student navigation' }).querySelector('button[title="Exams"]') || screen.getAllByRole('button', { name: 'Exams' })[0]);
+  expect(screen.getByText('Exam schedule')).toBeInTheDocument();
+  expect(screen.queryByText('Earlier exams')).not.toBeInTheDocument();
+  expect(screen.queryByText('Online exams')).not.toBeInTheDocument();
+  expect(screen.queryByText('Old online exam')).not.toBeInTheDocument();
+});

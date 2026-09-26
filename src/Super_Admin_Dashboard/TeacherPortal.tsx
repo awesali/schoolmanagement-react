@@ -1,7 +1,9 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import { profilePictureUrl } from "./ProfilePictureInput";
+import { API_BASE_URL } from "../config";
 import { localDate, SchoolIcon, teacherRequest } from "./TeacherWorkspace";
 import "./TeacherWorkspace.css";
+import { downloadStudyMaterial, isUploadedStudyMaterial } from "../Student/studyMaterialFiles";
 import SyllabusProgress from "./SyllabusProgress";
 
 export type TeacherPortalPage =
@@ -148,7 +150,7 @@ function Homework() {
               <option value="">Select assignment</option>
               {options.map((o, i) => (
                 <option key={`${o.sectionId}-${o.subjectId}`} value={i}>
-                  {o.className} · {o.sectionName} — {o.subjectName}
+                  {o.className} Â· {o.sectionName} â€” {o.subjectName}
                 </option>
               ))}
             </select>
@@ -172,7 +174,7 @@ function Homework() {
               onChange={(e) =>
                 setForm({ ...form, description: e.target.value })
               }
-              placeholder="Explain what students need to complete…"
+              placeholder="Explain what students need to completeâ€¦"
             />
           </label>
           <label>
@@ -214,7 +216,7 @@ function Homework() {
               onChange={(e) =>
                 setForm({ ...form, resourceUrl: e.target.value })
               }
-              placeholder="https://…"
+              placeholder="https://â€¦"
             />
           </label>
           <label className="tp-check">
@@ -227,7 +229,7 @@ function Homework() {
           </label>
           <button className="btn btn-primary" disabled={saving}>
             {saving
-              ? "Saving…"
+              ? "Savingâ€¦"
               : form.publish
                 ? "Publish assignment"
                 : "Save draft"}
@@ -249,7 +251,7 @@ function Homework() {
               </div>
               <h3>{row.title}</h3>
               <p>
-                {row.className} · {row.sectionName} · {row.subjectName}
+                {row.className} Â· {row.sectionName} Â· {row.subjectName}
               </p>
               <p>{row.description}</p>
               <div className="tp-meta">
@@ -257,7 +259,7 @@ function Homework() {
                 {row.totalMarks != null && <span>{row.totalMarks} marks</span>}
                 {row.resourceUrl && (
                   <a href={row.resourceUrl} target="_blank" rel="noreferrer">
-                    Open resource ↗
+                    Open resource â†—
                   </a>
                 )}
               </div>
@@ -275,6 +277,8 @@ function StudyMaterial() {
   const [open, setOpen] = useState(false),
     [error, setError] = useState(""),
     [saving, setSaving] = useState(false);
+  const [source, setSource] = useState<"Link" | "Upload">("Link");
+  const [file, setFile] = useState<File | null>(null);
   const [form, setForm] = useState({
     option: "",
     title: "",
@@ -303,8 +307,23 @@ function StudyMaterial() {
     const option = options[Number(form.option)];
     if (!option) return;
     setSaving(true);
+    setError("");
     try {
-      await teacherRequest("/api/Teacher/study-materials", {
+      if (source === "Upload") {
+        if (!file) throw new Error("Choose a file to upload.");
+        const body = new FormData();
+        body.append("sectionId", String(option.sectionId));
+        body.append("subjectId", String(option.subjectId));
+        body.append("title", form.title);
+        body.append("description", form.description);
+        body.append("resourceType", form.resourceType);
+        body.append("file", file);
+        const response = await fetch(API_BASE_URL + "/api/Teacher/study-materials/upload", {
+          method: "POST", headers: { Authorization: "Bearer " + localStorage.getItem("token") }, body,
+        });
+        const result = await response.json();
+        if (!response.ok || result.success === false) throw new Error(result.message || "Upload failed.");
+      } else await teacherRequest("/api/Teacher/study-materials", {
         method: "POST",
         body: JSON.stringify({
           ...form,
@@ -313,6 +332,8 @@ function StudyMaterial() {
         }),
       });
       setOpen(false);
+      setFile(null);
+      setSource("Link");
       setForm({
         option: "",
         title: "",
@@ -332,7 +353,7 @@ function StudyMaterial() {
       <Header
         eyebrow="LEARNING LIBRARY"
         title="Study Material"
-        text="Share trusted notes, videos, practice sheets, and reference links with assigned classes."
+        text="Share notes, PDFs, practice sheets, and reference links with assigned classes."
         icon="material"
       />
       <div className="tp-title-row">
@@ -365,7 +386,7 @@ function StudyMaterial() {
               <option value="">Select class</option>
               {options.map((o, i) => (
                 <option key={`${o.sectionId}-${o.subjectId}`} value={i}>
-                  {o.className} · {o.sectionName} — {o.subjectName}
+                  {o.className} Â· {o.sectionName} â€” {o.subjectName}
                 </option>
               ))}
             </select>
@@ -374,11 +395,9 @@ function StudyMaterial() {
             Resource type
             <select
               value={form.resourceType}
-              onChange={(e) =>
-                setForm({ ...form, resourceType: e.target.value })
-              }
+              onChange={(e) => { setForm({ ...form, resourceType: e.target.value }); setFile(null); if (e.target.value === "Link") setSource("Link"); }}
             >
-              {["Link", "Video", "PDF", "Worksheet", "Notes"].map((x) => (
+              {["Link", "PDF", "Worksheet", "Notes"].map((x) => (
                 <option key={x}>{x}</option>
               ))}
             </select>
@@ -391,18 +410,20 @@ function StudyMaterial() {
               onChange={(e) => setForm({ ...form, title: e.target.value })}
             />
           </label>
-          <label>
+          <div className="tp-wide tp-resource-source" role="group" aria-label="Resource source">
+            <label><input type="radio" name="material-source" checked={source === "Link"} onChange={() => { setSource("Link"); setFile(null); }} /> Link</label>
+            {form.resourceType !== "Link" && <label><input type="radio" name="material-source" checked={source === "Upload"} onChange={() => { setSource("Upload"); setForm({ ...form, resourceUrl: "" }); }} /> Upload file</label>}
+          </div>
+          {source === "Link" || form.resourceType === "Link" ? <label>
             Resource link
-            <input
-              type="url"
-              required
-              placeholder="https://…"
-              value={form.resourceUrl}
-              onChange={(e) =>
-                setForm({ ...form, resourceUrl: e.target.value })
-              }
-            />
-          </label>
+            <input type="url" required placeholder="https://example.com/material" value={form.resourceUrl}
+              onChange={(e) => setForm({ ...form, resourceUrl: e.target.value })} />
+          </label> : <label>
+            {form.resourceType} file
+            <input type="file" required accept={form.resourceType === "PDF" ? ".pdf" : ".pdf,.doc,.docx,.png,.jpg,.jpeg"}
+              onChange={(e) => setFile(e.target.files?.[0] || null)} />
+            <small>Maximum 100 MB</small>
+          </label>}
           <label className="tp-wide">
             Description
             <textarea
@@ -414,37 +435,39 @@ function StudyMaterial() {
             />
           </label>
           <button className="btn btn-primary" disabled={saving}>
-            {saving ? "Sharing…" : "Share with class"}
+            {saving ? "Sharingâ€¦" : "Share with class"}
           </button>
         </form>
       )}
       {!rows.length && !error ? (
         <Empty>No study material shared yet.</Empty>
       ) : (
-        <div className="tp-card-grid">
+        <div className="tp-card-grid tp-study-grid">
           {rows.map((row) => (
-            <a
-              className="tw-panel tp-resource"
-              href={row.resourceUrl}
-              target="_blank"
-              rel="noreferrer"
-              key={row.id}
-            >
-              <span className="tw-class-icon">
-                <SchoolIcon name="material" />
-              </span>
-              <div>
+            <article className="tw-panel tp-study-card" key={row.id}>
+              <div className="tp-study-card-head">
+                <span className="tw-class-icon" aria-hidden="true"><SchoolIcon name="material" /></span>
                 <span className="tw-pill">{row.resourceType}</span>
-                <h3>{row.title}</h3>
-                <p>
-                  {row.className} · {row.sectionName} · {row.subjectName}
-                </p>
-                <small>{row.description || "Open learning resource"}</small>
               </div>
-              <strong>↗</strong>
-            </a>
-          ))}
-        </div>
+              <div className="tp-study-card-body">
+                <h3>{row.title}</h3>
+                <p className="tp-study-card-class">{row.className} · {row.sectionName}</p>
+                <p className="tp-study-card-subject">{row.subjectName}</p>
+                {row.description && <p className="tp-study-card-description">{row.description}</p>}
+              </div>
+              <div className="tp-study-card-footer">
+                {isUploadedStudyMaterial(row.resourceUrl) ?
+                  <button className="tp-study-card-action" type="button" onClick={() => void downloadStudyMaterial(row.id, row.title).catch((failure: Error) => setError(failure.message))}>
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v3h16v-3" /></svg>
+                    Download file
+                  </button> :
+                  <a className="tp-study-card-action" href={row.resourceUrl} target="_blank" rel="noreferrer">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 5h5v5m0-5-9 9" /><path d="M19 13v6H5V5h6" /></svg>
+                    Open link
+                  </a>}
+              </div>
+            </article>
+          ))}       </div>
       )}
     </div>
   );
@@ -631,7 +654,7 @@ function Profile({ onNavigate }: { onNavigate: Navigate }) {
               <div>
                 <h3>{data.name}</h3>
                 <p>
-                  {data.designation} · {data.schoolName}
+                  {data.designation} Â· {data.schoolName}
                 </p>
               </div>
               <SchoolIcon name="profile" />
@@ -672,7 +695,7 @@ function Profile({ onNavigate }: { onNavigate: Navigate }) {
               ].map(([label, value]) => (
                 <div key={label}>
                   <dt>{label}</dt>
-                  <dd>{value || "—"}</dd>
+                  <dd>{value || "â€”"}</dd>
                 </div>
               ))}
             </dl>
@@ -682,7 +705,7 @@ function Profile({ onNavigate }: { onNavigate: Navigate }) {
             </p>
           </section>
         ) : (
-          <Empty>Loading personal details…</Empty>
+          <Empty>Loading personal detailsâ€¦</Empty>
         ))}
       {tab === "Leave" && (
         <>
@@ -767,7 +790,7 @@ function Profile({ onNavigate }: { onNavigate: Navigate }) {
                 </div>
                 <h3>{row.leaveType}</h3>
                 <p>
-                  {new Date(row.fromDate).toLocaleDateString("en-GB")} –{" "}
+                  {new Date(row.fromDate).toLocaleDateString("en-GB")} â€“{" "}
                   {new Date(row.toDate).toLocaleDateString("en-GB")}
                 </p>
                 <p>{row.reason}</p>
@@ -798,16 +821,16 @@ function Profile({ onNavigate }: { onNavigate: Navigate }) {
                       })}
                     </span>
                   </div>
-                  <h3>₹{Number(row.netSalary).toLocaleString("en-IN")}</h3>
+                  <h3>â‚¹{Number(row.netSalary).toLocaleString("en-IN")}</h3>
                   <div className="tp-meta">
                     <span>
-                      Basic ₹{Number(row.basicSalary).toLocaleString("en-IN")}
+                      Basic â‚¹{Number(row.basicSalary).toLocaleString("en-IN")}
                     </span>
                     <span>
-                      Bonus ₹{Number(row.bonus).toLocaleString("en-IN")}
+                      Bonus â‚¹{Number(row.bonus).toLocaleString("en-IN")}
                     </span>
                     <span>
-                      Deductions ₹
+                      Deductions â‚¹
                       {Number(row.deduction).toLocaleString("en-IN")}
                     </span>
                   </div>
@@ -842,7 +865,7 @@ function Profile({ onNavigate }: { onNavigate: Navigate }) {
                       {new Date(row.createdDate).toLocaleDateString("en-GB")}
                     </small>
                   </div>
-                  <strong>View ↗</strong>
+                  <strong>View â†—</strong>
                 </a>
               ))}
             </div>
@@ -866,3 +889,4 @@ export default function TeacherPortal({
   if (page === "Study Material") return <StudyMaterial />;
   return <Profile onNavigate={onNavigate} />;
 }
+

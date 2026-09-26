@@ -573,3 +573,25 @@
     grid-template-columns: 1fr;
   }
 }
+
+.tp-form .tp-resource-source { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.tp-form .tp-resource-source label { flex-direction: row; align-items: center; gap: 7px; cursor: pointer; }
+.tp-form .tp-resource-source input[type="radio"] { width: auto; padding: 0; margin: 0; }
+
+/* Study material cards keep details and the download action on separate rows. */
+.tp-card-grid .tp-study-card { display: flex; flex-direction: column; min-width: 0; min-height: 240px; padding: 20px; gap: 0; }
+.tp-study-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.tp-study-card-head .tw-class-icon { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; padding: 0; flex: 0 0 auto; }
+.tp-study-card-body { min-width: 0; padding: 17px 0 18px; }
+.tp-study-card-body h3 { margin: 0 0 10px; font-size: 18px; line-height: 1.35; overflow-wrap: anywhere; }
+.tp-study-card-class, .tp-study-card-subject, .tp-study-card-description { margin: 0; overflow-wrap: anywhere; }
+.tp-study-card-class { color: #435a75; font-weight: 600; }
+.tp-study-card-subject { color: #61758d; margin-top: 4px; }
+.tp-study-card-description { color: #61758d; margin-top: 12px; line-height: 1.5; }
+.tp-study-card-footer { margin-top: auto; padding-top: 15px; border-top: 1px solid #e4ebf3; }
+.tp-study-card-action { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 40px; padding: 9px 15px; border: 1px solid #2e6fb2; border-radius: 9px; background: #eef6ff; color: #205b98; font-size: 13px; font-weight: 700; text-decoration: none; white-space: nowrap; cursor: pointer; }
+.tp-study-card-action:hover { background: #dceeff; color: #164a80; }
+.tp-study-card-action svg { width: 18px; height: 18px; flex: 0 0 auto; }
+@media (max-width: 420px) { .tp-card-grid .tp-study-card { padding: 17px; } .tp-study-card-action { width: 100%; } }
+
+.tp-study-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 20px; }

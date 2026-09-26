@@ -182,7 +182,7 @@
 }
 
 @media print {
-  body * { visibility: hidden; }
+  body:has(.profile-id-card) * { visibility: hidden; }
   .profile-id-card, .profile-id-card * { visibility: visible; }
   .profile-id-card {
     position: fixed;

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import { LoadingButton, PageLoader } from '../components/Loader/Loader';
 import CreateExamSchedule from './CreateExamSchedule';
+import StudentReportCards from '../Student/StudentReportCards';
 import './StaffList.css';
 import './ManagementTabs.css';
 
@@ -30,6 +31,7 @@ interface ResultItem {
 
 interface StudentResultDetail {
   studentId: number; studentName: string; examName: string;
+  schoolName?: string; schoolAddress?: string; schoolLogoUrl?: string; rollNumber?: string; className?: string; sectionName?: string; parentName?: string; expectedSubjectCount?: number; recordedSubjectCount?: number; isComplete?: boolean;
   totalMarks: number; obtainedMarks: number; percentage: number;
   grade: string; resultStatus: string;
   subjects: { subjectId: number; subjectName: string; maxMarks: number; passingMarks: number; obtainedMarks: number; status: string; remarks: string; }[];
@@ -304,6 +306,7 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
       const res = await fetch(`${API_BASE_URL}/api/Exam/publish?examId=${resultsExamId}&schoolId=${selectedSchoolId}`, { method: 'PUT', headers: headers() });
       const result = await res.json();
       setResultsMsg({ text: result.message || (res.ok ? 'Results published!' : 'Failed.'), ok: res.ok && result.success });
+      if (res.ok && result.success) { void fetchResults(); void fetchExams(); }
     } catch { setResultsMsg({ text: 'Error publishing results.', ok: false }); }
     finally { setPublishingResults(false); }
   };
@@ -707,9 +710,9 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
                     <tr key={idx}>
                       <td style={{ fontWeight: 700 }}>#{r.rank}</td>
                       <td>
-                        <span className="staff-name-link" onClick={() => fetchStudentDetail(r.studentId)}>
+                        <button type="button" className="staff-name-link" onClick={() => fetchStudentDetail(r.studentId)}>
                           {r.studentName}
-                        </span>
+                        </button>
                       </td>
                       <td>{r.totalMarks}</td>
                       <td>{r.obtainedMarks}</td>
@@ -730,60 +733,25 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
       {/* ── STUDENT RESULT DETAIL MODAL ── */}
       {(detailLoading || studentDetail) && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'white', borderRadius: '16px', padding: '32px', width: '100%', maxWidth: '560px', boxShadow: '0 8px 32px rgba(0,0,0,0.18)', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div style={{ background: 'white', borderRadius: '16px', padding: '32px', width: '100%', maxWidth: '900px', boxShadow: '0 8px 32px rgba(0,0,0,0.18)', maxHeight: '90vh', overflowY: 'auto' }}>
             {detailLoading ? (
               <PageLoader label="Loading exam data..." />
             ) : studentDetail && (
               <>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                  <h3 style={{ color: '#1e2a3a', margin: 0 }}>Result Detail</h3>
-                  <button onClick={() => setStudentDetail(null)}
-                    style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#718096' }}>✕</button>
-                </div>
-                <div style={{ background: '#f7fafc', borderRadius: '10px', padding: '16px', marginBottom: '20px', fontSize: '14px', color: '#4a5568' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                    <div><strong>Student:</strong> {studentDetail.studentName}</div>
-                    <div><strong>Exam:</strong> {studentDetail.examName}</div>
-                    <div><strong>Total Marks:</strong> {studentDetail.totalMarks}</div>
-                    <div><strong>Obtained:</strong> {studentDetail.obtainedMarks}</div>
-                    <div><strong>Percentage:</strong> {studentDetail.percentage}%</div>
-                    <div><strong>Grade:</strong> <span style={{ fontWeight: 700, color: '#553c9a' }}>{studentDetail.grade}</span></div>
-                  </div>
-                  <div style={{ marginTop: '10px' }}>
-                    <span style={{ display: 'inline-block', padding: '4px 14px', borderRadius: '12px', fontWeight: 700, fontSize: '13px',
-                      background: studentDetail.resultStatus === 'PASS' ? '#c6f6d5' : '#fed7d7',
-                      color: studentDetail.resultStatus === 'PASS' ? '#22543d' : '#742a2a' }}>
-                      {studentDetail.resultStatus}
-                    </span>
-                  </div>
-                </div>
-                <h4 style={{ color: '#1e2a3a', marginBottom: '12px', fontSize: '14px' }}>Subject-wise Breakdown</h4>
-                {(studentDetail.subjects ?? []).length === 0 ? (
-                  <p style={{ color: '#718096', textAlign: 'center', padding: '20px' }}>No subject details available.</p>
-                ) : (
-                <div className="staff-table-wrapper">
-                  <table className="staff-table">
-                    <thead>
-                      <tr><th>Subject</th><th>Max</th><th>Pass</th><th>Obtained</th><th>Status</th><th>Remarks</th></tr>
-                    </thead>
-                    <tbody>
-                      {(studentDetail.subjects ?? []).map(s => (
-                        <tr key={s.subjectId}>
-                          <td style={{ fontWeight: 600 }}>{s.subjectName}</td>
-                          <td>{s.maxMarks}</td>
-                          <td>{s.passingMarks}</td>
-                          <td style={{ fontWeight: 600 }}>{s.obtainedMarks}</td>
-                          <td><span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 600,
-                            background: s.status === 'PASS' ? '#c6f6d5' : '#fed7d7',
-                            color: s.status === 'PASS' ? '#22543d' : '#742a2a' }}>{s.status}</span></td>
-                          <td style={{ color: '#718096', fontSize: '13px' }}>{s.remarks || '-'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                )}
-                <button className="btn btn-primary" style={{ width: '100%', marginTop: '20px' }} onClick={() => setStudentDetail(null)}>Close</button>
+                <button type="button" className="btn" style={{ marginBottom: 14 }} onClick={() => setStudentDetail(null)}>Close result</button>
+                <StudentReportCards
+                  showList={false}
+                  profile={{ studentName: studentDetail.studentName, schoolName: studentDetail.schoolName,
+                    schoolAddress: studentDetail.schoolAddress, schoolLogoUrl: studentDetail.schoolLogoUrl,
+                    rollNumber: studentDetail.rollNumber, className: studentDetail.className, sectionName: studentDetail.sectionName }}
+                  parent={{ name: studentDetail.parentName }}
+                  results={[{ examId: Number(resultsExamId), examName: studentDetail.examName,
+                    totalMarks: studentDetail.totalMarks, obtainedMarks: studentDetail.obtainedMarks,
+                    percentage: studentDetail.percentage, grade: studentDetail.grade,
+                    resultStatus: studentDetail.resultStatus, expectedSubjectCount: studentDetail.expectedSubjectCount,
+                    recordedSubjectCount: studentDetail.recordedSubjectCount, isComplete: studentDetail.isComplete }]}
+                  gradeHistory={studentDetail.subjects ?? []}
+                />
               </>
             )}
           </div>

@@ -17,3 +17,33 @@
 .sp-search{width:100%;border:1px solid var(--sp-border);background:var(--sp-surface);color:var(--sp-text);border-radius:9px;padding:11px;margin:15px 0}
 .sp-action-form{display:grid;gap:14px;margin-top:15px}.sp-action-form label{display:grid;gap:6px;font-size:13px;font-weight:600}.sp-action-form input,.sp-action-form select,.sp-action-form textarea{width:100%;border:1px solid var(--sp-border);border-radius:9px;padding:10px;background:var(--sp-surface);color:var(--sp-text)}.sp-action-form button{justify-self:start}
 .sp-now{display:flex;gap:16px;background:linear-gradient(110deg,#1e2a3a,#285584);color:#fff;padding:17px 22px;border-radius:13px;margin-bottom:18px}.sp-now>div{display:grid;gap:4px;flex:1}.sp-now small{color:#b8d8ff;letter-spacing:1.5px;font-weight:700;font-size:10px}.sp-now strong{font-size:16px}.sp-now span{font-size:12px;color:#d4e4f5}.sp-preferences{padding-top:14px}.sp-preferences label{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--sp-border);font-size:13px}.sp-preferences input{width:18px;height:18px}.sp-preferences small{display:block;margin-top:15px;color:var(--sp-muted)}.sp-print-button{margin:0 0 16px}.sp-receipt .sp-details{margin:18px 0 25px}@media print{.sp-side,.sp-bottom,.sp-header-actions,.sp-print-button,.sp-modal-close,.sp-filter,.sp-text-button{display:none!important}.sp-layout,.sp-main{display:block;background:#fff;color:#000;padding:0;min-height:0}.sp-panel,.sp-record{box-shadow:none;border:1px solid #ddd}.sp-modal-backdrop{position:static;background:#fff;display:block;padding:0}.sp-modal{box-shadow:none;max-height:none;width:100%;padding:0}.sp-receipt{border:0}}
+
+/* Study material cards share the teacher layout with readable actions. */
+.sp-material-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 20px; }
+.sp-card-grid .sp-material-card { min-width: 0; min-height: 240px; padding: 20px; }
+.sp-material-card .sp-record-head { align-items: flex-start; }
+.sp-material-card .sp-material-save { border: 1px solid var(--sp-border); border-radius: 8px; padding: 7px 12px; background: var(--sp-surface); color: var(--primary-dark); font-weight: 700; }
+.sp-material-body { min-width: 0; padding: 17px 0 18px; }
+.sp-material-body h3 { margin: 0 0 10px; font-size: 18px; line-height: 1.35; overflow-wrap: anywhere; }
+.sp-material-subject { display: block; color: var(--sp-muted); font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+.sp-material-body p { margin: 12px 0 0; overflow-wrap: anywhere; }
+.sp-material-card .sp-record-foot { display: block; margin-top: auto; padding-top: 15px; }
+.sp-material-card .sp-material-action { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 40px; padding: 9px 15px; border: 1px solid #2e6fb2; border-radius: 9px; background: #eef6ff; color: #205b98; font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer; }
+.sp-material-card .sp-material-action:hover { background: #dceeff; color: #164a80; text-decoration: none; }
+.sp-material-action svg { width: 18px; height: 18px; flex: 0 0 auto; }
+@media (max-width: 420px) { .sp-card-grid .sp-material-card { padding: 17px; } .sp-material-card .sp-material-action { width: 100%; } }
+/* Keep the student menu at full viewport height while the page content scrolls. */
+@media screen and (min-width: 921px) {
+  .sp-layout { padding-left: 240px; }
+  .sp-layout > .sp-side {
+    position: fixed;
+    inset: 0 auto 0 0;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  .sp-layout > .sp-main { width: 100%; }
+}
+
+
