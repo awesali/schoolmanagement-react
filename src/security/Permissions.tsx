@@ -116,8 +116,6 @@ export const PAGE_PERMISSIONS: Record<string, string> = {
   'Exam Preparation': 'academics.classes',
   'Parent List': 'management.parents',
   'Transport Management': 'management.transport',
-  'Inventory Management': 'management.inventory',
-  'Study Materials': 'management.study-materials',
   'Subject List': 'academics.subjects',
   'Fee Management': 'finance.fees',
   'Salary Management': 'finance.salary',

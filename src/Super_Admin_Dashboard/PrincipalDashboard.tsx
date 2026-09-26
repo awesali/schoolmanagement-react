@@ -4,6 +4,7 @@ import { LogoutIcon, ProfileIcon } from '../components/Icons/Icons';
 import { profilePictureUrl } from './ProfilePictureInput';
 import './PrincipalDashboard.css';
 import SyllabusProgress from './SyllabusProgress';
+import StudentRequestInbox from './StudentRequestInbox';
 
 type ClassRow = { id: number; name: string; total: number; recorded: number; present: number; absent: number; late: number; pending: number };
 type Attendance = { total: number; present: number; absent: number; late: number; unmarked: number };
@@ -17,7 +18,7 @@ export type PrincipalData = {
   finance: { today: number; month: number; outstanding: number; assessed: number; collected: number } | null;
   examinations: { id: number; name: string; startDate: string | null; endDate: string | null; resultPublished: boolean; isPublished: boolean }[] | null;
 };
-type Page = 'Dashboard' | 'Academic audit' | 'Student attendance' | 'Teachers & staff' | 'Leave requests' | 'Examinations' | 'Finance' | 'Daily school brief';
+type Page = 'Dashboard' | 'Academic audit' | 'Student attendance' | 'Teachers & staff' | 'Leave requests' | 'Student requests' | 'Examinations' | 'Finance' | 'Daily school brief';
 const dateLabel = (value: string) => new Date(value.substring(0, 10) + 'T12:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 const money = (value: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(value);
 export const percentage = (count: number, total: number) => total > 0 ? Math.round(count / total * 1000) / 10 : null;
@@ -95,6 +96,7 @@ export default function PrincipalDashboard({ userName, profilePicture, schoolNam
     { name: 'Examinations', group: 'ACADEMICS', visible: !!data?.examinations },
     { name: 'Teachers & staff', group: 'PEOPLE', visible: !!staff },
     { name: 'Leave requests', group: 'PEOPLE', visible: !!data?.leaveRequests },
+    { name: 'Student requests', group: 'PEOPLE', visible: true },
     { name: 'Finance', group: 'OPERATIONS', visible: !!data?.finance },
   ];
   const alerts = [
@@ -229,6 +231,7 @@ export default function PrincipalDashboard({ userName, profilePicture, schoolNam
         {page === 'Academic audit' && academicAudit()}
         {page === 'Teachers & staff' && staff && <section className="principal-panel"><h2>Today’s staff records</h2><input aria-label="Search staff" placeholder="Search staff" value={search} onChange={e => setSearch(e.target.value)} /><div className="principal-table-scroll"><table><thead><tr><th>Staff member</th><th>Attendance status</th></tr></thead><tbody>{staff.people.filter(s => s.name.toLowerCase().includes(search.toLowerCase())).map(s => <tr key={s.id}><td>{s.name}</td><td><span className={'principal-badge' + (s.status === 'Not marked' || s.status === 'Absent' ? ' warning' : '')}>{s.status}</span></td></tr>)}</tbody></table></div>{!staff.people.length && <p>No active staff found.</p>}</section>}
         {page === 'Leave requests' && leavePanel()}
+        {page === 'Student requests' && <StudentRequestInbox />}
         {page === 'Examinations' && examsPanel()}
         {page === 'Finance' && financePanel()}
         <p className="principal-updated">Updated {new Date(data.generatedAt).toLocaleString('en-IN')} · Attendance and activity reflect the selected date; leave requests show the current queue.</p>

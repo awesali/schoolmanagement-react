@@ -40,11 +40,11 @@ export default function StudentReportCards({ results, gradeHistory, resultSubjec
   return <div className="src-list">{results.filter((result, index) =>
     !showList || String(result.examId ?? result.examName + '-' + index) === openExamId).map((result, index) => {
     const bySubject = new Map<string, Row>();
-    (resultSubjects ?? gradeHistory).filter(mark => mark.examId == null && results.length === 1
+    (resultSubjects ?? gradeHistory).filter(mark => !showList || (mark.examId == null && results.length === 1
       ? true
       : result.examId != null
       ? Number(mark.examId) === Number(result.examId)
-      : mark.examName === result.examName).forEach(mark => {
+      : mark.examName === result.examName)).forEach(mark => {
       if (!bySubject.has(mark.subjectName)) bySubject.set(mark.subjectName, mark);
     });
     const subjects = Array.from(bySubject.values()).sort((a, b) => String(a.subjectName).localeCompare(String(b.subjectName)));

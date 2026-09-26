@@ -32,7 +32,6 @@ jest.mock('./AcademicYear', () => () => null);
 jest.mock('./FinanceManagement', () => () => null);
 jest.mock('./SalaryManagement', () => () => null);
 jest.mock('./TransportManagement', () => () => null);
-jest.mock('./InventoryManagement', () => () => null);
 jest.mock('./PermissionManagement', () => () => null);
 jest.mock('./StudentPromotion', () => () => null);
 
@@ -92,7 +91,8 @@ test('admin retains current school selection, dashboard and all management menus
   expect(screen.getByPlaceholderText('Search')).toBeInTheDocument();
   expect(screen.queryByText('Teacher workspace content')).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: /Management/ }));
-  expect(screen.getByRole('button', { name: /Study Materials/ })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /Study Materials/ })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /Inventory/ })).not.toBeInTheDocument();
   expect(!!screen.queryByRole('button', { name: /Security/ })).toBe(SECURITY_UI_ENABLED);
   expect(screen.getByRole('img', { name: 'Admin School logo' })).toHaveAttribute('src', expect.stringContaining('/uploads/school-logo.png'));
   expect(await screen.findByRole('img', { name: 'Account User profile' })).toBeInTheDocument();

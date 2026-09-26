@@ -22,6 +22,7 @@ import TeacherAttendance from './TeacherAttendance';
 import TeacherStudentAttendance from './TeacherStudentAttendance';
 import TeacherPortal, { TeacherPortalPage } from './TeacherPortal';
 import TeacherStudentContent, { TeacherContentPage } from './TeacherStudentContent';
+import TeacherStudentLeaveRequests from './TeacherStudentLeaveRequests';
 import TeacherExamContent from './TeacherExamContent';
 import HallTicketManagement from './HallTicketManagement';
 import StudentServicesManagement from './StudentServicesManagement';
@@ -29,7 +30,6 @@ import AcademicYear from './AcademicYear';
 import FinanceManagement from './FinanceManagement';
 import SalaryManagement from './SalaryManagement';
 import TransportManagement from './TransportManagement';
-import InventoryManagement from './InventoryManagement';
 import PermissionManagement from './PermissionManagement';
 import StudentPromotion from './StudentPromotion';
 import Sidebar from './Sidebar';
@@ -519,10 +519,6 @@ const Dashboard: React.FC = () => {
                     <SalaryManagement selectedSchoolId={selectedSchoolId} />
                   ) : activePage === 'Transport Management' ? (
                     <TransportManagement selectedSchoolId={selectedSchoolId} />
-                  ) : activePage === 'Inventory Management' ? (
-                    <InventoryManagement selectedSchoolId={selectedSchoolId} mode="inventory" />
-                  ) : activePage === 'Study Materials' ? (
-                    <InventoryManagement selectedSchoolId={selectedSchoolId} mode="studyMaterials" />
                   ) : activePage === 'Role & Permissions' ? (
                     <PermissionManagement selectedSchoolId={selectedSchoolId} />
                   ) : activePage === 'Attendance' ? (
@@ -553,6 +549,8 @@ const Dashboard: React.FC = () => {
                     <HallTicketManagement schoolId={selectedSchoolId} />
                   ) : activePage === 'Student Services' && selectedSchoolId ? (
                     <StudentServicesManagement schoolId={selectedSchoolId} />
+                  ) : userRole === '2' && activePage === 'Student Leave Requests' ? (
+                    <TeacherStudentLeaveRequests />
                   ) : userRole === '2' && activePage === 'Exam Preparation' ? (
                     <TeacherExamContent />
                   ) : userRole === '2' && ['Class Diary', 'Submissions', 'Announcements', 'Messages'].includes(activePage) ? (
