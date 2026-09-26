@@ -475,7 +475,7 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
                   <label style={{ fontSize: '13px', fontWeight: 600, color: '#4a5568', display: 'block', marginBottom: '6px' }}>Academic Session *</label>
                   <select value={examForm.academicSessionId} onChange={e => setExamForm(f => ({ ...f, academicSessionId: e.target.value }))} style={{ ...selectStyle, width: '100%' }}>
                     <option value="">Select Academic Session</option>
-                    {sessions.map(s => <option key={s.id} value={s.id}>{new Date(s.yearStart).toLocaleDateString('en-GB')} � {new Date(s.yearEnd).toLocaleDateString('en-GB')} (ID {s.id})</option>)}
+                    {sessions.map(s => <option key={s.id} value={s.id}>{new Date(s.yearStart).toLocaleDateString('en-GB')} to {new Date(s.yearEnd).toLocaleDateString('en-GB')} (ID {s.id})</option>)}
                   </select>
                 </div>
                 {examMsg && !examMsg.ok && (

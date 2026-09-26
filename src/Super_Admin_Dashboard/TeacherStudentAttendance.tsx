@@ -222,7 +222,7 @@ export default function StudentAttendance({
             <option value="">Select your class</option>
             {sectionOptions.map((s) => (
               <option key={s.sectionId} value={s.sectionId}>
-                {s.className} · {s.sectionName}
+                {s.className} - {s.sectionName}
               </option>
             ))}
           </select>

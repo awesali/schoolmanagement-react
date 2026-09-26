@@ -163,14 +163,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, 
       {
         label: 'Unit tests',
         page: 'Unit Test',
-        icon: 'book',
+        icon: 'check',
         permission: 'exams.academic-exam',
-      },
-      {
-        label: 'My timetable',
-        page: 'My Timetable',
-        icon: 'calendar',
-        permission: 'academics.class-schedule',
       },
       {
         label: 'My attendance',

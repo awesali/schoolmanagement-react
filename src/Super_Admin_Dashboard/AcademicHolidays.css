@@ -1,0 +1,15 @@
+.academic-holidays { margin: 28px 0; padding: 22px; background: #fff; border: 1px solid #dbe5ef; border-radius: 14px; }
+.academic-holidays h3 { margin: 0 0 6px; color: #173657; }
+.academic-holidays p { color: #53677d; }
+.academic-holidays label { display: flex; flex-direction: column; gap: 6px; font-weight: 650; color: #25496e; }
+.academic-holidays input, .academic-holidays select { min-height: 42px; border: 1px solid #ced9e5; border-radius: 7px; padding: 7px 10px; font: inherit; }
+.academic-holidays-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 20px 0; }
+.academic-holidays-wide { grid-column: span 2; }
+.academic-holidays-form button { align-self: end; min-height: 42px; }
+.academic-holidays-list { list-style: none; padding: 0; margin: 0; }
+.academic-holidays-list li { display: flex; justify-content: space-between; gap: 14px; padding: 12px 0; border-top: 1px solid #e5ebf2; }
+.academic-holidays-list li div { display: flex; flex-direction: column; gap: 3px; }
+.academic-holidays-list li span, .academic-holidays-list li small { color: #59718a; }
+.academic-holidays-list li button { align-self: center; background: #fff; border: 1px solid #cbd5e1; border-radius: 7px; padding: 7px 12px; cursor: pointer; }
+.academic-holidays-error { color: #b91c1c !important; }
+@media (max-width: 700px) { .academic-holidays-form { grid-template-columns: 1fr; } .academic-holidays-wide { grid-column: 1; } }

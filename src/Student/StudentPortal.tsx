@@ -13,7 +13,7 @@ type Row = Record<string, any>;
 type Overview = {
   profile: Row; subjects: Row[]; timetable: Row[]; homework: Row[]; materials: Row[];
   attendance: Row[]; exams: Row[]; results: Row[]; resultSubjects?: Row[]; parent?: Row; teachers: Row[];
-  documents: Row[]; fees: Row[]; payments: Row[]; transport?: Row; diary: Row[]; submissions: Row[]; announcements: Row[]; libraryBooks: Row[]; borrowedBooks: Row[]; requests: Row[]; messages: Row[]; achievements: Row[]; schoolEvents: Row[]; gradeHistory: Row[]; examResources?: Row[]; hallTickets?: Row[];
+  documents: Row[]; fees: Row[]; payments: Row[]; transport?: Row; diary: Row[]; submissions: Row[]; announcements: Row[]; libraryBooks: Row[]; borrowedBooks: Row[]; requests: Row[]; messages: Row[]; achievements: Row[]; schoolEvents: Row[]; gradeHistory: Row[]; examResources?: Row[]; hallTickets?: Row[]; onlineExams?: Row[]; onlineAttempts?: Row[];
 };
 type Page = 'Today' | 'My Classes' | 'Timetable' | 'Class Diary' | 'Homework' | 'Study Materials' | 'Announcements' | 'Notifications' | 'Attendance' | 'Exams' | 'Results' | 'My Grades' | 'Progress' | 'Calendar' | 'Events' | 'Library' | 'Teachers' | 'Messages' | 'Requests' | 'Achievements' | 'Fees' | 'Transport' | 'Documents' | 'Planner' | 'Goals' | 'Settings' | 'My Profile';
 const pages: Page[] = ['Today', 'My Classes', 'Timetable', 'Homework', 'Study Materials', 'Attendance', 'Exams', 'Results', 'Calendar', 'Teachers', 'Fees', 'Transport', 'Documents', 'Planner', 'My Profile'];
@@ -27,9 +27,9 @@ const dateOnly = (value: string) => String(value || '').slice(0, 10);
 const shortDate = (value: string) => value ? new Date(value).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '·';
 const shortTime = (value?: string) => {
   const match = /^(\d{1,2}):(\d{2})/.exec(String(value || ''));
-  if (!match) return '�';
+  if (!match) return '-';
   const hours = Number(match[1]);
-  if (hours > 23 || Number(match[2]) > 59) return '�';
+  if (hours > 23 || Number(match[2]) > 59) return '-';
   return `${hours % 12 || 12}:${match[2]} ${hours >= 12 ? 'PM' : 'AM'}`;
 };
 const safeLink = (value: string) => { try { return ['https:', 'http:'].includes(new URL(value).protocol); } catch { return false; } };
@@ -137,7 +137,16 @@ export default function StudentPortal() {
   const events = [
     ...data.homework.map(x => ({ id: `h-${x.id}`, date: x.dueDate, title: x.title, type: 'Homework', detail: x.subjectName })),
     ...data.exams.map(x => ({ id: `e-${x.id}`, date: x.examDate, title: x.examName, type: 'Exam', detail: x.subjectName })),
-    ...(data.schoolEvents || []).map(x => ({ id: 's-' + x.id, date: x.eventDate, title: x.title, type: 'School event', detail: x.description || '' })),
+    ...(data.schoolEvents || []).flatMap(x => {
+      const start = new Date(dateOnly(x.eventDate) + 'T12:00:00');
+      const end = new Date(dateOnly(x.endDate || x.eventDate) + 'T12:00:00');
+      const count = x.eventType === 'AcademicHoliday' ? Math.min(366, Math.max(1, Math.round((end.getTime() - start.getTime()) / 86400000) + 1)) : 1;
+      return Array.from({ length: count }, (_, offset) => {
+        const date = new Date(start); date.setDate(start.getDate() + offset);
+        return { id: 's-' + x.id + '-' + offset, date: dateOnly(date.toISOString()), title: x.title,
+          type: x.eventType === 'AcademicHoliday' ? 'Holiday' : 'School event', detail: x.description || '' };
+      });
+    }),
   ].filter(x => dateOnly(x.date).startsWith(month)).sort((a, b) => String(a.date).localeCompare(String(b.date)));
   const submissionFor = (assignment: Row) => (data.submissions || []).find(row => Number(row.assignmentId) === Number(assignment.id));
   const isSubmitted = (assignment: Row) => {
@@ -215,7 +224,7 @@ export default function StudentPortal() {
     </>}
     {page === 'Attendance' && <>{sectionHeading('My attendance', 'Your own attendance history for this enrollment.')}<div className="sp-stats sp-stats-three">{[['Present', present], ['Absent', absent], ['Attendance', attendancePercent == null ? '·' : `${attendancePercent}%`]].map(([label,value]) => <div key={String(label)}><small>{label}</small><strong>{value}</strong></div>)}</div>{attendancePercent !== null && attendancePercent < 75 && <div className="sp-notice"><strong>Attendance alert</strong><span>Your attendance is {attendancePercent}%. Please contact your school about its attendance requirement.</span></div>}{panel('Attendance history', data.attendance.length ? data.attendance.map((x,i) => <div className="sp-line" key={i}><strong>{shortDate(x.date)}</strong><span className="sp-tag">{x.status}</span></div>) : empty('No attendance recorded yet.'))}</>}
     {page === 'Exams' && <>{sectionHeading('Exam schedule', 'Only published exams for your current session are shown.')}{panel('Upcoming exams', upcomingExams.length ? upcomingExams.map(x => <div className="sp-line" key={x.id}><span className="sp-line-date">{shortDate(x.examDate)}</span><div><strong>{x.subjectName}</strong><small>{x.examName} · {shortTime(x.startTime)}·{shortTime(x.endTime)}</small></div></div>) : empty('No upcoming exams.'))}</>}
-    {page === 'Exams' && <StudentExamPanel data={data}/>}
+    {page === 'Exams' && <StudentExamPanel data={data} refresh={() => void load()}/>}
     {page === 'Results' && <>{sectionHeading('Results', 'Only results released by your school are visible.')}<StudentReportCards results={data.results} gradeHistory={data.gradeHistory} resultSubjects={data.resultSubjects} profile={data.profile} parent={data.parent} /></>}
     {page === 'My Grades' && <>{sectionHeading('My grades', 'Subject marks released by your school.')}{panel('Marks history', data.gradeHistory.length ? data.gradeHistory.map((x,i) => <div className="sp-line" key={i}><div><strong>{x.subjectName}</strong><small>{x.examName} · {shortDate(x.enteredDate)}{x.remarks ? ' · ' + x.remarks : ''}</small></div><b>{x.obtainedMarks}{x.maxMarks != null ? ' / ' + x.maxMarks : ''}</b></div>) : empty('No subject marks published yet.'))}</>}
     {page === 'Progress' && <>{sectionHeading('My progress', 'A summary of published results and completed work.')}{panel('Academic snapshot', <div className="sp-stats sp-stats-three"><div><small>Published exams</small><strong>{data.results.length}</strong></div><div><small>Assignments submitted</small><strong>{data.submissions.length}</strong></div><div><small>Attendance</small><strong>{attendancePercent == null ? '·' : attendancePercent + '%'}</strong></div></div>)}{panel('Subject performance', data.gradeHistory.length ? Array.from(new Set(data.gradeHistory.map(x => x.subjectName))).map(name => { const marks = data.gradeHistory.filter(x => x.subjectName === name && Number(x.maxMarks) > 0); const percentage = marks.length ? Math.round(100 * marks.reduce((sum,x) => sum + Number(x.obtainedMarks),0) / marks.reduce((sum,x) => sum + Number(x.maxMarks),0)) : null; return <div className="sp-line" key={name}><strong>{name}</strong><b>{percentage == null ? 'Marks recorded' : percentage + '%'}</b></div>; }) : empty('No marks published yet.'))}</>}
