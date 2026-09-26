@@ -145,10 +145,10 @@ function Homework() {
               value={form.option}
               onChange={(e) => setForm({ ...form, option: e.target.value })}
             >
-              <option value="">Select assignment</option>
+              <option value="">Select class and subject</option>
               {options.map((o, i) => (
                 <option key={`${o.sectionId}-${o.subjectId}`} value={i}>
-                  {o.className} · {o.sectionName} — {o.subjectName}
+                  {o.className} - {o.sectionName} - {o.subjectName}
                 </option>
               ))}
             </select>
@@ -362,10 +362,10 @@ function StudyMaterial() {
               value={form.option}
               onChange={(e) => setForm({ ...form, option: e.target.value })}
             >
-              <option value="">Select class</option>
+              <option value="">Select class and subject</option>
               {options.map((o, i) => (
                 <option key={`${o.sectionId}-${o.subjectId}`} value={i}>
-                  {o.className} · {o.sectionName} — {o.subjectName}
+                  {o.className} - {o.sectionName} - {o.subjectName}
                 </option>
               ))}
             </select>
@@ -552,7 +552,7 @@ function Profile({ onNavigate }: { onNavigate: Navigate }) {
   });
   const tabs = [
     "Personal Details",
-    "My Timetable",
+    "Calendar",
     "Attendance",
     "Leave",
     "Payslips",
@@ -577,7 +577,7 @@ function Profile({ onNavigate }: { onNavigate: Navigate }) {
     void load(tab);
   }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
   const choose = (value: string) => {
-    if (value === "My Timetable") return onNavigate("My Timetable");
+    if (value === "Calendar") return onNavigate("Calendar");
     if (value === "Attendance") return onNavigate("Attendance", "staff");
     setTab(value);
   };

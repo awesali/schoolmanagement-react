@@ -25,9 +25,9 @@ const dateOnly = (value: string) => String(value || '').slice(0, 10);
 const shortDate = (value: string) => value ? new Date(value).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '·';
 const shortTime = (value?: string) => {
   const match = /^(\d{1,2}):(\d{2})/.exec(String(value || ''));
-  if (!match) return '�';
+  if (!match) return '-';
   const hours = Number(match[1]);
-  if (hours > 23 || Number(match[2]) > 59) return '�';
+  if (hours > 23 || Number(match[2]) > 59) return '-';
   return `${hours % 12 || 12}:${match[2]} ${hours >= 12 ? 'PM' : 'AM'}`;
 };
 const safeLink = (value: string) => { try { return ['https:', 'http:'].includes(new URL(value).protocol); } catch { return false; } };
@@ -135,7 +135,16 @@ export default function StudentPortal() {
   const events = [
     ...data.homework.map(x => ({ id: `h-${x.id}`, date: x.dueDate, title: x.title, type: 'Homework', detail: x.subjectName })),
     ...data.exams.map(x => ({ id: `e-${x.id}`, date: x.examDate, title: x.examName, type: 'Exam', detail: x.subjectName })),
-    ...(data.schoolEvents || []).map(x => ({ id: 's-' + x.id, date: x.eventDate, title: x.title, type: 'School event', detail: x.description || '' })),
+    ...(data.schoolEvents || []).flatMap(x => {
+      const start = new Date(dateOnly(x.eventDate) + 'T12:00:00');
+      const end = new Date(dateOnly(x.endDate || x.eventDate) + 'T12:00:00');
+      const count = x.eventType === 'AcademicHoliday' ? Math.min(366, Math.max(1, Math.round((end.getTime() - start.getTime()) / 86400000) + 1)) : 1;
+      return Array.from({ length: count }, (_, offset) => {
+        const date = new Date(start); date.setDate(start.getDate() + offset);
+        return { id: 's-' + x.id + '-' + offset, date: dateOnly(date.toISOString()), title: x.title,
+          type: x.eventType === 'AcademicHoliday' ? 'Holiday' : 'School event', detail: x.description || '' };
+      });
+    }),
   ].filter(x => dateOnly(x.date).startsWith(month)).sort((a, b) => String(a.date).localeCompare(String(b.date)));
   const filteredHomework = data.homework.filter(x => !filter || (filter === 'Upcoming' && dateOnly(x.dueDate) >= currentDate) || (filter === 'Past due' && dateOnly(x.dueDate) < currentDate));
   const homeworkCard = (x: Row) => <article className="sp-record" key={x.id}><div className="sp-record-head"><span className="sp-tag">{x.subjectName}</span><span>{shortDate(x.dueDate)}</span></div><h3>{x.title}</h3><p>{x.description}</p><div className="sp-record-foot"><span>Due {shortDate(x.dueDate)}</span>{x.totalMarks != null && <span>{x.totalMarks} marks</span>}{link(x.resourceUrl || '')}<button onClick={() => setSelectedHomework(x)}>{(data.submissions || []).find(y => y.assignmentId === x.id)?.status || "Open assignment"} ?</button></div></article>;

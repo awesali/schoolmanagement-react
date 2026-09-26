@@ -114,7 +114,7 @@ export default function TeacherStudentContent({ page }: { page: TeacherContentPa
     {reviewSuccess && <div className="tw-panel" role="status">{reviewSuccess}</div>}
     {loading && <PageLoader label="Loading classroom data…" />}
     {(page === 'Class Diary' || page === 'Announcements') && <form className="tw-panel tsc-form" onSubmit={save}>
-      <label>Class and subject<select required value={form.option} onChange={e => setForm({ ...form, option: e.target.value })}><option value="">Select class</option>{options.map((x,i) => <option value={i} key={i}>{x.className} · {x.sectionName} · {x.subjectName}</option>)}</select></label>
+      <label>Class and subject<select required value={form.option} onChange={e => setForm({ ...form, option: e.target.value })}><option value="">Select class and subject</option>{options.map((x,i) => <option value={i} key={i}>{x.className} - {x.sectionName} - {x.subjectName}</option>)}</select></label>
       {page === 'Class Diary' ? <>
         <label>Class date<input type="date" required max={localDate()} value={form.entryDate} onChange={e => setForm({ ...form, entryDate: e.target.value })}/></label>
         <label className="tsc-full">Topic taught<input required maxLength={500} value={form.topic} onChange={e => setForm({ ...form, topic: e.target.value })}/></label>
@@ -129,7 +129,7 @@ export default function TeacherStudentContent({ page }: { page: TeacherContentPa
       <label className="tsc-check"><input type="checkbox" checked={form.publish} onChange={e => setForm({ ...form, publish: e.target.checked })}/> Publish now</label>
       <LoadingButton className="btn btn-primary" loading={saving} loadingText="Saving…">{form.publish ? 'Publish' : 'Save draft'}</LoadingButton>
     </form>}
-    {page === 'Submissions' && <section className="tw-panel tsc-select"><label>Assignment<select value={assignmentId} onChange={e => { setAssignmentId(e.target.value); setReviewSuccess(''); setError(''); }}><option value="">Choose an assignment</option>{assignments.map(x => <option key={x.id} value={x.id}>{x.title} · {x.className} {x.sectionName}</option>)}</select></label></section>}
+    {page === 'Submissions' && <section className="tw-panel tsc-select"><label>Assignment<select value={assignmentId} onChange={e => { setAssignmentId(e.target.value); setReviewSuccess(''); setError(''); }}><option value="">Choose an assignment</option>{assignments.map(x => <option key={x.id} value={x.id}>{x.title} - {x.className} {x.sectionName}</option>)}</select></label></section>}
     <section className="tsc-list"><h3>{page === 'Submissions' ? 'Student work' : page === 'Messages' ? 'Messages' : 'Published records'}</h3>{!rows.length && !loading && <p className="tw-empty">{page === 'Submissions' && !assignmentId ? 'Choose an assignment to see submissions.' : 'No records yet.'}</p>}
       {rows.map(x => <article className="tw-panel tsc-record" key={x.id}>
         {page === 'Class Diary' && <><span className="tw-pill">{x.isPublished ? 'Published' : 'Draft'}</span><h4>{x.subjectName} · {new Date(x.entryDate).toLocaleDateString()}</h4><p>{x.topic}</p>{x.pages && <p>Pages: {x.pages}</p>}{x.homework && <p>Homework: {x.homework}</p>}</>}

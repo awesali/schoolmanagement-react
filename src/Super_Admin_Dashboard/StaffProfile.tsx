@@ -1,3 +1,5 @@
+import StaffLeaveAllowance from './StaffLeaveAllowanceEditor';
+import { staffTimetableSlots } from './staffTimetable';
 import { StaffCareerActions, StaffChangeHistory } from './StaffCareer';
 import { BackIcon, EmailIcon, PhoneIcon, SchoolIcon, ProfileIcon, IdCardIcon, EditIcon, AssignmentIcon, PaymentIcon, SubjectsIcon, TimeTableIcon, TemplateIcon, PreviewIcon, PrintIcon } from '../components/Icons/Icons';
 import ProfileIdCard from './ProfileIdCard';
@@ -41,7 +43,7 @@ export default function StaffProfile() {
   const salaryAllowed = can('finance.salary');
   const classesAllowed = can('academics.classes') && can('academics.subjects');
   const timetableAllowed = classesAllowed && can('academics.class-schedule');
-  const tabs = ['Overview', ...(attendanceAllowed ? ['Attendance'] : []), ...(salaryAllowed ? ['Salary'] : []), ...(classesAllowed ? ['Classes & Subjects'] : []), ...(timetableAllowed ? ['Timetable'] : []), 'Documents', 'Change History'];
+  const tabs = ['Overview', ...(attendanceAllowed ? ['Attendance'] : []), ...(salaryAllowed ? ['Salary'] : []), ...(classesAllowed ? ['Classes & Subjects'] : []), ...(timetableAllowed ? ['Timetable'] : []), 'Documents', 'Leave Allowance', 'Change History'];
   const back = `/dashboard?schoolId=${schoolId}&page=Staff%20List`;
   const tabIcons: Record<string, React.ReactNode> = { Overview: <ProfileIcon />, Attendance: <AssignmentIcon />, Salary: <PaymentIcon />, 'Classes & Subjects': <SubjectsIcon />, Timetable: <TimeTableIcon />, Documents: <TemplateIcon /> };
 
@@ -89,10 +91,9 @@ export default function StaffProfile() {
           if (tab === 'Timetable') {
             for (const section of sections.filter(s => s.taught.length)) {
               const result = await request(`Timetable/get-timetable?sectionId=${section.id}`);
-              for (const slot of result.data?.slots || []) {
+              for (const slot of staffTimetableSlots(result.data?.periods || [], result.data?.slots || [])) {
                 if (!section.taught.some((sub: Row) => Number(sub.subjectId) === Number(slot.subjectId))) continue;
-                const period = result.data.periods.find((p: Row) => p.id === slot.periodId);
-                slots.push({ ...slot, ...period, className: section.className, sectionName: section.sectionName, subjectName: slot.subjectName || owned.find(s => s.id === slot.subjectId)?.subjectName });
+                slots.push({ ...slot, className: section.className, sectionName: section.sectionName, subjectName: slot.subjectName || owned.find(s => s.id === slot.subjectId)?.subjectName });
               }
             }
             slots.sort((a, b) => a.dayOfWeek - b.dayOfWeek || String(a.startTime).localeCompare(String(b.startTime)));
@@ -136,7 +137,8 @@ export default function StaffProfile() {
             <h3>Pending Salary - All Months</h3><Grid headings={['Month', 'Amount', 'Status']} rows={(data.pending || []).map((r: Row) => [`${r.salaryMonth}/${r.salaryYear}`, money(r.netSalary), r.status])} empty="No pending salary." />
           </>}
           {tab === 'Classes & Subjects' && <><h3>Assigned Classes</h3><Grid headings={['Class', 'Section', 'Class Teacher', 'Teaching Subjects']} rows={(data.sections || []).map((s: Row) => [s.className, s.sectionName, Number(s.staffId) === Number(staffId) ? 'Yes' : 'No', s.taught.map((r: Row) => r.subjectName).join(', ') || '-'])} empty="No class assigned." /><h3>Assigned Subjects</h3><Grid headings={['Subject']} rows={(data.subjects || []).map((s: Row) => [s.subjectName])} empty="No subject assigned." /></>}
-          {tab === 'Timetable' && <Grid headings={['Day', 'Time', 'Class', 'Section', 'Subject']} rows={(data.slots || []).map((s: Row) => [['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][s.dayOfWeek] || s.dayOfWeek, `${s.startTime?.slice(0, 5)} - ${s.endTime?.slice(0, 5)}`, s.className, s.sectionName, s.subjectName])} empty="No teaching periods scheduled." />}
+          {tab === 'Timetable' && <Grid headings={['Day', 'Time', 'Class', 'Section', 'Subject']} rows={(data.slots || []).map((s: Row) => [['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][s.dayOfWeek] || s.dayOfWeek, s.timeLabel, s.className, s.sectionName, s.subjectName])} empty="No teaching periods scheduled." />}
+          {tab === 'Leave Allowance' && <StaffLeaveAllowance schoolId={Number(schoolId)} staffId={Number(staffId)} canEdit={can('management.staff', 'update')} />}
           {tab === 'Change History' && <StaffChangeHistory key={staffId} staffId={Number(staffId)} schoolId={Number(schoolId)} />}
           {tab === 'Documents' && <Grid headings={['Document', 'View / Download']} rows={(staff.documents || []).map((d: Row) => [d.documentName, <a href={profilePictureUrl(d.documentURL) || undefined} target="_blank" rel="noopener noreferrer"><PreviewIcon />View document</a>])} empty="No documents uploaded." />}
         </>}

@@ -19,6 +19,7 @@ import TeacherUnitTest from './TeacherUnitTest';
 import TeacherWorkspace from './TeacherWorkspace';
 import PrincipalDashboard from './PrincipalDashboard';
 import TeacherAttendance from './TeacherAttendance';
+import TeacherCalendar from './TeacherCalendar';
 import TeacherStudentAttendance from './TeacherStudentAttendance';
 import TeacherPortal, { TeacherPortalPage } from './TeacherPortal';
 import TeacherStudentContent, { TeacherContentPage } from './TeacherStudentContent';
@@ -557,10 +558,12 @@ const Dashboard: React.FC = () => {
                     <TeacherExamContent />
                   ) : userRole === '2' && ['Class Diary', 'Submissions', 'Announcements', 'Messages'].includes(activePage) ? (
                     <TeacherStudentContent page={activePage as TeacherContentPage} />
-                  ) : userRole === '2' && ['Homework & Assignments', 'Syllabus Progress', 'Calendar', 'Study Material', 'My Profile'].includes(activePage) ? (
+                  ) : userRole === '2' && ['Homework & Assignments', 'Syllabus Progress', 'Study Material', 'My Profile'].includes(activePage) ? (
                     <TeacherPortal page={activePage as TeacherPortalPage} onNavigate={handleNavigate} />
+                  ) : activePage === 'Calendar' && userRole === '2' ? (
+                    <TeacherCalendar onNavigate={handleNavigate} />
                   ) : userRole === '2' ? (
-                    <TeacherWorkspace userName={userName} onNavigate={handleNavigate} timetable={activePage === 'My Timetable'} />
+                    <TeacherWorkspace userName={userName} onNavigate={handleNavigate} />
                   ) : userRole !== '1' && userRole !== '2' ? (
                     <div
                       style={{
