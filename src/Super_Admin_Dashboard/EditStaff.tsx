@@ -39,11 +39,6 @@ interface EditStaffProps {
   onSuccess: () => void;
 }
 
-interface Role {
-  id: number;
-  roleName: string;
-}
-
 const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess }) => {
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const [, setSaveError] = useToastMessageState('error');
@@ -61,7 +56,7 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
     ...staffDetailValues(),
     isActive: true
   });
-  const [roles, setRoles] = useState<Role[]>([]);
+
   const [newDocuments, setNewDocuments] = useState<Array<{ name: string; file: File }>>([]);
   const [existingDocuments, setExistingDocuments] = useState<Array<{ id: number; name: string; url: string; originalName: string; newFile?: File }>>([]);
 
@@ -91,29 +86,9 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
       setSaveError('');
       setCurrentPictureUrl(staff.profilePictureUrl || null);
       setNewDocuments([]);
-      fetchRoles();
+
     }
   }, [isOpen, staff]);
-
-  const fetchRoles = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/Admin/Get-roles`, {
-        headers: {
-          'accept': '*/*',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data) {
-          setRoles(result.data);
-        }
-      }
-    } catch (err) {
-      console.error('Failed to fetch roles');
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -334,19 +309,7 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
             />
           </div>
           <div className="form-group">
-            <label>Role *</label>
-            <select
-              required
-              value={formData.roleId}
-              onChange={(e) => setFormData({...formData, roleId: Number(e.target.value)})}
-            >
-              <option value="">Select Role</option>
-              {roles.map((role) => (
-                <option key={role.id} value={role.id}>
-                  {role.roleName}
-                </option>
-              ))}
-            </select>
+            <label>Role</label><input value={staff?.roleName || ''} readOnly /><small>Use Promote or Demote on the staff profile to change this role.</small>
           </div>
           <div className="form-group">
             <label>Employment Type *</label>

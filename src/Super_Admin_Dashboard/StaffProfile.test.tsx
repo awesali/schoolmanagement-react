@@ -58,3 +58,10 @@ test('classes and timetable use actual section teacher assignments', async () =>
   mount(); await screen.findByRole('heading', { name: 'Test Teacher' }); fireEvent.click(screen.getByRole('button', { name: 'Timetable' }));
   expect(await screen.findByText('Maths')).toBeInTheDocument(); expect(screen.queryByText('Science')).not.toBeInTheDocument(); expect(screen.getByText('Monday')).toBeInTheDocument();
 });
+
+test('read-only staff access exposes history but hides role changes', async () => {
+  mockCan = (page: string, action?: string) => page === 'management.staff' && !action;
+  mount(); await screen.findByRole('heading', { name: 'Test Teacher' });
+  expect(screen.getByRole('button', { name: 'Change History' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Promote to Principal' })).not.toBeInTheDocument();
+});

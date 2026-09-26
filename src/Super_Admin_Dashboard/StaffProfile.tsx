@@ -1,3 +1,4 @@
+import { StaffCareerActions, StaffChangeHistory } from './StaffCareer';
 import { BackIcon, EmailIcon, PhoneIcon, SchoolIcon, ProfileIcon, IdCardIcon, EditIcon, AssignmentIcon, PaymentIcon, SubjectsIcon, TimeTableIcon, TemplateIcon, PreviewIcon, PrintIcon } from '../components/Icons/Icons';
 import ProfileIdCard from './ProfileIdCard';
 import React, { useEffect, useState } from 'react';
@@ -40,7 +41,7 @@ export default function StaffProfile() {
   const salaryAllowed = can('finance.salary');
   const classesAllowed = can('academics.classes') && can('academics.subjects');
   const timetableAllowed = classesAllowed && can('academics.class-schedule');
-  const tabs = ['Overview', ...(attendanceAllowed ? ['Attendance'] : []), ...(salaryAllowed ? ['Salary'] : []), ...(classesAllowed ? ['Classes & Subjects'] : []), ...(timetableAllowed ? ['Timetable'] : []), 'Documents'];
+  const tabs = ['Overview', ...(attendanceAllowed ? ['Attendance'] : []), ...(salaryAllowed ? ['Salary'] : []), ...(classesAllowed ? ['Classes & Subjects'] : []), ...(timetableAllowed ? ['Timetable'] : []), 'Documents', 'Change History'];
   const back = `/dashboard?schoolId=${schoolId}&page=Staff%20List`;
   const tabIcons: Record<string, React.ReactNode> = { Overview: <ProfileIcon />, Attendance: <AssignmentIcon />, Salary: <PaymentIcon />, 'Classes & Subjects': <SubjectsIcon />, Timetable: <TimeTableIcon />, Documents: <TemplateIcon /> };
 
@@ -118,6 +119,7 @@ export default function StaffProfile() {
         <ProfileListAvatar name={staff.name} pictureUrl={staff.profilePictureUrl} onView={() => setPhoto(true)} />
         <div><h1>{staff.name}</h1><div className="staff-profile-meta"><span><ProfileIcon size={18} />{staff.roleName}</span><span><SchoolIcon size={18} />{staff.schoolName}</span></div><div className="staff-profile-meta"><span><EmailIcon size={18} />{staff.email}</span><span><PhoneIcon size={18} />{staff.phone}</span></div><span>{staff.isActive ? 'Active' : 'Inactive'}</span></div>
         <div className="staff-profile-actions"><button type="button" className="create-icon-button" title="ID Card" aria-label="ID Card" onClick={() => setShowIdCard(true)}><IdCardIcon size={26} /></button>
+        {can('management.staff', 'update') && <StaffCareerActions staff={staff as any} schoolId={Number(schoolId)} onSuccess={() => { setStaff(null); setRevision(r => r + 1); }} />}
         {can('management.staff', 'update') && <button type="button" className="create-icon-button" title="Edit Profile" aria-label="Edit Profile" onClick={() => setEdit(true)}><EditIcon size={26} /></button>}</div>
       </header>
       <nav className="staff-profile-tabs" aria-label="Staff profile sections">{tabs.map(t => <button key={t} className={tab === t ? 'selected' : ''} aria-current={tab === t ? 'page' : undefined} onClick={() => setTab(t)}>{tabIcons[t]}{t}</button>)}</nav>
@@ -135,6 +137,7 @@ export default function StaffProfile() {
           </>}
           {tab === 'Classes & Subjects' && <><h3>Assigned Classes</h3><Grid headings={['Class', 'Section', 'Class Teacher', 'Teaching Subjects']} rows={(data.sections || []).map((s: Row) => [s.className, s.sectionName, Number(s.staffId) === Number(staffId) ? 'Yes' : 'No', s.taught.map((r: Row) => r.subjectName).join(', ') || '-'])} empty="No class assigned." /><h3>Assigned Subjects</h3><Grid headings={['Subject']} rows={(data.subjects || []).map((s: Row) => [s.subjectName])} empty="No subject assigned." /></>}
           {tab === 'Timetable' && <Grid headings={['Day', 'Time', 'Class', 'Section', 'Subject']} rows={(data.slots || []).map((s: Row) => [['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][s.dayOfWeek] || s.dayOfWeek, `${s.startTime?.slice(0, 5)} - ${s.endTime?.slice(0, 5)}`, s.className, s.sectionName, s.subjectName])} empty="No teaching periods scheduled." />}
+          {tab === 'Change History' && <StaffChangeHistory key={staffId} staffId={Number(staffId)} schoolId={Number(schoolId)} />}
           {tab === 'Documents' && <Grid headings={['Document', 'View / Download']} rows={(staff.documents || []).map((d: Row) => [d.documentName, <a href={profilePictureUrl(d.documentURL) || undefined} target="_blank" rel="noopener noreferrer"><PreviewIcon />View document</a>])} empty="No documents uploaded." />}
         </>}
       </section>
