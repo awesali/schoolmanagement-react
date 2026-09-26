@@ -50,7 +50,7 @@ test('Upcoming excludes submitted work and Submitted shows it', async () => {
   global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, text: async () => JSON.stringify({ success: true, data: withHomework }) }) as jest.Mock;
   render(<StudentPortal />);
   await screen.findByText(/Good .*Test/);
-  fireEvent.click(screen.getAllByRole('button', { name: 'Homework', exact: true })[0]);
+  fireEvent.click(screen.getAllByRole('button', { name: 'Homework' })[0]);
   fireEvent.click(screen.getByRole('button', { name: 'Upcoming' }));
   expect(screen.queryByText('Already sent')).not.toBeInTheDocument();
   expect(screen.getByText('Still due')).toBeInTheDocument();
@@ -74,7 +74,7 @@ test('study materials show clear download and link actions', async () => {
   expect(screen.getByRole('link', { name: 'Open link' })).toHaveAttribute('href', 'https://example.com/guide');
 });
 
-test('Exams shows upcoming schedule without earlier or online exam sections', async () => {
+test('Exams preserves the upcoming schedule and online exams', async () => {
   const examDate = new Date(Date.now() + 86400000).toISOString();
   const data = { ...overview, exams: [{ id: 9, examName: 'Annual', subjectName: 'Science', examDate, startTime: '09:00', endTime: '10:00' }], onlineExams: [{ id: 2, name: 'Old online exam' }] };
   global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, text: async () => JSON.stringify({ success: true, data }) }) as jest.Mock;
@@ -83,6 +83,7 @@ test('Exams shows upcoming schedule without earlier or online exam sections', as
   fireEvent.click(screen.getByRole('navigation', { name: 'Student navigation' }).querySelector('button[title="Exams"]') || screen.getAllByRole('button', { name: 'Exams' })[0]);
   expect(screen.getByText('Exam schedule')).toBeInTheDocument();
   expect(screen.queryByText('Earlier exams')).not.toBeInTheDocument();
-  expect(screen.queryByText('Online exams')).not.toBeInTheDocument();
-  expect(screen.queryByText('Old online exam')).not.toBeInTheDocument();
+  expect(screen.getByText('Online exams')).toBeInTheDocument();
+  expect(screen.getByText('Old online exam')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Start exam' })).toBeInTheDocument();
 });

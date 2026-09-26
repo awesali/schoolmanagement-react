@@ -161,12 +161,12 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({ se
         })),
         fees: feeStudents.map((item:any) => ({ value:item.value, label:item.studentName, totalAmount:Number(item.totalAmount), dueAmount:Number(item.dueAmount), dueDate:String(item.dueDate).slice(0,10) })),
         vehicleTypes: active(types).map(item => ({ value: item.id, label: `${item.vehicleTypeName} (${item.defaultCapacity} seats)` })),
-        vehicles: active(vehicles).map(item => ({ value: item.id, label: `${item.vehicleName} — ${item.vehicleNumber}` })),
-        drivers: active(drivers).map(item => ({ value: item.id, label: `${item.name} — ${item.mobile}` })),
-        conductors: active(conductors).map(item => ({ value: item.id, label: `${item.name} — ${item.mobile}` })),
+        vehicles: active(vehicles).map(item => ({ value: item.id, label: `${item.vehicleName} - ${item.vehicleNumber}` })),
+        drivers: active(drivers).map(item => ({ value: item.id, label: `${item.name} - ${item.mobile}` })),
+        conductors: active(conductors).map(item => ({ value: item.id, label: `${item.name} - ${item.mobile}` })),
         routes: active(routes).map(item => ({ value: item.id, label: `${item.routeName} (${item.startPoint} to ${item.endPoint})` })),
-        assignments: active(assignments).map(item => ({ value: item.id, label: `${item.vehicleName} — ${item.routeName} — ${item.driverName}`, vehicleId:item.vehicleId, driverId:item.driverId, conductorId:item.conductorId })),
-        sessions: active(sessions).map(item => ({ value: item.id, label: `${new Date(item.yearStart).getFullYear()}–${new Date(item.yearEnd).getFullYear()}${item.isActive ? ' (Active)' : ''}` })),
+        assignments: active(assignments).map(item => ({ value: item.id, label: `${item.vehicleName} - ${item.routeName} - ${item.driverName}`, vehicleId:item.vehicleId, driverId:item.driverId, conductorId:item.conductorId })),
+        sessions: active(sessions).map(item => ({ value: item.id, label: `${new Date(item.yearStart).getFullYear()}-${new Date(item.yearEnd).getFullYear()}${item.isActive ? ' (Active)' : ''}` })),
         students: active(students).map(item => ({ value: item.id, label: `${item.studentName} - ${item.className} - ${item.sectionName}`, className:item.className, sectionName:item.sectionName, academicSessionId:item.academicSessionId }))
       });
     }).catch(error => setMessage(error instanceof Error ? error.message : 'Unable to load form options.'));

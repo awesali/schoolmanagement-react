@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import AcademicHolidays from './AcademicHolidays';
 import { API_BASE_URL } from '../config';
 import { PageLoader } from '../components/Loader/Loader';
 import { useToastMessageState } from '../components/Toast/Toast';
@@ -255,6 +256,8 @@ const AcademicYear: React.FC<AcademicYearProps> = ({ selectedSchoolId }) => {
           </table>
         )}
       </div>
+
+      {sessions.length > 0 && <AcademicHolidays schoolId={selectedSchoolId} sessions={sessions} />}
 
       <Modal
         isOpen={pendingSession !== null}

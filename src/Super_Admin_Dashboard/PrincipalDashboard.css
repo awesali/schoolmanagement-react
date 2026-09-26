@@ -60,3 +60,8 @@
 .principal-audit-coverage p { display: flex; justify-content: space-between; gap: 15px; flex-wrap: wrap; border-bottom: 1px solid #edf1f4; padding-bottom: 12px; }
 .principal-filters select { padding: 9px; border: 1px solid #d6dfe5; border-radius: 7px; background: white; color: #28444a; font: inherit; }
 @media print { .principal-brief { max-width: none; border: 0; } .principal-brief-action { break-inside: avoid; } }
+.principal-invigilation-form { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin: 20px 0; }
+.principal-invigilation-form label { display: grid; gap: 6px; flex: 1 1 180px; font-weight: 600; }
+.principal-invigilation-form label:first-child { flex: 3 1 320px; }
+.principal-invigilation-form select { width: 100%; min-height: 42px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px; background: white; }
+.principal-invigilation-form button { min-height: 42px; padding: 8px 16px; }

@@ -1,0 +1,21 @@
+.tut-page { padding-bottom: 24px; }
+.tut-panel { max-width: 900px; margin: 22px auto 0; padding: 30px; }
+.tut-panel-heading { padding-bottom: 22px; margin-bottom: 23px; border-bottom: 1px solid #e8edf4; }
+.tut-panel-heading h3 { margin: 5px 0 6px; color: #1d344e; font-size: 22px; }
+.tut-panel-heading p { margin: 0; }
+.tut-eyebrow { color: #4d7fac; font-size: 11px; font-weight: 800; letter-spacing: .14em; }
+.tut-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 21px 18px; }
+.tut-form label { display: flex; flex-direction: column; gap: 8px; color: #304963; font-size: 13px; font-weight: 700; }
+.tut-form label span { color: #be4b52; }
+.tut-form input, .tut-form select { width: 100%; min-width: 0; height: 46px; box-sizing: border-box; padding: 0 13px; border: 1px solid #d4dfeb; border-radius: 9px; background: #fff; color: #213a55; font: inherit; font-weight: 500; }
+.tut-form input::placeholder { color: #91a1b3; }
+.tut-form select:disabled { background: #f3f6fa; color: #8493a3; }
+.tut-form input:focus, .tut-form select:focus { outline: 2px solid #8ab8e8; outline-offset: 1px; border-color: #4b91d5; }
+.tut-wide, .tut-actions { grid-column: 1 / -1; }
+.tut-actions { display: flex; justify-content: flex-end; padding-top: 7px; }
+.tut-actions button { min-height: 44px; padding: 10px 20px; border-radius: 9px; font-weight: 700; }
+.tut-message { padding: 13px 15px; margin-bottom: 22px; border-radius: 9px; font-size: 14px; }
+.tut-success { color: #166534; background: #effaf2; border: 1px solid #bde6c8; }
+.tut-error { color: #991b1b; background: #fff3f2; border: 1px solid #f2c9c5; }
+.tut-empty { padding: 28px; border: 1px dashed #ccd9e6; border-radius: 10px; text-align: center; background: #f8fbff; }
+@media (max-width: 650px) { .tut-panel { padding: 20px; } .tut-form { grid-template-columns: 1fr; } .tut-wide, .tut-actions { grid-column: 1; } .tut-actions button { width: 100%; } }

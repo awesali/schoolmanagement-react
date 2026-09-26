@@ -5,6 +5,11 @@ import { profilePictureUrl } from './ProfilePictureInput';
 import './PrincipalDashboard.css';
 import SyllabusProgress from './SyllabusProgress';
 import StudentRequestInbox from './StudentRequestInbox';
+import PrincipalInvigilation from './PrincipalInvigilation';
+import PrincipalLeaveDecisions from './PrincipalLeaveDecisions';
+import PrincipalLeaveHistory from './PrincipalLeaveHistory';
+import PrincipalUpcomingLeave from './PrincipalUpcomingLeave';
+
 
 type ClassRow = { id: number; name: string; total: number; recorded: number; present: number; absent: number; late: number; pending: number };
 type Attendance = { total: number; present: number; absent: number; late: number; unmarked: number };
@@ -93,7 +98,7 @@ export default function PrincipalDashboard({ userName, profilePicture, schoolNam
     { name: 'Daily school brief', group: 'OVERVIEW', visible: true },
     { name: 'Academic audit', group: 'ACADEMICS', visible: !!student || !!data?.academics },
     { name: 'Student attendance', group: 'ACADEMICS', visible: !!student },
-    { name: 'Examinations', group: 'ACADEMICS', visible: !!data?.examinations },
+    { name: 'Examinations', group: 'ACADEMICS', visible: true },
     { name: 'Teachers & staff', group: 'PEOPLE', visible: !!staff },
     { name: 'Leave requests', group: 'PEOPLE', visible: !!data?.leaveRequests },
     { name: 'Student requests', group: 'PEOPLE', visible: true },
@@ -230,9 +235,10 @@ export default function PrincipalDashboard({ userName, profilePicture, schoolNam
         {page === 'Student attendance' && student && attendanceTable()}
         {page === 'Academic audit' && academicAudit()}
         {page === 'Teachers & staff' && staff && <section className="principal-panel"><h2>Today’s staff records</h2><input aria-label="Search staff" placeholder="Search staff" value={search} onChange={e => setSearch(e.target.value)} /><div className="principal-table-scroll"><table><thead><tr><th>Staff member</th><th>Attendance status</th></tr></thead><tbody>{staff.people.filter(s => s.name.toLowerCase().includes(search.toLowerCase())).map(s => <tr key={s.id}><td>{s.name}</td><td><span className={'principal-badge' + (s.status === 'Not marked' || s.status === 'Absent' ? ' warning' : '')}>{s.status}</span></td></tr>)}</tbody></table></div>{!staff.people.length && <p>No active staff found.</p>}</section>}
-        {page === 'Leave requests' && leavePanel()}
+        {page === 'Leave requests' && <><PrincipalLeaveDecisions requests={data.leaveRequests || []} onChanged={() => setRefresh(n => n + 1)} /><PrincipalUpcomingLeave refresh={refresh} /><PrincipalLeaveHistory refresh={refresh} /></>}
         {page === 'Student requests' && <StudentRequestInbox />}
-        {page === 'Examinations' && examsPanel()}
+        {page === 'Examinations' && <>{examsPanel()}<PrincipalInvigilation /></>}
+
         {page === 'Finance' && financePanel()}
         <p className="principal-updated">Updated {new Date(data.generatedAt).toLocaleString('en-IN')} · Attendance and activity reflect the selected date; leave requests show the current queue.</p>
       </>}</div></div>

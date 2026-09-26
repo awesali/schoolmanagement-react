@@ -1,0 +1,388 @@
+/* ── Navigation bar ── */
+.tc-nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 22px 0 18px;
+}
+.tc-nav-btn {
+  border: 1px solid #dce5ee;
+  border-radius: 8px;
+  background: #fff;
+  color: #31577e;
+  padding: 9px 16px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tc-nav-btn:hover { background: #edf5ff; border-color: #91bcee; }
+.tc-week-label {
+  flex: 1;
+  text-align: center;
+  font-weight: 700;
+  font-size: 15px;
+  color: #1e2a3a;
+}
+.tc-leave-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  border-radius: 9px;
+  background: #357abd;
+  color: #fff;
+  padding: 10px 18px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.tc-leave-btn:hover { background: #2a6099; }
+
+/* ── Leave form ── */
+.tc-leave-form-wrap {
+  background: #fff;
+  border: 1px solid #dce5ee;
+  border-radius: 16px;
+  padding: 24px 28px;
+  margin-bottom: 22px;
+  box-shadow: 0 6px 24px rgba(30,42,58,.08);
+}
+.tc-leave-form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+.tc-leave-form-header h3 { margin: 0; font-size: 18px; }
+.tc-close-btn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #62748a;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+.tc-close-btn:hover { background: #f0f4f8; }
+.tc-form-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.tc-form-actions button:last-child {
+  border: 1px solid #dce5ee;
+  border-radius: 9px;
+  background: #fff;
+  color: #31577e;
+  padding: 10px 18px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ── Calendar wrapper ── */
+.tc-calendar-wrap {
+  background: #fff;
+  border: 1px solid #e0e7ef;
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+/* ── Day header row ── */
+.tc-header-row {
+  display: grid;
+  grid-template-columns: 56px repeat(7, 1fr);
+  border-bottom: 2px solid #e0e7ef;
+  background: #f8fbff;
+}
+.tc-time-gutter { /* shared by header and body */ }
+.tc-day-header {
+  padding: 12px 6px 10px;
+  text-align: center;
+  border-left: 1px solid #e8eef5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-height: 64px;
+}
+.tc-day-header.tc-today { background: #edf5ff; }
+.tc-day-header.tc-on-leave { background: #f7f4ff; }
+.tc-day-name {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #62748a;
+}
+.tc-day-num {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e2a3a;
+  line-height: 1;
+}
+.tc-today-num {
+  background: #357abd;
+  color: #fff;
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+}
+.tc-leave-badge {
+  font-size: 10px;
+  font-weight: 700;
+  background: #ede9fe;
+  color: #6d28d9;
+  border-radius: 4px;
+  padding: 2px 6px;
+  text-transform: capitalize;
+}
+
+/* ── Grid body ── */
+.tc-grid-body {
+  display: grid;
+  grid-template-columns: 56px repeat(7, 1fr);
+  position: relative;
+  overflow-y: auto;
+  max-height: 600px;
+}
+.tc-time-labels {
+  position: relative;
+  border-right: 1px solid #e8eef5;
+}
+.tc-hour-label {
+  position: absolute;
+  right: 6px;
+  font-size: 10px;
+  color: #8fa3b8;
+  font-weight: 600;
+  transform: translateY(-50%);
+  white-space: nowrap;
+}
+
+/* ── Day column ── */
+.tc-day-col {
+  position: relative;
+  border-left: 1px solid #e8eef5;
+}
+.tc-today-col { background: #fafcff; }
+.tc-hour-line {
+  position: absolute;
+  left: 0; right: 0;
+  height: 1px;
+  background: #edf1f6;
+}
+
+/* ── Leave overlay ── */
+.tc-leave-overlay {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    -45deg,
+    #ede9fe44,
+    #ede9fe44 6px,
+    transparent 6px,
+    transparent 14px
+  );
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 8px;
+  pointer-events: none;
+  z-index: 1;
+}
+.tc-leave-overlay span {
+  font-size: 10px;
+  font-weight: 700;
+  color: #6d28d9;
+  background: #ede9fe;
+  border-radius: 4px;
+  padding: 2px 7px;
+}
+
+/* ── Timetable slot block ── */
+.tc-slot {
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, #357abd, #4a90e2);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  padding: 5px 8px;
+  text-align: left;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(53,122,189,.25);
+  transition: filter .15s;
+}
+.tc-slot:hover { filter: brightness(1.1); }
+.tc-slot-subject {
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tc-slot-class {
+  font-size: 10px;
+  opacity: .85;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tc-slot-time {
+  font-size: 9px;
+  opacity: .75;
+  margin-top: auto;
+}
+
+/* ── Current time line ── */
+.tc-now-line {
+  position: absolute;
+  left: 0; right: 0;
+  height: 2px;
+  background: #ef4444;
+  z-index: 3;
+}
+.tc-now-line::before {
+  content: "";
+  position: absolute;
+  left: -4px;
+  top: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ef4444;
+}
+
+/* ── Leave list ── */
+.tc-leave-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+  margin-top: 4px;
+}
+.tc-leave-card {
+  border: 1px solid #e0e7ef;
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #fafcff;
+}
+.tc-leave-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.tc-leave-card-top strong {
+  display: block;
+  font-size: 15px;
+  color: #1e2a3a;
+}
+.tc-leave-dates {
+  display: block;
+  font-size: 12px;
+  color: #62748a;
+  margin-top: 3px;
+}
+.tc-status-badge {
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 6px;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+.tc-leave-reason {
+  font-size: 13px;
+  color: #40536a;
+  margin: 0;
+  line-height: 1.5;
+}
+.tc-admin-remarks {
+  font-size: 12px;
+  color: #62748a;
+  margin: 0;
+  font-style: italic;
+}
+.tc-cancel-btn {
+  align-self: flex-start;
+  border: 1px solid #fca5a5;
+  border-radius: 7px;
+  background: #fff5f5;
+  color: #b91c1c;
+  padding: 7px 14px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tc-cancel-btn:hover { background: #fee2e2; }
+.tc-cancel-btn:disabled { opacity: .55; cursor: not-allowed; }
+
+/* ── Responsive ── */
+@media (max-width: 700px) {
+  .tc-header-row,
+  .tc-grid-body {
+    grid-template-columns: 40px repeat(7, 1fr);
+  }
+  .tc-slot-class,
+  .tc-slot-time { display: none; }
+  .tc-week-label { font-size: 12px; }
+}
+
+.tc-agenda { margin-top: 22px; }
+.tc-agenda h3 { margin: 0 0 14px; }
+.tc-agenda .tp-event { margin: 8px 0; }
+.tc-agenda .tp-event time { min-width: 105px; font-weight: 700; }
+
+@media (max-width: 850px) {
+  .tc-calendar-wrap { overflow-x: auto; }
+  .tc-header-row, .tc-grid-body { min-width: 720px; }
+}
+
+.tc-day-header { min-width: 0; }
+.tc-day-event { width: 100%; box-sizing: border-box; padding: 4px 6px; border-radius: 5px; text-align: left; font-size: 10px; line-height: 1.3; overflow-wrap: anywhere; color: #2f4b68; background: #e9f1fb; }
+.tc-day-event-holiday { background: #dcfce7; color: #166534; }
+.tc-day-event-leave { background: #ede9fe; color: #6d28d9; }
+.tc-day-event-homework { background: #dbeafe; color: #1d4ed8; }
+.tc-day-event-exam { background: #ffedd5; color: #9a3412; }
+.tc-calendar-event { position: absolute; left: 3px; right: 3px; z-index: 4; border-radius: 7px; padding: 5px 7px; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; font-size: 10px; box-shadow: 0 2px 8px #0002; }
+.tc-calendar-event span { font-weight: 800; white-space: nowrap; }
+.tc-calendar-event strong { overflow: hidden; text-overflow: ellipsis; }
+.tc-calendar-event-exam { background: #f97316; color: #fff; }
+.tc-calendar-event-invigilation { background: #7c3aed; color: #fff; }
+.tc-day-event-invigilation { background: #ede9fe; color: #5b21b6; }
+.tc-agenda .tp-event-exam { border-left: 4px solid #f97316; background: #fff7ed; }
+.tc-agenda .tp-event-invigilation { border-left: 4px solid #7c3aed; background: #f5f3ff; }
+.tc-agenda .tp-event strong { min-width: 105px; }
+.tc-calendar-event-homework { background: #1d4ed8; color: #fff; }
+
+.tc-balance { margin-bottom: 22px; padding: 26px; }
+.tc-balance-heading { display: flex; justify-content: space-between; align-items: end; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+.tc-section-eyebrow { display: block; margin-bottom: 5px; color: #4674a4; font-size: 11px; font-weight: 800; letter-spacing: .14em; }
+.tc-balance h3 { margin: 0; color: #182e47; font-size: 22px; letter-spacing: -.025em; }
+.tc-session-pill { background: #edf4fb; border: 1px solid #dce8f4; border-radius: 999px; padding: 8px 12px; color: #365471; font-size: 12px; font-weight: 650; }
+.tc-balance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.tc-balance-card { display: flex; flex-direction: column; min-width: 0; min-height: 155px; box-sizing: border-box; border: 1px solid #e1e9f1; border-radius: 14px; padding: 17px; background: #f9fbfe; color: #24486c; }
+.tc-balance-type { color: #344e69; font-size: 13px; font-weight: 750; }
+.tc-balance-amount { display: flex; align-items: baseline; gap: 7px; margin: 12px 0 13px; }
+.tc-balance-amount strong { color: #172f4c; font-size: 34px; font-weight: 750; line-height: 1; font-variant-numeric: tabular-nums; }
+.tc-balance-amount span { color: #60758b; font-size: 12px; }
+.tc-balance-track { height: 5px; overflow: hidden; border-radius: 999px; background: #e4ebf3; }
+.tc-balance-track span { display: block; height: 100%; border-radius: inherit; background: #3d87ce; }
+.tc-balance-meta { display: flex; justify-content: space-between; gap: 5px; margin-top: auto; padding-top: 13px; color: #62758b; font-size: 11px; white-space: nowrap; }
+.tc-balance-meta b { color: #304d6c; font-variant-numeric: tabular-nums; }
+.tc-balance-note { margin: 16px 0 0; font-size: 12px !important; color: #6a7d91 !important; }
+.tc-balance-unassigned { margin: 0 0 17px; padding: 11px 13px; border: 1px solid #f1dfb7; border-radius: 9px; background: #fffbef; color: #7c5b21 !important; font-size: 13px !important; }
+@media (max-width: 620px) { .tc-balance { padding: 18px; } .tc-balance-grid { grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); } .tc-balance-card { padding: 14px; } }
