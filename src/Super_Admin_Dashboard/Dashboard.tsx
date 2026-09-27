@@ -25,6 +25,7 @@ import TeacherStudentAttendance from './TeacherStudentAttendance';
 import TeacherPortal, { TeacherPortalPage } from './TeacherPortal';
 import TeacherStudentContent, { TeacherContentPage } from './TeacherStudentContent';
 import TeacherStudentLeaveRequests from './TeacherStudentLeaveRequests';
+import StudentMessageInbox from './StudentMessageInbox';
 import TeacherExamContent from './TeacherExamContent';
 import HallTicketManagement from './HallTicketManagement';
 import StudentServicesManagement from './StudentServicesManagement';
@@ -554,11 +555,15 @@ const Dashboard: React.FC = () => {
                     <HallTicketManagement schoolId={selectedSchoolId} />
                   ) : activePage === 'Student Services' && selectedSchoolId ? (
                     <StudentServicesManagement schoolId={selectedSchoolId} />
+                  ) : activePage === 'Student Messages' && !['1', '2', '7'].includes(userRole) ? (
+                    <StudentMessageInbox />
+                  ) : userRole === '2' && activePage === 'Messages' ? (
+                    <StudentMessageInbox />
                   ) : userRole === '2' && activePage === 'Student Leave Requests' ? (
                     <TeacherStudentLeaveRequests />
                   ) : userRole === '2' && activePage === 'Exam Preparation' ? (
                     <TeacherExamContent />
-                  ) : userRole === '2' && ['Class Diary', 'Submissions', 'Announcements', 'Messages'].includes(activePage) ? (
+                  ) : userRole === '2' && ['Class Diary', 'Submissions', 'Announcements'].includes(activePage) ? (
                     <TeacherStudentContent page={activePage as TeacherContentPage} />
                   ) : userRole === '2' && ['Homework & Assignments', 'Syllabus Progress', 'Study Material', 'My Profile'].includes(activePage) ? (
                     <TeacherPortal page={activePage as TeacherPortalPage} onNavigate={handleNavigate} />

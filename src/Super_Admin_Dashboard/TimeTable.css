@@ -5,7 +5,7 @@
   margin-bottom: 20px;
   max-height: 200px;
   overflow-y: auto;
-  border: 1px solid #ddd;
+  border: 1px solid #dce5ef;
   padding: 10px;
   border-radius: 4px;
 }
@@ -26,7 +26,7 @@
 
 .period-row input[type="time"] {
   padding: 4px 8px;
-  border: 1px solid #ddd;
+  border: 1px solid #dce5ef;
   border-radius: 4px;
   font-size: 12px;
 }
@@ -55,6 +55,9 @@
 .timetable-container {
   overflow-x: auto;
   margin-top: 20px;
+  border: 1px solid #dce5ef;
+  border-radius: 10px;
+  background: #fff;
 }
 
 .timetable {
@@ -65,34 +68,34 @@
 }
 
 .timetable th {
-  border: 1px solid #ddd;
+  border: 1px solid #dce5ef;
   padding: 8px;
   text-align: center;
   vertical-align: top;
   position: relative;
-  background-color: #90EE90;
+  background-color: #dcebf9;
   font-weight: bold;
-  color: #2d5016;
+  color: #234d76;
   min-width: 120px;
 }
 
 .day-name,
 .time-label {
-  background-color: #90EE90 !important;
+  background-color: #dcebf9 !important;
   font-weight: bold !important;
-  color: #2d5016 !important;
+  color: #234d76 !important;
   min-width: 100px !important;
 }
 
 .time-row th {
-  background-color: #e8f5e8 !important;
+  background-color: #f1f6fc !important;
   padding: 4px !important;
 }
 
 .time-row .time-label {
-  background-color: #90EE90 !important;
+  background-color: #dcebf9 !important;
   font-weight: bold !important;
-  color: #2d5016 !important;
+  color: #234d76 !important;
   font-size: 12px !important;
 }
 
@@ -112,7 +115,7 @@
 }
 
 .time-config {
-  background-color: #e8f5e8 !important;
+  background-color: #f1f6fc !important;
   padding: 4px !important;
 }
 
@@ -175,7 +178,7 @@
 }
 
 .add-period-btn {
-  background-color: #28a745;
+  background-color: #357abd;
   color: white;
   border: none;
   padding: 6px 12px;
@@ -186,20 +189,20 @@
 }
 
 .add-period-btn:hover {
-  background-color: #218838;
+  background-color: #2864a1;
 }
 
 .timetable td {
-  border: 1px solid #ddd;
+  border: 1px solid #dce5ef;
   padding: 8px;
   text-align: center;
   vertical-align: top;
 }
 
 .day-name {
-  background-color: #90EE90 !important;
+  background-color: #dcebf9 !important;
   font-weight: bold;
-  color: #2d5016;
+  color: #234d76;
   min-width: 100px;
 }
 
@@ -213,17 +216,17 @@
 
 .period-cell select {
   padding: 4px 8px;
-  border: 1px solid #ddd;
+  border: 1px solid #dce5ef;
   border-radius: 3px;
   font-size: 12px;
   width: 100%;
 }
 
 .break-cell {
-  background-color: #ffeb3b;
+  background-color: #eaf2ff;
   padding: 10px;
   font-weight: bold;
-  color: #f57f17;
+  color: #285584;
   border-radius: 4px;
 }
 
@@ -242,12 +245,12 @@
 }
 
 .timetable-btn {
-  background-color: #28a745 !important;
+  background-color: #357abd !important;
   color: white !important;
 }
 
 .timetable-btn:hover {
-  background-color: #218838 !important;
+  background-color: #2864a1 !important;
 }
 
 /* Modal size adjustment for timetable */

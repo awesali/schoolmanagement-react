@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import StudentHallTickets from './StudentHallTickets';
 
@@ -8,6 +8,8 @@ test('shows hall-ticket identity, venue and avatar fallbacks', () => {
     profile={{ studentName: 'Asha Khan', rollNumber: '42', schoolName: 'Green Valley School', className: '10', sectionName: 'A' }}
     parent={{ name: 'Sara Khan' }}
   />);
+  expect(screen.queryByRole('article', { name: 'Annual Exam hall ticket' })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /Annual Exam.*View hall ticket/ }));
   expect(screen.getByText('Green Valley School')).toBeInTheDocument();
   expect(screen.getByText('Asha Khan')).toBeInTheDocument();
   expect(screen.getByText('42')).toBeInTheDocument();
@@ -22,6 +24,7 @@ test('shows hall-ticket identity, venue and avatar fallbacks', () => {
 test('falls back to school address and avatar when photo fails', () => {
   render(<StudentHallTickets tickets={[{ id: 2, examName: 'Science Exam' }]}
     profile={{ studentName: 'Asha Khan', schoolName: 'Green Valley', schoolAddress: 'Main Road', profilePictureUrl: '/missing.png' }} />);
+  fireEvent.click(screen.getByRole('button', { name: /Science Exam.*View hall ticket/ }));
   fireEvent.error(screen.getByAltText('Asha Khan photo'));
   expect(screen.getByLabelText('Student avatar')).toHaveTextContent('AK');
   expect(screen.getByText('Main Road')).toBeInTheDocument();

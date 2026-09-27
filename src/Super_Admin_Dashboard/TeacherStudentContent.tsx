@@ -1,11 +1,11 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { PageLoader, LoadingButton } from '../components/Loader/Loader';
 import { localDate, teacherRequest } from './TeacherWorkspace';
 import './TeacherWorkspace.css';
 import './TeacherStudentContent.css';
 
 type Row = Record<string, any>;
-export type TeacherContentPage = 'Class Diary' | 'Submissions' | 'Announcements' | 'Messages';
+export type TeacherContentPage = 'Class Diary' | 'Submissions' | 'Announcements';
 export default function TeacherStudentContent({ page }: { page: TeacherContentPage }) {
   const [options, setOptions] = useState<Row[]>([]);
   const [rows, setRows] = useState<Row[]>([]);
@@ -17,7 +17,6 @@ export default function TeacherStudentContent({ page }: { page: TeacherContentPa
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ option: '', entryDate: localDate(), topic: '', pages: '', homework: '', title: '', body: '', expiresAt: '', isPinned: false, publish: true });
   const [reviews, setReviews] = useState<Record<number, { status: string; marks: string; feedback: string }>>({});
-  const [replies, setReplies] = useState<Record<number, string>>({});
   const load = async () => {
     setLoading(true); setError('');
     try {
@@ -99,7 +98,6 @@ export default function TeacherStudentContent({ page }: { page: TeacherContentPa
     } catch (failure: any) { setError(failure.message || 'Could not review submission.'); }
     finally { setSaving(false); }
   };
-  const reply = async (studentId: number) => { const body = replies[studentId]?.trim(); if (!body) return; setSaving(true); setError(''); try { await teacherRequest('/api/Teacher/messages', { method: 'POST', body: JSON.stringify({ studentId, body }) }); setReplies({ ...replies, [studentId]: '' }); await load(); } catch (failure: any) { setError(failure.message || 'Could not send reply.'); } finally { setSaving(false); } };
   const download = async (id: number) => {
     try {
       const response = await fetch(`/api/Teacher/submissions/${id}/file`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
@@ -109,7 +107,7 @@ export default function TeacherStudentContent({ page }: { page: TeacherContentPa
     } catch (failure: any) { setError(failure.message); }
   };
   return <div className="tw tsc">
-    <section className="tw-hero"><div><span className="tw-eyebrow">CLASSROOM</span><h2>{page}</h2><p>{page === 'Class Diary' ? 'Record the lesson and homework for your class.' : page === 'Submissions' ? 'Read student work and return feedback.' : page === 'Messages' ? 'Reply to students in your classes.' : 'Publish updates to the classes you teach.'}</p></div></section>
+    <section className="tw-hero"><div><span className="tw-eyebrow">CLASSROOM</span><h2>{page}</h2><p>{page === 'Class Diary' ? 'Record the lesson and homework for your class.' : page === 'Submissions' ? 'Read student work and return feedback.' : 'Publish updates to the classes you teach.'}</p></div></section>
     {error && <div className="tw-error" role="alert">{error}</div>}
     {reviewSuccess && <div className="tw-panel" role="status">{reviewSuccess}</div>}
     {loading && <PageLoader label="Loading classroom data…" />}
@@ -130,11 +128,10 @@ export default function TeacherStudentContent({ page }: { page: TeacherContentPa
       <LoadingButton className="btn btn-primary" loading={saving} loadingText="Saving…">{form.publish ? 'Publish' : 'Save draft'}</LoadingButton>
     </form>}
     {page === 'Submissions' && <section className="tw-panel tsc-select"><label>Assignment<select value={assignmentId} onChange={e => { setAssignmentId(e.target.value); setReviewSuccess(''); setError(''); }}><option value="">Choose an assignment</option>{assignments.map(x => <option key={x.id} value={x.id}>{x.title} - {x.className} {x.sectionName}</option>)}</select></label></section>}
-    <section className="tsc-list"><h3>{page === 'Submissions' ? 'Student work' : page === 'Messages' ? 'Messages' : 'Published records'}</h3>{!rows.length && !loading && <p className="tw-empty">{page === 'Submissions' && !assignmentId ? 'Choose an assignment to see submissions.' : 'No records yet.'}</p>}
+    <section className="tsc-list"><h3>{page === 'Submissions' ? 'Student work' : 'Published records'}</h3>{!rows.length && !loading && <p className="tw-empty">{page === 'Submissions' && !assignmentId ? 'Choose an assignment to see submissions.' : 'No records yet.'}</p>}
       {rows.map(x => <article className="tw-panel tsc-record" key={x.id}>
         {page === 'Class Diary' && <><span className="tw-pill">{x.isPublished ? 'Published' : 'Draft'}</span><h4>{x.subjectName} · {new Date(x.entryDate).toLocaleDateString()}</h4><p>{x.topic}</p>{x.pages && <p>Pages: {x.pages}</p>}{x.homework && <p>Homework: {x.homework}</p>}</>}
         {page === 'Announcements' && <><span className="tw-pill">{x.isPinned ? 'Pinned' : x.isPublished ? 'Published' : 'Draft'}</span><h4>{x.title}</h4><p>{x.body}</p></>}
-        {page === 'Messages' && <><span className="tw-pill">{x.fromStudent ? 'Student' : 'You'}</span><h4>{x.studentName}</h4><p>{x.body}</p><small>{new Date(x.sentAt).toLocaleString()}</small><div className="tsc-reply"><textarea rows={2} maxLength={2000} aria-label={'Reply to ' + x.studentName} placeholder="Write a reply" value={replies[x.studentId] || ''} onChange={e => setReplies({ ...replies, [x.studentId]: e.target.value })}/><button className="btn btn-primary" disabled={saving || !replies[x.studentId]?.trim()} onClick={() => void reply(x.studentId)}>Reply</button></div></>}
         {page === 'Submissions' && <><span className="tw-pill">{x.status}</span><h4>{x.studentName}</h4><p>Submitted {new Date(x.submittedAt).toLocaleString()}</p><p>{x.textAnswer || 'File submission'}</p>{x.hasFile && <button className="btn" onClick={() => void download(x.id)}>Download file</button>}<div className="tsc-review"><label>Status<select value={reviewValue(x).status} onChange={e => setReviews({ ...reviews, [x.id]: { ...reviewValue(x), status: e.target.value } })}>{['Graded','Returned','Resubmission Required'].map(status => <option key={status}>{status}</option>)}</select></label><label>Marks<input type="number" min="0" step="0.5" value={reviews[x.id]?.marks ?? x.marks ?? ''} onChange={e => setReviews({ ...reviews, [x.id]: { ...reviewValue(x), marks: e.target.value } })}/></label><label>Feedback<textarea rows={2} value={reviews[x.id]?.feedback ?? x.teacherFeedback ?? ''} onChange={e => setReviews({ ...reviews, [x.id]: { ...reviewValue(x), feedback: e.target.value } })}/></label><LoadingButton className="btn btn-primary" loading={saving} loadingText="Saving review…" onClick={() => void review(x.id)}>Save review</LoadingButton></div></>}
       </article>)}
     </section>

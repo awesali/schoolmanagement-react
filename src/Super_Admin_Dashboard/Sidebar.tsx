@@ -48,7 +48,7 @@ const menuGroups = [
       { label: 'Classes', children: ['Class List'] },
       { label: 'Staff', children: ['Staff List', 'Attendance'] },
       { label: 'Security', children: ['Role & Permissions'] },
-      { label: 'Students', children: ['Student List', 'Student Services', 'Hall Tickets', 'Attendance'] },
+      { label: 'Students', children: ['Student List', 'Student Services', 'Student Messages', 'Hall Tickets', 'Attendance'] },
       { label: 'Parents', children: ['Parent List'] },
       { label: 'Transport', children: ['Transport Management'] },
       { label: 'Subjects', children: ['Subject List'] },
@@ -102,6 +102,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, 
           .map((item) => ({
             ...item,
             children: item.children.filter((child) => {
+              if (['1', '7'].includes(userRole) && child === 'Student Messages') return false;
               if (userRole === '1' && item.label === 'Students' && child === 'Attendance') {
                 return false;
               }
@@ -176,7 +177,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, 
       { label: 'Submissions', page: 'Submissions', icon: 'assignment', permission: 'academics.classes' },
       { label: 'Student requests', page: 'Student Leave Requests', icon: 'assignment', permission: 'academics.classes' },
       { label: 'Announcements', page: 'Announcements', icon: 'material', permission: 'academics.classes' },
-      { label: 'Messages', page: 'Messages', icon: 'material', permission: 'academics.classes' },
+      { label: 'Messages', page: 'Messages', icon: 'material', permission: 'dashboard.dashboard' },
       {
         label: 'Syllabus Progress',
         page: 'Syllabus Progress',

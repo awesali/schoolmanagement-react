@@ -1,0 +1,23 @@
+.teacher-exam-timetable{display:grid;gap:24px;margin-top:16px}
+.teacher-exam-section{background:#fff;border:1px solid #dce5ef;border-radius:12px;padding:20px;box-shadow:0 2px 8px #102a4310}
+.teacher-exam-section h3{margin:0 0 8px;color:#173454;font-size:19px}
+.teacher-exam-section .timetable-container{margin-top:14px}
+.teacher-exam-grid{min-width:620px}
+.teacher-exam-grid th,.teacher-exam-grid td{padding:14px 12px;vertical-align:middle}
+.teacher-exam-grid td{text-align:center;background:#fff;min-width:160px}
+.teacher-exam-grid .day-name{min-width:160px;text-align:left}
+.teacher-exam-paper{display:grid;gap:5px;padding:6px 4px}
+.teacher-exam-paper+ .teacher-exam-paper{border-top:1px solid #e2e8f0}
+.teacher-exam-paper strong{font-size:13px;color:#173454}
+.teacher-exam-paper small{font-size:11px;color:#596b80}
+.teacher-exam-empty{color:#9aabba}
+.teacher-exam-undated{color:#8a4b10;margin:12px 0 0;font-size:13px}
+@media(max-width:640px){.teacher-exam-section{padding:14px}.teacher-exam-grid{min-width:520px}}
+/* Match the teacher dashboard palette without changing the timetable grid. */
+.teacher-exam-grid{border:1px solid #dce5ef;border-radius:10px;overflow:hidden;color:#173454}
+.teacher-exam-grid th,.teacher-exam-grid td{border-color:#dce5ef}
+.teacher-exam-grid thead th{background:#eaf2fb;color:#234d76}
+.teacher-exam-grid thead th.day-name{background:#dcebf9!important;color:#234d76!important}
+.teacher-exam-grid tbody th.day-name{background:#f1f6fc!important;color:#285584!important}
+.teacher-exam-grid tbody tr:nth-child(even) td{background:#f8fbff}
+.teacher-exam-grid .period-title{color:#234d76}

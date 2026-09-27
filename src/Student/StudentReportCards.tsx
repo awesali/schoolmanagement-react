@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { PreviewIcon } from '../components/Icons/Icons';
 import { profilePictureUrl } from '../Super_Admin_Dashboard/ProfilePictureInput';
 import './StudentReportCards.css';
 
 type Row = Record<string, any>;
-type Props = { results: Row[]; gradeHistory: Row[]; resultSubjects?: Row[]; profile: Row; parent?: Row | null; showList?: boolean };
+type Props = { results: Row[]; gradeHistory: Row[]; resultSubjects?: Row[]; profile: Row; parent?: Row | null; showList?: boolean; initialExamId?: string | null };
 const amount = (value: number) => Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
 const percent = (value: number) => `${amount(Math.round(value * 100) / 100)}%`;
 
@@ -15,8 +16,8 @@ function SchoolMark({ name, url }: { name: string; url?: string | null }) {
     : <span aria-label="School avatar">{initials}</span>}</div>;
 }
 
-export default function StudentReportCards({ results, gradeHistory, resultSubjects, profile, parent, showList = true }: Props) {
-  const [openExamId, setOpenExamId] = useState<string | null>(null);
+export default function StudentReportCards({ results, gradeHistory, resultSubjects, profile, parent, showList = true, initialExamId = null }: Props) {
+  const [openExamId, setOpenExamId] = useState<string | null>(initialExamId);
   const activeResult = showList
     ? results.find((result, index) => String(result.examId ?? result.examName + '-' + index) === openExamId)
     : results[0];
@@ -33,8 +34,8 @@ export default function StudentReportCards({ results, gradeHistory, resultSubjec
   if (!results.length) return <div className="sp-empty">No published results yet.</div>;
   if (showList && openExamId === null) return <div className="src-choices">{results.map((result, index) => {
     const key = String(result.examId ?? result.examName + '-' + index);
-    return <button type="button" className="src-choice" key={key} onClick={() => setOpenExamId(key)}>
-      <span><small>EXAM RESULT</small><strong>{result.examName}</strong></span><span>View result &#8594;</span>
+    return <button type="button" className="src-choice" aria-label={result.examName + ' View result'} key={key} onClick={() => setOpenExamId(key)}>
+      <span><small>EXAM RESULT</small><strong>{result.examName}</strong></span><span className="sp-view-eye" title="View result"><PreviewIcon size={21}/></span>
     </button>;
   })}</div>;
   return <div className="src-list">{results.filter((result, index) =>

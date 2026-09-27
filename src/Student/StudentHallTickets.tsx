@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { PreviewIcon } from '../components/Icons/Icons';
 import { profilePictureUrl } from '../Super_Admin_Dashboard/ProfilePictureInput';
 import './StudentHallTickets.css';
 
@@ -12,11 +13,15 @@ function Avatar({ name, url, school = false }: { name: string; url?: string | nu
   </div>;
 }
 
-export default function StudentHallTickets({ tickets = [], profile = {}, parent }: { tickets?: Row[]; profile?: Row; parent?: Row | null }) {
+export default function StudentHallTickets({ tickets = [], profile = {}, parent, initialTicketId = null }: { tickets?: Row[]; profile?: Row; parent?: Row | null; initialTicketId?: number | null }) {
+  const [openTicketId, setOpenTicketId] = useState<number | null>(initialTicketId);
   if (!tickets.length) return <div className="sp-empty">No hall tickets published yet.</div>;
+  if (openTicketId === null || !tickets.some(ticket => Number(ticket.id) === openTicketId)) return <div className="sht-choices">{tickets.map(ticket => <button type="button" className="sht-choice" aria-label={ticket.examName + ' View hall ticket'} key={ticket.id} onClick={() => setOpenTicketId(Number(ticket.id))}>
+    <span><small>HALL TICKET</small><strong>{ticket.examName}</strong></span><span className="sp-view-eye" title="View hall ticket"><PreviewIcon size={21}/></span>
+  </button>)}</div>;
   const schoolName = profile.schoolName || 'School';
   const studentName = profile.studentName || 'Student';
-  return <div className="sht-list">{tickets.map(ticket => <article className="sht-card" key={ticket.id} aria-label={`${ticket.examName} hall ticket`}>
+  return <div className="sht-list"><button type="button" className="sht-back" onClick={() => setOpenTicketId(null)}>← Back to hall tickets</button>{tickets.filter(ticket => Number(ticket.id) === openTicketId).map(ticket => <article className="sht-card" key={ticket.id} aria-label={`${ticket.examName} hall ticket`}>
     <header className="sht-header"><Avatar school name={schoolName} url={profile.schoolLogoUrl} /><div><span className="sht-overline">OFFICIAL HALL TICKET</span><h3>{schoolName}</h3></div></header>
     <div className="sht-exam"><div><span className="sht-label">EXAMINATION</span><strong>{ticket.examName}</strong></div><span className="sht-status">Admit card</span></div>
     <div className="sht-person"><Avatar name={studentName} url={profile.profilePictureUrl} /><div><span className="sht-label">STUDENT NAME</span><strong>{studentName}</strong><span>{[profile.className, profile.sectionName].filter(Boolean).join(' · ')}</span></div></div>
