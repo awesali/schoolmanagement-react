@@ -18,6 +18,7 @@ import TeacherClassManagement from './TeacherClassManagement';
 import TeacherUnitTest from './TeacherUnitTest';
 import TeacherWorkspace from './TeacherWorkspace';
 import PrincipalDashboard from './PrincipalDashboard';
+import CaDashboard from './CaDashboard';
 import TeacherAttendance from './TeacherAttendance';
 import TeacherCalendar from './TeacherCalendar';
 import TeacherStudentAttendance from './TeacherStudentAttendance';
@@ -163,7 +164,7 @@ const Dashboard: React.FC = () => {
       setProfileRoleName(profile?.roleName || '');
       const token = localStorage.getItem('token');
       const profileRoleId = token ? String(JSON.parse(atob(token.split('.')[1]))['RoleId'] || '') : '';
-      if (profileRoleId && !['1', '2'].includes(profileRoleId) && (profile?.roleName || '').trim().toLowerCase() !== 'principal') fetchSchools();
+      if (profileRoleId && !['1', '2'].includes(profileRoleId) && !['principal', 'ca', 'accountant', 'chartered accountant'].includes((profile?.roleName || '').trim().toLowerCase())) fetchSchools();
       setUserProfilePicture(profile?.profilePictureUrl || null);
       setTeacherSchool({
         schoolName: profile?.schoolName,
@@ -351,6 +352,9 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  if (['ca', 'accountant', 'chartered accountant'].includes((profileRoleName || roleName).trim().toLowerCase())) {
+    return <CaDashboard userName={userName} profilePicture={userProfilePicture} schoolName={teacherSchool.schoolName} schoolLogoUrl={teacherSchool.logoUrl} onLogout={handleLogout} onProfile={() => navigate('/profile')} />;
+  }
   if ((profileRoleName || roleName).trim().toLowerCase() === 'principal') {
     return <PrincipalDashboard userName={userName} profilePicture={userProfilePicture} schoolName={teacherSchool.schoolName} schoolLogoUrl={teacherSchool.logoUrl} onLogout={handleLogout} onProfile={() => navigate('/profile')} />;
   }
