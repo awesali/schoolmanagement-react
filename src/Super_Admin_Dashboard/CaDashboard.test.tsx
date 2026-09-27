@@ -1,8 +1,9 @@
-﻿import React from 'react';
+import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import CaDashboard, { csvCell } from './CaDashboard';
 jest.mock('./FinanceManagement', () => () => <div>Fee workflow</div>);
 jest.mock('./SalaryManagement', () => () => <div>Salary workflow</div>);
+jest.mock('./AccountingWorkspace', () => ({ schoolName }: { schoolName: string }) => <div>Accounting books for {schoolName}</div>);
 const data = { schoolId: 7, schoolName: 'School Seven', academicYear: '2026-27', generatedAt: '2026-09-01T00:00:00Z', payroll: null, fees: {
   today: 100, month: 100, assessed: 300, collected: 100, outstanding: 200,
   payments: [{ id: 1, studentName: 'Student One', amount: 100, date: '2026-09-01', mode: 'Cash', receipt: 'R001' }],
@@ -41,3 +42,11 @@ test('CSV quotes fields and neutralizes spreadsheet formulas', () => {
   expect(csvCell('A,"B"')).toBe('"A,""B"""');
 });
 
+
+test('opens the accounting workspace only when the server grants access', async () => {
+  (global.fetch as jest.Mock).mockResolvedValue({ ok: true, json: async () => ({ ...data, accounting: true }) });
+  show();
+  fireEvent.click(await screen.findByRole('button', { name: 'Accounting' }));
+  expect(screen.getByText('Accounting books for School Seven')).toBeInTheDocument();
+  expect(screen.queryByLabelText('Overview date')).not.toBeInTheDocument();
+});
