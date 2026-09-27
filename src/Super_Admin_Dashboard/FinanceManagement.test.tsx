@@ -21,8 +21,8 @@ test('edits an assigned fee and prevents reducing it below paid amount', async (
   fireEvent.change(screen.getAllByRole('combobox')[1], { target: { value: '2' } });
   fireEvent.change(screen.getAllByRole('combobox')[2], { target: { value: '3' } });
   fireEvent.click(screen.getByRole('button', { name: 'Load Assigned Fees' }));
-  await screen.findByText('Manage (1)');
-  fireEvent.click(screen.getByText('Manage (1)'));
+  await screen.findByRole('button', { name: 'View fee details for Student' });
+  fireEvent.click(screen.getByRole('button', { name: 'View fee details for Student' }));
   fireEvent.click(screen.getByRole('button', { name: 'Edit Tuition' }));
   fireEvent.change(screen.getByLabelText('Fee amount *'), { target: { value: '300' } });
   fireEvent.submit(container.querySelector('#edit-assigned-fee')!);

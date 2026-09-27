@@ -717,7 +717,7 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
               <td>₹{Number(item.balance).toLocaleString('en-IN')}</td>
               <td><span style={statusStyle(item.status)}>{item.status}</span></td>
               <td><div style={{ display: 'flex', gap: 8 }}>
-                {can('finance.fees', 'update') && <button type="button" className="btn" onClick={() => { setEditFee(item); setEditAmount(String(item.amount)); }}>Edit</button>}
+                {can('finance.fees', 'update') && <button type="button" className="btn" aria-label={`Edit ${item.feeType || 'fee'}`} onClick={() => { setEditFee(item); setEditAmount(String(item.amount)); }}>Edit</button>}
                 {item.balance > 0 && <button type="button" className="btn" onClick={() => { setPayModal(item); setAmountPaid(String(item.balance)); }}>Collect</button>}
               </div></td>
             </tr>)}</tbody>
