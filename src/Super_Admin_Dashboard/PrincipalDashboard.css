@@ -65,3 +65,48 @@
 .principal-invigilation-form label:first-child { flex: 3 1 320px; }
 .principal-invigilation-form select { width: 100%; min-height: 42px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px; background: white; }
 .principal-invigilation-form button { min-height: 42px; padding: 8px 16px; }
+
+/* Shared scrollbars for the principal, CA and receptionist workspaces. */
+.principal-shell {
+  --dashboard-scroll-thumb: #b4c4c7;
+  --dashboard-scroll-hover: #829d9e;
+}
+.principal-sidebar {
+  --dashboard-scroll-thumb: #496b72;
+  --dashboard-scroll-hover: #729197;
+}
+.principal-shell,
+.principal-shell * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--dashboard-scroll-thumb) transparent;
+}
+.principal-shell ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.principal-shell ::-webkit-scrollbar-track,
+.principal-shell ::-webkit-scrollbar-corner {
+  background: transparent;
+}
+.principal-shell ::-webkit-scrollbar-thumb {
+  background: var(--dashboard-scroll-thumb);
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+}
+.principal-shell ::-webkit-scrollbar-thumb:hover {
+  background-color: var(--dashboard-scroll-hover);
+}
+.principal-shell ::-webkit-scrollbar-button {
+  display: none;
+}
+@supports selector(::-webkit-scrollbar) {
+  .principal-shell,
+  .principal-shell * {
+    scrollbar-width: auto;
+    scrollbar-color: auto;
+  }
+  .principal-shell .principal-sidebar nav {
+    scrollbar-width: auto;
+  }
+}
