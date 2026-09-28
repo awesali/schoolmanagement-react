@@ -1,3 +1,4 @@
+import AdminActionIcon from './AdminActionIcon';
 import React from 'react';
 import { profilePictureUrl } from './ProfilePictureInput';
 import './ProfileIdCard.css';
@@ -66,11 +67,11 @@ const ProfileIdCard: React.FC<ProfileIdCardProps> = ({
 
     {!hideActions && <div className="profile-card-actions">
       {onEdit && (
-        <button type="button" className="profile-card-edit" onClick={onEdit}>
+        <button type="button" className="profile-card-edit" onClick={onEdit}><AdminActionIcon action="edit" />
           Edit Profile
         </button>
       )}
-      <button type="button" className="profile-card-print" onClick={() => window.print()}>
+      <button type="button" className="profile-card-print" onClick={() => window.print()}><AdminActionIcon action="print" />
         Print ID Card
       </button>
     </div>}

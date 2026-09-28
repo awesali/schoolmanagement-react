@@ -1,3 +1,4 @@
+import AdminActionIcon from './AdminActionIcon';
 import { Link } from 'react-router-dom';
 import { staffTemplateHeaders, staffTemplateExample, parseStaffDetailColumns } from './staffImportDetails';
 import React, { useState, useEffect } from 'react';
@@ -494,7 +495,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
                     <button 
                       className="btn-delete"
                       onClick={() => handleDeleteDocument(doc.documentId)}
-                    >
+                    ><AdminActionIcon action="delete" />
                       Delete
                     </button>
                   </div>

@@ -1,4 +1,5 @@
-﻿import React, { useEffect, useState } from 'react';
+import AdminActionIcon from './AdminActionIcon';
+import React, { useEffect, useState } from 'react';
 import { API_BASE_URL } from '../config';
 import { usePermissions } from '../security/Permissions';
 import './SyllabusProgress.css';
@@ -79,14 +80,14 @@ export default function SyllabusProgress({ date, refresh = 0, teacher = false }:
   };
   return <section className="principal-panel syllabus-panel" aria-label="Syllabus progress">
     <div className="syllabus-heading"><div><h2>Syllabus Progress</h2><p>Completed chapters compared with the teaching plan, as of {date}.</p></div><span className="principal-badge">{teacher ? 'Teacher updates' : 'Academic monitoring'}</span></div>
-    {loading ? <p role="status">Loading syllabus progress…</p> : error ? <div role="alert"><p>{error}</p><button className="principal-link" onClick={() => setReload(v => v + 1)}>Retry syllabus</button></div> : <>
+    {loading ? <p role="status">Loading syllabus progress…</p> : error ? <div role="alert"><p>{error}</p><button className="principal-link" onClick={() => setReload(v => v + 1)}><AdminActionIcon action="refresh" />Retry syllabus</button></div> : <>
       {!data?.academicYear ? <p>No active academic year covers this date.</p> : !rows.length ? <p>No active class-subject teaching assignments found.</p> : <>
         {teacher && can('academics.classes', 'create') && <form className="syllabus-form" onSubmit={submit}>
           <label>Class and subject<select required value={form.option} onChange={e => choose(e.target.value)} disabled={saving}><option value="">Select class and subject</option>{rows.map((r, i) => <option key={r.sectionId + '-' + r.subjectId} value={i}>{r.className} {r.sectionName} - {r.subjectName}</option>)}</select></label>
           <label>Total chapters<input required type="number" min="1" max="5000" step="1" value={form.total} disabled={saving} onChange={e => setForm({ ...form, total: e.target.value })} /></label>
           <label>Planned by this date<input required type="number" min="0" max={form.total || '5000'} step="1" value={form.planned} disabled={saving} onChange={e => setForm({ ...form, planned: e.target.value })} /></label>
           <label>Completed chapters<input required type="number" min="0" max={form.total || '5000'} step="1" value={form.completed} disabled={saving} onChange={e => setForm({ ...form, completed: e.target.value })} /></label>
-          <button className="btn btn-primary" disabled={saving || form.option === ''}>{saving ? 'Saving…' : 'Record progress'}</button>
+          <button className="btn btn-primary" disabled={saving || form.option === ''}><AdminActionIcon action="save" />{saving ? 'Saving…' : 'Record progress'}</button>
           {saveError && <p role="alert">{saveError}</p>}
         </form>}
         <div className="syllabus-classes">{classes.map(c => {

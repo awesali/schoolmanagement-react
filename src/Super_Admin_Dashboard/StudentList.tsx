@@ -1,3 +1,4 @@
+import AdminActionIcon from './AdminActionIcon';
 import { Link } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
@@ -486,7 +487,7 @@ const StudentList: React.FC<StudentListProps> = ({ selectedSchoolId, onViewParen
                     <button
                       className="btn-delete"
                       onClick={() => handleDeleteDocument(doc.documentId)}
-                    >
+                    ><AdminActionIcon action="delete" />
                       Delete
                     </button>
                   </div>

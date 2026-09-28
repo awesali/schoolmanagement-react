@@ -1,3 +1,4 @@
+import AdminActionIcon from './AdminActionIcon';
 import React, { useEffect, useState } from 'react';
 import { API_BASE_URL } from '../config';
 import Modal from './Modal';
@@ -60,7 +61,7 @@ export function StaffChangeHistory({ staffId, schoolId }: { staffId: number; sch
   }, [staffId, schoolId, page, retry]);
   return <>
     <p>Profile, role, employment, document, photo, class and subject assignment changes are recorded from the time change tracking was enabled.</p>
-    {loading ? <p role="status">Loading change history…</p> : error ? <p role="alert">{error} <button onClick={() => setRetry(r => r + 1)}>Retry history</button></p> : <>
+    {loading ? <p role="status">Loading change history…</p> : error ? <p role="alert">{error} <button onClick={() => setRetry(r => r + 1)}><AdminActionIcon action="refresh" />Retry history</button></p> : <>
       {!rows.length && <p>No changes recorded yet.</p>}
       {rows.map(row => <article key={row.id} style={{ borderBottom: '1px solid #ddd', padding: '12px 0' }}>
         <h3>{row.after.values.RoleId && row.before.RoleId ? `${row.before.RoleId} → ${row.after.values.RoleId}` : actionLabel(row.action)}</h3>
@@ -70,7 +71,7 @@ export function StaffChangeHistory({ staffId, schoolId }: { staffId: number; sch
           {Object.entries(row.after.values).map(([field, value]) => <tr key={field}><td>{fieldLabel(field)}</td><td>{row.before[field] ?? '—'}</td><td>{value ?? '—'}</td></tr>)}
         </tbody></table></div>
       </article>)}
-      {pages > 1 && <div><button disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Previous</button> <span>Page {page} of {pages}</span> <button disabled={page >= pages} onClick={() => setPage(p => p + 1)}>Next</button></div>}
+      {pages > 1 && <div><button disabled={page <= 1} onClick={() => setPage(p => p - 1)}><AdminActionIcon action="back" />Previous</button> <span>Page {page} of {pages}</span> <button disabled={page >= pages} onClick={() => setPage(p => p + 1)}><AdminActionIcon action="next" />Next</button></div>}
     </>}
   </>;
 }

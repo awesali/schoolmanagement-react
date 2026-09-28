@@ -1,3 +1,4 @@
+import AdminActionIcon from './AdminActionIcon';
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import { LoadingButton, PageLoader } from '../components/Loader/Loader';
@@ -365,7 +366,7 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
       {view === 'examTypes' && (
         <>
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
-            <button className="btn btn-primary" onClick={() => { setShowAddExamType(true); setExamTypeMsg(null); }}>+ Add Exam Type</button>
+            <button className="btn btn-primary" onClick={() => { setShowAddExamType(true); setExamTypeMsg(null); }}><AdminActionIcon action="add" />Add Exam Type</button>
           </div>
           {msgBanner(examTypeMsg)}
           {examTypesLoading ? <PageLoader label="Loading exam data..." />
@@ -401,7 +402,7 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
                 )}
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <LoadingButton className="btn btn-primary" style={{ flex: 1 }} onClick={handleAddExamType} loading={savingExamType} loadingText="Saving...">Save</LoadingButton>
-                  <button className="btn" style={{ flex: 1, border: '1px solid #e2e8f0' }} onClick={() => { setShowAddExamType(false); setNewExamTypeName(''); setExamTypeMsg(null); }}>Cancel</button>
+                  <button className="btn" style={{ flex: 1, border: '1px solid #e2e8f0' }} onClick={() => { setShowAddExamType(false); setNewExamTypeName(''); setExamTypeMsg(null); }}><AdminActionIcon action="close" />Cancel</button>
                 </div>
               </div>
             </div>
@@ -413,7 +414,7 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
       {view === 'exams' && (
         <>
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
-            <button className="btn btn-primary" onClick={() => { setShowAddExam(true); setExamMsg(null); }}>+ Create Exam</button>
+            <button className="btn btn-primary" onClick={() => { setShowAddExam(true); setExamMsg(null); }}><AdminActionIcon action="add" />Create Exam</button>
           </div>
           {msgBanner(examMsg)}
           {examsLoading ? <PageLoader label="Loading exam data..." />
@@ -434,7 +435,7 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
                         <td><span style={badgeStyle(ex.resultPublished)}>{ex.resultPublished ? 'Published' : 'Pending'}</span></td>
                         <td>
                           {!ex.isPublished && (
-                            <button className="btn btn-primary" style={{ padding: '5px 12px', fontSize: '12px' }} onClick={() => handlePublishExam(ex.id)}>Publish</button>
+                            <button className="btn btn-primary" style={{ padding: '5px 12px', fontSize: '12px' }} onClick={() => handlePublishExam(ex.id)}><AdminActionIcon action="publish" />Publish</button>
                           )}
                         </td>
                       </tr>
@@ -483,7 +484,7 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
                 )}
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <LoadingButton className="btn btn-primary" style={{ flex: 1 }} onClick={handleAddExam} loading={savingExam} loadingText="Creating...">Create</LoadingButton>
-                  <button className="btn" style={{ flex: 1, border: '1px solid #e2e8f0' }} onClick={() => { setShowAddExam(false); setExamForm({ name: '', examTypeId: '', academicSessionId: '', startDate: '', endDate: '' }); setExamMsg(null); }}>Cancel</button>
+                  <button className="btn" style={{ flex: 1, border: '1px solid #e2e8f0' }} onClick={() => { setShowAddExam(false); setExamForm({ name: '', examTypeId: '', academicSessionId: '', startDate: '', endDate: '' }); setExamMsg(null); }}><AdminActionIcon action="close" />Cancel</button>
                 </div>
               </div>
             </div>
@@ -528,7 +529,7 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
               {subjectFilterSections.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
             {selectedExamId && (
-              <button className="btn btn-primary" onClick={() => { setShowAddSubject(true); setSubjectMsg(null); }}>+ Add Subject</button>
+              <button className="btn btn-primary" onClick={() => { setShowAddSubject(true); setSubjectMsg(null); }}><AdminActionIcon action="add" />Add Subject</button>
             )}
           </div>
           {msgBanner(subjectMsg)}
@@ -604,7 +605,7 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
                 )}
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <LoadingButton className="btn btn-primary" style={{ flex: 1 }} onClick={handleAddExamSubject} loading={savingSubject} loadingText="Saving..." disabled={!selectedSubjectIds.length}>{`Add ${selectedSubjectIds.length || ''} Subject(s)`}</LoadingButton>
-                  <button className="btn" style={{ flex: 1, border: '1px solid #e2e8f0' }} onClick={() => { setShowAddSubject(false); setSubjectForm({ classId: '', sectionId: '', subjectId: '', maxMarks: '', passingMarks: '' }); setSelectedSubjectIds([]); setSubjectMsg(null); }}>Cancel</button>
+                  <button className="btn" style={{ flex: 1, border: '1px solid #e2e8f0' }} onClick={() => { setShowAddSubject(false); setSubjectForm({ classId: '', sectionId: '', subjectId: '', maxMarks: '', passingMarks: '' }); setSelectedSubjectIds([]); setSubjectMsg(null); }}><AdminActionIcon action="close" />Cancel</button>
                 </div>
               </div>
             </div>
@@ -738,7 +739,7 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
               <PageLoader label="Loading exam data..." />
             ) : studentDetail && (
               <>
-                <button type="button" className="btn" style={{ marginBottom: 14 }} onClick={() => setStudentDetail(null)}>Close result</button>
+                <button type="button" className="btn" style={{ marginBottom: 14 }} onClick={() => setStudentDetail(null)}><AdminActionIcon action="close" />Close result</button>
                 <StudentReportCards
                   showList={false}
                   profile={{ studentName: studentDetail.studentName, schoolName: studentDetail.schoolName,

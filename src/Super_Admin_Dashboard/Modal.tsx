@@ -1,3 +1,4 @@
+import AdminActionIcon from './AdminActionIcon';
 import React from 'react';
 import { LoadingButton } from '../components/Loader/Loader';
 import './Modal.css';
@@ -55,7 +56,7 @@ const Modal: React.FC<ModalProps> = ({
           <div className="header-actions">
             {headerActions}
             {showCancel && (
-              <button type="button" className="btn btn-primary" onClick={handleCancel}>
+              <button type="button" className="btn btn-primary" onClick={handleCancel}><AdminActionIcon action="reset" />
                 Clear
               </button>
             )}
@@ -65,7 +66,7 @@ const Modal: React.FC<ModalProps> = ({
                 {submitLabel}
               </LoadingButton>
             )}
-            <button className="modal-close" onClick={onClose}>×</button>
+            <button className="modal-close" onClick={onClose} aria-label="Close"><AdminActionIcon action="close" /></button>
           </div>
         </div>
         <div className="modal-body">

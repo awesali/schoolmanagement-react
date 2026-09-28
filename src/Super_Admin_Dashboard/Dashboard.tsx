@@ -1,3 +1,4 @@
+import AdminActionIcon from './AdminActionIcon';
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CreateSchool from './CreateSchool';
@@ -26,6 +27,7 @@ import TeacherStudentAttendance from './TeacherStudentAttendance';
 import TeacherPortal, { TeacherPortalPage } from './TeacherPortal';
 import TeacherStudentContent, { TeacherContentPage } from './TeacherStudentContent';
 import TeacherStudentLeaveRequests from './TeacherStudentLeaveRequests';
+import StudentMessageInbox from './StudentMessageInbox';
 import TeacherExamContent from './TeacherExamContent';
 import HallTicketManagement from './HallTicketManagement';
 import StudentServicesManagement from './StudentServicesManagement';
@@ -84,13 +86,13 @@ const Dashboard: React.FC = () => {
   const [isCreateSchoolOpen, setIsCreateSchoolOpen] = useState(false);
   const [activePage, setActivePage] = useState(() => {
     const page = new URLSearchParams(window.location.search).get('page');
-    return page && ['Staff List', 'Student List', 'Parent List'].includes(page) ? page : 'Dashboard';
+    return page && (PAGE_PERMISSIONS[page] || page === 'Student Messages' || page === 'Attendance') ? page : 'Dashboard';
   });
   const [parentToOpen, setParentToOpen] = useState<number | null>(() => {
     const id = Number(new URLSearchParams(window.location.search).get('parentId'));
     return id > 0 && Number.isInteger(id) ? id : null;
   });
-  const [isCollapsed, setIsCollapsed] = useState(true);
+  const [isCollapsed, setIsCollapsed] = useState(() => window.innerWidth <= 768);
   const [schools, setSchools] = useState<School[]>([]);
   const [selectedSchoolId, setSelectedSchoolId] = useState<number | null>(null);
   const [userName, setUserName] = useState('User');
@@ -114,7 +116,10 @@ const Dashboard: React.FC = () => {
   });
   const [teacherAttendanceDirty, setTeacherAttendanceDirty] = useState(false);
   const [teacherSection, setTeacherSection] = useState<number | undefined>();
-  const [attendanceType, setAttendanceType] = useState<'student' | 'staff' | null>(null);
+  const [attendanceType, setAttendanceType] = useState<'student' | 'staff' | null>(() => {
+    const type = new URLSearchParams(window.location.search).get('attendanceType');
+    return type === 'student' || type === 'staff' ? type : null;
+  });
   const [showAttendancePopup, setShowAttendancePopup] = useState(false);
   const [publishedResults, setPublishedResults] = useState<DashboardExam[]>([]);
   const [upcomingExamEvents, setUpcomingExamEvents] = useState<DashboardExamEvent[]>([]);
@@ -394,7 +399,7 @@ const Dashboard: React.FC = () => {
             )}
             {userRole === '2' ? (
               <button className="btn btn-primary" title="Open your assigned classes and daily actions" onClick={() => handleNavigate('My Classes')}>
-                + Quick action
+                <AdminActionIcon action="add" />Quick action
               </button>
             ) : (
               <>
@@ -523,9 +528,9 @@ const Dashboard: React.FC = () => {
                   ) : activePage === 'Unit Test' ? (
                     <TeacherUnitTest />
                   ) : activePage === 'Fees' || activePage === 'Fee Management' ? (
-                    <FinanceManagement selectedSchoolId={selectedSchoolId} />
+                    <FinanceManagement selectedSchoolId={selectedSchoolId} schoolName={schools.find(school => school.id === selectedSchoolId)?.schoolName} schoolLogoUrl={schools.find(school => school.id === selectedSchoolId)?.logoUrl} />
                   ) : activePage === 'Salary Management' ? (
-                    <SalaryManagement selectedSchoolId={selectedSchoolId} />
+                    <SalaryManagement selectedSchoolId={selectedSchoolId} schoolName={schools.find(school => school.id === selectedSchoolId)?.schoolName} schoolLogoUrl={schools.find(school => school.id === selectedSchoolId)?.logoUrl} />
                   ) : activePage === 'Transport Management' ? (
                     <TransportManagement selectedSchoolId={selectedSchoolId} />
                   ) : activePage === 'Role & Permissions' ? (
@@ -558,14 +563,18 @@ const Dashboard: React.FC = () => {
                     <HallTicketManagement schoolId={selectedSchoolId} />
                   ) : activePage === 'Student Services' && selectedSchoolId ? (
                     <StudentServicesManagement schoolId={selectedSchoolId} />
+                  ) : activePage === 'Student Messages' && !['1', '2', '7'].includes(userRole) ? (
+                    <StudentMessageInbox />
+                  ) : userRole === '2' && activePage === 'Messages' ? (
+                    <StudentMessageInbox />
                   ) : userRole === '2' && activePage === 'Student Leave Requests' ? (
                     <TeacherStudentLeaveRequests />
                   ) : userRole === '2' && activePage === 'Exam Preparation' ? (
                     <TeacherExamContent />
-                  ) : userRole === '2' && ['Class Diary', 'Submissions', 'Announcements', 'Messages'].includes(activePage) ? (
+                  ) : userRole === '2' && ['Class Diary', 'Submissions', 'Announcements'].includes(activePage) ? (
                     <TeacherStudentContent page={activePage as TeacherContentPage} />
                   ) : userRole === '2' && ['Homework & Assignments', 'Syllabus Progress', 'Study Material', 'My Profile'].includes(activePage) ? (
-                    <TeacherPortal page={activePage as TeacherPortalPage} onNavigate={handleNavigate} />
+                    <TeacherPortal page={activePage as TeacherPortalPage} onNavigate={handleNavigate} schoolName={teacherSchool.schoolName} schoolLogoUrl={teacherSchool.logoUrl} />
                   ) : activePage === 'Calendar' && userRole === '2' ? (
                     <TeacherCalendar onNavigate={handleNavigate} />
                   ) : userRole === '2' ? (
@@ -791,7 +800,7 @@ const Dashboard: React.FC = () => {
                 handleNavigate('Attendance', 'staff');
               }}
             >
-              Mark Attendance Now
+              <AdminActionIcon action="present" />Mark Attendance Now
             </button>
             <button
               className="btn"
@@ -803,7 +812,7 @@ const Dashboard: React.FC = () => {
               }}
               onClick={() => setShowAttendancePopup(false)}
             >
-              Remind Me Later
+              <AdminActionIcon action="close" />Remind Me Later
             </button>
           </div>
         </div>

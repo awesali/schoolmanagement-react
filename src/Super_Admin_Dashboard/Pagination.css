@@ -48,8 +48,8 @@
 }
 
 .page-size-select:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 1px #3b82f6;
+  border-color: #087f83;
+  box-shadow: 0 0 0 1px #087f83;
 }
 
 .page-label {
@@ -75,8 +75,8 @@
 }
 
 .page-input:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 1px #3b82f6;
+  border-color: #087f83;
+  box-shadow: 0 0 0 1px #087f83;
 }
 
 .page-total {

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './Sidebar.css';
 import { SchoolIcon } from './TeacherWorkspace';
+import { AssignmentIcon, ClipboardIcon, EmailIcon, EmployeesIcon, IdCardIcon, LeaveIcon, PaymentIcon, ProfileIcon, ReceiptIcon, SchoolIcon as AdminSchoolIcon, StudentsIcon, SubjectsIcon, TimeTableIcon, VehicleIcon } from '../components/Icons/Icons';
 import { PAGE_PERMISSIONS, usePermissions } from '../security/Permissions';
 import { SECURITY_UI_ENABLED } from '../security/features';
 import { profilePictureUrl } from './ProfilePictureInput';
@@ -48,7 +49,7 @@ const menuGroups = [
       { label: 'Classes', children: ['Class List'] },
       { label: 'Staff', children: ['Staff List', 'Attendance'] },
       { label: 'Security', children: ['Role & Permissions'] },
-      { label: 'Students', children: ['Student List', 'Student Services', 'Hall Tickets', 'Attendance'] },
+      { label: 'Students', children: ['Student List', 'Student Services', 'Student Messages', 'Hall Tickets', 'Attendance'] },
       { label: 'Parents', children: ['Parent List'] },
       { label: 'Transport', children: ['Transport Management'] },
       { label: 'Subjects', children: ['Subject List'] },
@@ -67,10 +68,18 @@ const menuGroups = [
   },
 ];
 
+const adminMenuIcons: Record<string, React.ComponentType<{ size?: number }>> = {
+  'Dashboard': AdminSchoolIcon, 'Academic Year': LeaveIcon, 'Student Promotion': StudentsIcon,
+  'School List': AdminSchoolIcon, 'Class List': TimeTableIcon, 'Staff List': EmployeesIcon,
+  'Role & Permissions': IdCardIcon, 'Student List': StudentsIcon, 'Student Services': AssignmentIcon,
+  'Student Messages': EmailIcon, 'Hall Tickets': IdCardIcon, 'Parent List': ProfileIcon,
+  'Transport Management': VehicleIcon, 'Subject List': SubjectsIcon, 'Fee Management': PaymentIcon,
+  'Salary Management': ReceiptIcon, 'Exam Management': ClipboardIcon,
+  'Student Attendance': StudentsIcon, 'Staff Attendance': EmployeesIcon,
+};
+
 const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, userRole, schoolName, schoolLogoUrl, attendanceType }) => {
   const { can } = usePermissions();
-  const [openGroups, setOpenGroups] = useState<string[]>([]);
-  const [openItems, setOpenItems] = useState<string[]>([]);
   const [failedLogo, setFailedLogo] = useState<string | null>(null);
   const resolvedLogo = profilePictureUrl(schoolLogoUrl);
   const schoolInitials =
@@ -85,14 +94,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, 
 
   const currentMenuGroups = userRole === '2' ? teacherMenuGroups : menuGroups;
 
-  const toggleGroup = (group: string) => {
-    setOpenGroups((prev) => (prev.includes(group) ? prev.filter((g) => g !== group) : [...prev, group]));
-  };
-
-  const toggleItem = (item: string) => {
-    setOpenItems((prev) => (prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item]));
-  };
-
+  const isActiveChild = (child: string, parentLabel: string) =>
+    activePage === child && (child !== 'Attendance' || attendanceType === (parentLabel === 'Students' ? 'student' : 'staff'));
   const getFilteredMenuGroups = () => {
     return currentMenuGroups
       .map((group) => ({
@@ -102,6 +105,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, 
           .map((item) => ({
             ...item,
             children: item.children.filter((child) => {
+              if (['1', '7'].includes(userRole) && child === 'Student Messages') return false;
               if (userRole === '1' && item.label === 'Students' && child === 'Attendance') {
                 return false;
               }
@@ -176,7 +180,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, 
       { label: 'Submissions', page: 'Submissions', icon: 'assignment', permission: 'academics.classes' },
       { label: 'Student requests', page: 'Student Leave Requests', icon: 'assignment', permission: 'academics.classes' },
       { label: 'Announcements', page: 'Announcements', icon: 'material', permission: 'academics.classes' },
-      { label: 'Messages', page: 'Messages', icon: 'material', permission: 'academics.classes' },
+      { label: 'Messages', page: 'Messages', icon: 'material', permission: 'dashboard.dashboard' },
       {
         label: 'Syllabus Progress',
         page: 'Syllabus Progress',
@@ -238,41 +242,27 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, 
         <span className="logo-text">SchoolAdmin</span>
       </div>
 
-      <nav className="sidebar-nav">
+      <nav className="sidebar-nav admin-sidebar-nav" aria-label="Admin navigation">
         {can('dashboard.dashboard', 'read') && (
-          <button className={`nav-item ${activePage === 'Dashboard' ? 'active' : ''}`} onClick={() => onNavigate('Dashboard')}>
-            <span className="nav-icon">📊</span>
+          <button className={`nav-item ${activePage === 'Dashboard' ? 'active' : ''}`} aria-current={activePage === 'Dashboard' ? 'page' : undefined} onClick={() => onNavigate('Dashboard')}>
+            <AdminSchoolIcon size={19} />
             <span>Dashboard</span>
           </button>
         )}
-
         {filteredMenuGroups.map(({ group, items }) => (
           <div key={group} className="nav-group">
-            <button className="nav-group-header" onClick={() => toggleGroup(group)}>
-              <span>{group}</span>
-              <span className={`chevron ${openGroups.includes(group) ? 'open' : ''}`}>›</span>
-            </button>
-            {openGroups.includes(group) && (
-              <div className="nav-group-items">
-                {items.map(({ label, children }) => (
-                  <div key={label}>
-                    <button className="nav-sub-item nav-sub-parent" onClick={() => toggleItem(label)}>
-                      <span>{label}</span>
-                      <span className={`chevron ${openItems.includes(label) ? 'open' : ''}`}>›</span>
-                    </button>
-                    {openItems.includes(label) && (
-                      <div className="nav-leaf-items">
-                        {children.map((child) => (
-                          <button key={child} className={`nav-leaf-item ${activePage === child ? 'active' : ''}`} onClick={() => handleAttendanceClick(child, label)}>
-                            {child}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+            <p className="nav-group-header">{group}</p>
+            {items.flatMap(({ label, children }) => children.map((child) => {
+              const active = isActiveChild(child, label);
+              const name = child === 'Attendance' ? `${label === 'Students' ? 'Student' : 'Staff'} Attendance` : child;
+              const Icon = adminMenuIcons[name] || ClipboardIcon;
+              return (
+                <button key={`${label}-${child}`} className={`nav-item ${active ? 'active' : ''}`} aria-current={active ? 'page' : undefined} onClick={() => handleAttendanceClick(child, label)}>
+                  <Icon size={19} />
+                  <span>{name}</span>
+                </button>
+              );
+            }))}
           </div>
         ))}
       </nav>

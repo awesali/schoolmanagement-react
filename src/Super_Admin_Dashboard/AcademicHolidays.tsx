@@ -1,3 +1,4 @@
+import AdminActionIcon from './AdminActionIcon';
 import React, { useEffect, useState } from 'react';
 import { API_BASE_URL } from '../config';
 import './AcademicHolidays.css';
@@ -63,8 +64,8 @@ export default function AcademicHolidays({ schoolId, sessions }: { schoolId: num
       <label>From <input required type="date" min={day(selected.yearStart)} max={day(selected.yearEnd)} value={form.fromDate} onChange={e => setForm({ ...form, fromDate: e.target.value, toDate: e.target.value > form.toDate ? e.target.value : form.toDate })} /></label>
       <label>To <input required type="date" min={form.fromDate || day(selected.yearStart)} max={day(selected.yearEnd)} value={form.toDate} onChange={e => setForm({ ...form, toDate: e.target.value })} /></label>
       <label className="academic-holidays-wide">Details (optional) <input maxLength={1000} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></label>
-      <button type="submit" className="btn btn-primary" disabled={busy}>{busy ? 'Saving...' : 'Add holiday'}</button>
+      <button type="submit" className="btn btn-primary" disabled={busy}><AdminActionIcon action="add" />{busy ? 'Saving...' : 'Add holiday'}</button>
     </form>}
-    {!rows.length ? <p>No academic holidays added for this session.</p> : <ul className="academic-holidays-list">{rows.map(row => <li key={row.id}><div><strong>{row.title}</strong><span>{pretty(row.eventDate)}{row.endDate && day(row.endDate) !== day(row.eventDate) ? ` to ${pretty(row.endDate)}` : ''}</span>{row.description && <small>{row.description}</small>}</div><button type="button" disabled={busy} onClick={() => remove(row)}>Remove</button></li>)}</ul>}
+    {!rows.length ? <p>No academic holidays added for this session.</p> : <ul className="academic-holidays-list">{rows.map(row => <li key={row.id}><div><strong>{row.title}</strong><span>{pretty(row.eventDate)}{row.endDate && day(row.endDate) !== day(row.eventDate) ? ` to ${pretty(row.endDate)}` : ''}</span>{row.description && <small>{row.description}</small>}</div><button type="button" disabled={busy} onClick={() => remove(row)}><AdminActionIcon action="delete" />Remove</button></li>)}</ul>}
   </section>;
 }

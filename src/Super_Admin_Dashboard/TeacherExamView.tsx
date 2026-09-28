@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import { useToastResultState } from '../components/Toast/Toast';
 import { LoadingButton } from '../components/Loader/Loader';
+import TeacherExamTimetable, { ExamTimetableRow } from './TeacherExamTimetable';
 import './StaffList.css';
 
 type TeacherExamView = 'timetable' | 'marks';
@@ -28,7 +29,7 @@ const TeacherExamView: React.FC<{ selectedSchoolId: number | null }> = ({ select
 
   // Timetable
   const [timetableExamId, setTimetableExamId] = useState('');
-  const [timetable, setTimetable] = useState<any[]>([]);
+  const [timetable, setTimetable] = useState<ExamTimetableRow[]>([]);
   const [timetableLoading, setTimetableLoading] = useState(false);
 
   // Marks Entry
@@ -37,6 +38,7 @@ const TeacherExamView: React.FC<{ selectedSchoolId: number | null }> = ({ select
   const [marksSectionId, setMarksSectionId] = useState('');
   const [marksSubjectId, setMarksSubjectId] = useState('');
   const [marksSheet, setMarksSheet] = useState<MarksEntry[]>([]);
+  const [marksSchedules, setMarksSchedules] = useState<any[]>([]);
   const [marksLoading, setMarksLoading] = useState(false);
   const [savingMarks, setSavingMarks] = useState(false);
   const [lockingMarks, setLockingMarks] = useState(false);
@@ -113,6 +115,17 @@ const TeacherExamView: React.FC<{ selectedSchoolId: number | null }> = ({ select
     } catch { } finally { setTimetableLoading(false); }
   };
 
+  useEffect(() => {
+    setMarksSchedules([]);
+    if (!marksExamId) return;
+    const controller = new AbortController();
+    fetch(`${API_BASE_URL}/api/Exam/GetExamSubjects?examId=${marksExamId}`, { headers: headers(), signal: controller.signal })
+      .then(async response => response.ok ? response.json() : null)
+      .then(result => { if (!controller.signal.aborted) setMarksSchedules(result?.data ?? []); })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [marksExamId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const fetchMarksSheet = async () => {
     if (!marksExamId || !marksSectionId || !marksSubjectId) return;
     try {
@@ -158,6 +171,12 @@ const TeacherExamView: React.FC<{ selectedSchoolId: number | null }> = ({ select
     finally { setLockingMarks(false); }
   };
 
+  const selectedMarksSchedule = marksSchedules.find(schedule => Number(schedule.classId) === Number(marksClassId) &&
+    Number(schedule.sectionId) === Number(marksSectionId) && Number(schedule.subjectId) === Number(marksSubjectId));
+  const paperDate = selectedMarksSchedule?.examDate ? String(selectedMarksSchedule.examDate).slice(0, 10) : '';
+  const today = new Date();
+  const todayDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const marksNotOpen = Boolean(paperDate && paperDate >= todayDate);
   const filteredSections = sections.filter(s => s.classId === Number(marksClassId));
   const selectedExam = exams.find(e => String(e.id) === timetableExamId);
 
@@ -204,27 +223,7 @@ const TeacherExamView: React.FC<{ selectedSchoolId: number | null }> = ({ select
           )}
 
           {timetable.length > 0 ? (
-            <div className="staff-table-wrapper">
-              <table className="staff-table">
-                <thead>
-                  <tr><th>Subject</th><th>Class</th><th>Section</th><th>Exam Date</th><th>Start Time</th><th>End Time</th><th>Max Marks</th><th>Pass Marks</th></tr>
-                </thead>
-                <tbody>
-                  {timetable.map((t: any, i) => (
-                    <tr key={i}>
-                      <td style={{ fontWeight: 600 }}>{t.subjectName}</td>
-                      <td>{t.className}</td>
-                      <td>{t.sectionName}</td>
-                      <td>{t.examDate ? fmt(t.examDate) : 'Not Scheduled'}</td>
-                      <td>{t.startTime ? t.startTime.substring(0, 5) : 'Not Scheduled'}</td>
-                      <td>{t.endTime ? t.endTime.substring(0, 5) : 'Not Scheduled'}</td>
-                      <td>{t.maxMarks ?? '-'}</td>
-                      <td>{t.passingMarks ?? '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <TeacherExamTimetable rows={timetable} />
           ) : (
             !timetableLoading && (
               <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>
@@ -256,10 +255,12 @@ const TeacherExamView: React.FC<{ selectedSchoolId: number | null }> = ({ select
               {subjects.map(s => <option key={s.subjectId} value={s.subjectId}>{s.subjectName}</option>)}
             </select>
             <button className="btn btn-primary" onClick={fetchMarksSheet}
-              disabled={!marksExamId || !marksSectionId || !marksSubjectId || marksLoading}>
+              disabled={!marksExamId || !marksSectionId || !marksSubjectId || marksLoading || marksNotOpen}>
               {marksLoading ? 'Loading...' : 'Load Sheet'}
             </button>
           </div>
+
+          {marksNotOpen && <p role="status" style={{ color: '#8a4b10', background: '#fff6e8', padding: '12px 16px', borderRadius: '8px' }}>This subject paper is on {fmt(selectedMarksSchedule.examDate)}. Marks entry opens the next day.</p>}
 
           {msgBanner(marksMsg)}
 

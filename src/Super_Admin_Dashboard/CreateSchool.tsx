@@ -1,3 +1,4 @@
+import AdminActionIcon from './AdminActionIcon';
 import React, { useEffect, useMemo, useState } from 'react';
 import { API_BASE_URL } from '../config';
 import { useToast, useToastMessageState } from '../components/Toast/Toast';
@@ -425,10 +426,10 @@ const CreateSchool: React.FC<CreateSchoolProps> = ({ isOpen, onClose, school, on
               <label>School Location *</label>
               <div className="map-actions">
                 <button type="button" className="btn btn-secondary btn-small" onClick={handleFindOnMap} disabled={locationLoading}>
-                  Find Address
+                  <AdminActionIcon action="search" />Find Address
                 </button>
                 <button type="button" className="btn btn-secondary btn-small" onClick={handleUseCurrentLocation} disabled={locationLoading}>
-                  Current Location
+                  <AdminActionIcon action="location" />Current Location
                 </button>
               </div>
             </div>

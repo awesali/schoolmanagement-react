@@ -1,3 +1,4 @@
+import AdminActionIcon from './AdminActionIcon';
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import { useToastMessageState } from '../components/Toast/Toast';
@@ -116,8 +117,7 @@ const ExamList: React.FC<ExamListProps> = ({ selectedSchoolId }) => {
       <div className="staff-list-header">
         <h2>Exam Schedules</h2>
         <div className="header-buttons">
-          <button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>
-            + Add Exam
+          <button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}><AdminActionIcon action="add" />Add Exam
           </button>
         </div>
       </div>
@@ -171,7 +171,7 @@ const ExamList: React.FC<ExamListProps> = ({ selectedSchoolId }) => {
                           });
                           setIsDetailModalOpen(true);
                         }}
-                      >
+                      ><AdminActionIcon action="view" />
                         View Schedule
                       </button>
                     </td>

@@ -1,3 +1,4 @@
+import AdminActionIcon from './AdminActionIcon';
 import { useToastMessageState } from '../components/Toast/Toast';
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
@@ -421,8 +422,7 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
         <div className="documents-section">
           <div className="documents-header">
             <label>Add New Documents</label>
-            <button type="button" className="btn-add-doc" onClick={handleAddDocument}>
-              + Add Document
+            <button type="button" className="btn-add-doc" onClick={handleAddDocument}><AdminActionIcon action="add" />Add Document
             </button>
           </div>
           {newDocuments.map((doc, index) => (
@@ -449,9 +449,7 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
                   {doc.file ? doc.file.name : 'Upload'}
                 </label>
               </div>
-              <button type="button" className="btn-remove" onClick={() => handleRemoveNewDocument(index)}>
-                ✕
-              </button>
+              <button type="button" className="btn-remove" onClick={() => handleRemoveNewDocument(index)} aria-label="Remove document"><AdminActionIcon action="delete" /></button>
             </div>
           ))}
         </div>

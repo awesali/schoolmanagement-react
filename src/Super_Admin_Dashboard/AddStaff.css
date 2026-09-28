@@ -80,7 +80,7 @@
 }
 
 .btn-add-doc:hover {
-  background: #3b82f6;
+  background: #087f83;
   transform: translateY(-2px);
 }
 
@@ -119,7 +119,7 @@
 }
 
 .btn-view-existing:hover {
-  background: #3b82f6;
+  background: #087f83;
   transform: translateY(-2px);
 }
 
@@ -186,7 +186,7 @@
 }
 
 .existing-doc-row-edit .btn-view-existing:hover {
-  background: #3b82f6;
+  background: #087f83;
   transform: translateY(-2px);
 }
 
@@ -340,7 +340,7 @@ input:checked + .toggle-slider:before {
 }
 
 .existing-doc-row a:hover {
-  background: #3b82f6;
+  background: #087f83;
   transform: translateY(-2px);
 }
 
@@ -528,14 +528,14 @@ input:checked + .toggle-slider:before {
   z-index: 2;
 }
 .profile-upload-undo:hover { background: #dc2626; }
-.profile-upload-undo:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.profile-upload-undo:focus-visible { outline: 2px solid #087f83; outline-offset: 2px; }
 
 .profile-upload-circle {
   width: 112px;
   height: 112px;
   border-radius: 50%;
-  border: 2px dashed #3b82f6;
-  background: #eff6ff;
+  border: 2px dashed #087f83;
+  background: #e8f5f3;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -545,7 +545,7 @@ input:checked + .toggle-slider:before {
 }
 
 .profile-upload-circle:hover { transform: scale(1.03); box-shadow: 0 8px 20px rgba(59, 130, 246, .18); }
-.profile-upload-circle span { font-size: 42px; line-height: 1; color: #3b82f6; font-weight: 300; }
+.profile-upload-circle span { font-size: 42px; line-height: 1; color: #087f83; font-weight: 300; }
 .profile-upload-circle.has-image { border-style: solid; background: #fff; }
 .profile-upload-circle img { width: 100%; height: 100%; object-fit: cover; }
 .profile-upload-title { margin-top: 10px; color: #1e2a3a; font-size: 14px; font-weight: 600; }

@@ -1,3 +1,4 @@
+import AdminActionIcon from './AdminActionIcon';
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import { useToastMessageState } from '../components/Toast/Toast';
@@ -373,9 +374,7 @@ const TimeTable: React.FC<TimeTableProps> = ({
                           className="remove-period-btn"
                           onClick={() => removePeriod(period.periodNumber)}
                           title="Remove Period"
-                        >
-                          ×
-                        </button>
+                         aria-label="Remove period"><AdminActionIcon action="delete" /></button>
                       </div>
                       <label className="break-checkbox">
                         <input
@@ -394,8 +393,7 @@ const TimeTable: React.FC<TimeTableProps> = ({
                     onClick={addPeriod} 
                     className="add-period-btn"
                     title="Add Period"
-                  >
-                    + Add Period
+                  ><AdminActionIcon action="add" />Add Period
                   </button>
                 </th>
               </tr>

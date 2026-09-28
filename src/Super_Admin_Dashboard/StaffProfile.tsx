@@ -1,7 +1,8 @@
+import AdminActionIcon from './AdminActionIcon';
 import StaffLeaveAllowance from './StaffLeaveAllowanceEditor';
 import { staffTimetableSlots } from './staffTimetable';
 import { StaffCareerActions, StaffChangeHistory } from './StaffCareer';
-import { BackIcon, EmailIcon, PhoneIcon, SchoolIcon, ProfileIcon, IdCardIcon, EditIcon, AssignmentIcon, PaymentIcon, SubjectsIcon, TimeTableIcon, TemplateIcon, PreviewIcon, PrintIcon } from '../components/Icons/Icons';
+import { BackIcon, EmailIcon, PhoneIcon, SchoolIcon, ProfileIcon, IdCardIcon, EditIcon, AssignmentIcon, PaymentIcon, SubjectsIcon, TimeTableIcon, TemplateIcon, PreviewIcon } from '../components/Icons/Icons';
 import ProfileIdCard from './ProfileIdCard';
 import React, { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
@@ -14,6 +15,7 @@ import { StaffDetailSummary } from './StaffDetailSections';
 import ProfileListAvatar from './ProfileListAvatar';
 import { profilePictureUrl } from './ProfilePictureInput';
 import Modal from './Modal';
+import SchoolFinanceDocument from './SchoolFinanceDocument';
 import { genderLabel } from '../utils/gender';
 import './StaffProfile.css';
 import '../components/Icons/CreateIconButton.css';
@@ -127,7 +129,7 @@ export default function StaffProfile() {
       <section className="staff-profile-content">
         <h2>{tab}</h2>
         {['Attendance', 'Salary'].includes(tab) && <label>Month <input type="month" value={month} onChange={e => { if (/^\d{4}-\d{2}$/.test(e.target.value)) setMonth(e.target.value); }} /></label>}
-        {busy ? <PageLoader /> : failed ? <button className="btn btn-secondary" onClick={() => setRevision(r => r + 1)}>Retry loading</button> : <>
+        {busy ? <PageLoader /> : failed ? <button className="btn btn-secondary" onClick={() => setRevision(r => r + 1)}><AdminActionIcon action="refresh" />Retry loading</button> : <>
           {tab === 'Overview' && <><dl className="staff-detail-summary"><div><dt>Date of Birth</dt><dd>{date(staff.dob)}</dd></div><div><dt>Date of Joining</dt><dd>{date(staff.doj)}</dd></div><div><dt>Gender</dt><dd>{genderLabel(staff.genderCode)}</dd></div></dl><StaffDetailSummary record={staff} /></>}
           {tab === 'Attendance' && <><p>{(data.attendance || []).filter((r: Row) => r.status === 'Present').length} Present - {(data.attendance || []).filter((r: Row) => r.status === 'Absent').length} Absent - {(data.attendance || []).length} recorded days</p><Grid headings={['Date', 'Status']} rows={(data.attendance || []).map((r: Row) => [date(r.attendanceDate), r.status])} empty="No attendance recorded for this month." /></>}
           {tab === 'Salary' && <>
@@ -143,11 +145,30 @@ export default function StaffProfile() {
           {tab === 'Documents' && <Grid headings={['Document', 'View / Download']} rows={(staff.documents || []).map((d: Row) => [d.documentName, <a href={profilePictureUrl(d.documentURL) || undefined} target="_blank" rel="noopener noreferrer"><PreviewIcon />View document</a>])} empty="No documents uploaded." />}
         </>}
       </section>
-      <Modal showSubmit={false} showCancel={false} isOpen={!!payslip} onClose={() => setPayslip(null)} title="Salary Payslip">
-        {payslip && <><div className="staff-payslip"><h2>{staff.schoolName}</h2><h3>Salary Payslip - {payslip.salaryMonth}/{payslip.salaryYear}</h3><p>{staff.name} - {staff.roleName}</p><p>Employee No: {staff.employeeNumber}</p><Grid headings={['Description', 'Amount']} rows={[
-          ['Basic Salary', money(payslip.basicSalary)], ['Bonus', money(payslip.bonus)], ['Deduction', money(payslip.deduction)], ['Net Salary', money(payslip.netSalary)]
-        ]} empty="" /><p>Paid on: {date(payslip.paymentDate)} - {payslip.paymentMethod}</p><p>{payslip.remarks}</p></div><button className="btn btn-primary" onClick={() => window.print()}><PrintIcon />Print Payslip</button></>}
-      </Modal>
+      {payslip && <SchoolFinanceDocument
+        title="Salary Payslip"
+        kind="payslip"
+        schoolName={staff.schoolName}
+        schoolLogoUrl={staff.schoolLogoUrl}
+        reference={`${payslip.salaryMonth}/${payslip.salaryYear}`}
+        date={payslip.paymentDate}
+        recipientLabel="Employee"
+        recipient={staff.name}
+        fields={[
+          { label: 'Role', value: staff.roleName },
+          { label: 'Employee number', value: staff.employeeNumber },
+          { label: 'Payment method', value: payslip.paymentMethod },
+          { label: 'Remarks', value: payslip.remarks },
+        ]}
+        lines={[
+          { label: 'Basic salary', amount: Number(payslip.basicSalary) || 0 },
+          { label: 'Bonus', amount: Number(payslip.bonus) || 0 },
+          { label: 'Deduction', amount: -(Number(payslip.deduction) || 0) },
+        ]}
+        totalLabel="Net salary paid"
+        total={Number(payslip.netSalary) || 0}
+        onClose={() => setPayslip(null)}
+      />}
       <Modal isOpen={showIdCard} onClose={() => setShowIdCard(false)} title="Employee Profile" showSubmit={false} showCancel={false}>
         <ProfileIdCard
           pictureUrl={staff.profilePictureUrl} name={staff.name} type="Employee"
@@ -169,6 +190,6 @@ export default function StaffProfile() {
       <EditStaff isOpen={edit} onClose={() => setEdit(false)} staff={staff as any} onSuccess={() => { setEdit(false); setStaff(null); setRevision(r => r + 1); }} />
       <Modal showSubmit={false} showCancel={false} isOpen={photo} onClose={() => setPhoto(false)} title={staff.name}><img className="staff-profile-photo" src={profilePictureUrl(staff.profilePictureUrl) || ''} alt={staff.name} /></Modal>
     </>}
-    {!staff && (busy ? <PageLoader /> : <p>{failed ? 'Unable to load profile.' : 'Staff not found in this school.'} <button onClick={() => setRevision(r => r + 1)}>Retry</button></p>)}
+    {!staff && (busy ? <PageLoader /> : <p>{failed ? 'Unable to load profile.' : 'Staff not found in this school.'} <button onClick={() => setRevision(r => r + 1)}><AdminActionIcon action="refresh" />Retry</button></p>)}
   </main>;
 }

@@ -1,4 +1,5 @@
-﻿import React, { useEffect, useState } from 'react';
+import AdminActionIcon from './AdminActionIcon';
+import React, { useEffect, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { API_BASE_URL } from '../config';
 import { BackIcon } from '../components/Icons/Icons';
@@ -86,7 +87,7 @@ const AccountProfile: React.FC = () => {
   return <main className="account-profile-page">
     <Link className="staff-profile-back" to="/dashboard"><BackIcon />Back to Dashboard</Link>
     <header><h1>My Profile</h1><p>View and update your account details.</p></header>
-    {!profile ? <section className="account-profile-card"><p>Profile details could not be loaded.</p><button className="btn btn-secondary" onClick={loadProfile}>Retry</button></section> : <div className="account-profile-grid">
+    {!profile ? <section className="account-profile-card"><p>Profile details could not be loaded.</p><button className="btn btn-secondary" onClick={loadProfile}><AdminActionIcon action="refresh" />Retry</button></section> : <div className="account-profile-grid">
       <section className="account-profile-card">
         <h2>Profile Details</h2>
         <form onSubmit={saveProfile}>

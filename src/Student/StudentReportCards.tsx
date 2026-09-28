@@ -1,9 +1,10 @@
+import StudentIcon from './StudentIcon';
 import React, { useEffect, useState } from 'react';
 import { profilePictureUrl } from '../Super_Admin_Dashboard/ProfilePictureInput';
 import './StudentReportCards.css';
 
 type Row = Record<string, any>;
-type Props = { results: Row[]; gradeHistory: Row[]; resultSubjects?: Row[]; profile: Row; parent?: Row | null; showList?: boolean };
+type Props = { results: Row[]; gradeHistory: Row[]; resultSubjects?: Row[]; profile: Row; parent?: Row | null; showList?: boolean; initialExamId?: string | null };
 const amount = (value: number) => Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
 const percent = (value: number) => `${amount(Math.round(value * 100) / 100)}%`;
 
@@ -15,8 +16,8 @@ function SchoolMark({ name, url }: { name: string; url?: string | null }) {
     : <span aria-label="School avatar">{initials}</span>}</div>;
 }
 
-export default function StudentReportCards({ results, gradeHistory, resultSubjects, profile, parent, showList = true }: Props) {
-  const [openExamId, setOpenExamId] = useState<string | null>(null);
+export default function StudentReportCards({ results, gradeHistory, resultSubjects, profile, parent, showList = true, initialExamId = null }: Props) {
+  const [openExamId, setOpenExamId] = useState<string | null>(initialExamId);
   const activeResult = showList
     ? results.find((result, index) => String(result.examId ?? result.examName + '-' + index) === openExamId)
     : results[0];
@@ -33,8 +34,8 @@ export default function StudentReportCards({ results, gradeHistory, resultSubjec
   if (!results.length) return <div className="sp-empty">No published results yet.</div>;
   if (showList && openExamId === null) return <div className="src-choices">{results.map((result, index) => {
     const key = String(result.examId ?? result.examName + '-' + index);
-    return <button type="button" className="src-choice" key={key} onClick={() => setOpenExamId(key)}>
-      <span><small>EXAM RESULT</small><strong>{result.examName}</strong></span><span>View result &#8594;</span>
+    return <button type="button" className="src-choice" aria-label={result.examName + ' View result'} key={key} onClick={() => setOpenExamId(key)}>
+      <span><small>EXAM RESULT</small><strong>{result.examName}</strong></span><span className="sp-view-eye" title="View result"><StudentIcon name="preview" size={21} /></span>
     </button>;
   })}</div>;
   return <div className="src-list">{results.filter((result, index) =>
@@ -56,7 +57,7 @@ export default function StudentReportCards({ results, gradeHistory, resultSubjec
     const overall = isComplete && total > 0 ? obtained * 100 / total : NaN;
     const key = result.examId ?? `${result.examName}-${index}`;
     return <article className="src-card" key={key} aria-label={`${result.examName} report card`}>
-      {showList && <button type="button" className="src-back" onClick={() => setOpenExamId(null)}>&#8592; Back to results</button>}
+      {showList && <button type="button" className="src-back" onClick={() => setOpenExamId(null)}><StudentIcon name="back" />Back to results</button>}
       <header className="src-header"><SchoolMark name={profile.schoolName || 'School'} url={profile.schoolLogoUrl} /><div><span className="src-eyebrow">STUDENT REPORT CARD</span><h2>{profile.schoolName || 'School'}</h2>{profile.schoolAddress && <p>{profile.schoolAddress}</p>}</div></header>
       <div className="src-exam-name"><span>Examination</span><strong>{result.examName}</strong></div>
       <dl className="src-identity"><div><dt>Student name</dt><dd>{profile.studentName || '—'}</dd></div><div><dt>Roll number</dt><dd>{profile.rollNumber || '—'}</dd></div><div><dt>Class / section</dt><dd>{[profile.className, profile.sectionName].filter(Boolean).join(' / ') || '—'}</dd></div><div><dt>Parent name</dt><dd>{parent?.name || '—'}</dd></div></dl>
@@ -69,7 +70,7 @@ export default function StudentReportCards({ results, gradeHistory, resultSubjec
         }) : <tr><td colSpan={4} className="src-no-subjects">Subject marks are not available for this published result.</td></tr>}
       </tbody><tfoot><tr><th scope="row">Overall total</th><td>{Number.isFinite(total) ? amount(total) : '—'}</td><td>{Number.isFinite(obtained) ? amount(obtained) : '—'}</td><td>{Number.isFinite(overall) ? percent(overall) : '—'}</td></tr></tfoot></table></div>
       <footer className="src-footer"><div><span>Result</span><strong className={isComplete ? String(result.resultStatus).toUpperCase() === 'PASS' ? 'src-pass' : 'src-fail' : ''}>{isComplete ? result.resultStatus || '—' : 'Pending'}</strong></div><div><span>Grade</span><strong>{isComplete ? result.grade || '—' : '—'}</strong></div><div><span>Percentage</span><strong>{Number.isFinite(overall) ? percent(overall) : '—'}</strong></div></footer>
-      <div className="src-actions"><button type="button" className="btn" onClick={() => window.print()}>Print report card</button></div>
+      <div className="src-actions"><button type="button" className="btn" onClick={() => window.print()}><StudentIcon name="print" />Print report card</button></div>
     </article>;
   })}</div>;
 }
