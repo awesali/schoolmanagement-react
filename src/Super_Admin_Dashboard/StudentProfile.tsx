@@ -1,3 +1,4 @@
+import AdminActionIcon from './AdminActionIcon';
 import React, { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { API_BASE_URL } from '../config';
@@ -152,7 +153,7 @@ export default function StudentProfile() {
       <nav className="staff-profile-tabs" aria-label="Student profile sections">{tabs.map(t => <button key={t.name} className={tab === t.name ? 'selected' : ''} aria-current={tab === t.name ? 'page' : undefined} onClick={() => setTab(t.name)}>{t.icon}{t.name}</button>)}</nav>
       <section className="staff-profile-content"><h2>{tab}</h2>
         {tab === 'Attendance' && <label>Month <input type="month" value={month} onChange={e => { if (/^\d{4}-\d{2}$/.test(e.target.value)) setMonth(e.target.value); }} /></label>}
-        {busy || receiptBusy ? <PageLoader /> : failed ? <button onClick={() => setRefresh(r => r + 1)}>Retry loading</button> : <>
+        {busy || receiptBusy ? <PageLoader /> : failed ? <button onClick={() => setRefresh(r => r + 1)}><AdminActionIcon action="refresh" />Retry loading</button> : <>
           {tab === 'Overview' && <dl className="student-profile-details">{[['Student ID', student.id], ['Roll Number', student.rollNumber], ['Date of Birth', displayDate(student.dob)], ['Gender', genderLabel(student.genderCode)], ['Academic Session', student.academicSession?.slice(0, 4)], ['Class', student.className], ['Section', student.sectionName], ['Parent', parentLink], ['Relationship', student.parentRelationship]].map(([label, value]) => <div key={String(label)}><dt>{label}</dt><dd>{value || '-'}</dd></div>)}</dl>}
           {tab === 'Attendance' && <><p>{(data.attendance || []).filter((a: Row) => a.status === 'Present').length} Present / {(data.attendance || []).filter((a: Row) => a.status === 'Absent').length} Absent / {(data.attendance || []).length} recorded days</p><Table headers={['Date', 'Status']} rows={(data.attendance || []).map((a: Row) => [displayDate(a.attendanceDate), a.status])} empty="No attendance recorded for this month." /></>}
           {tab === 'Fees & Payments' && <>
@@ -193,7 +194,7 @@ export default function StudentProfile() {
         onClose={() => setReceipt(null)}
       />}
     </>}
-    {!student && (busy ? <PageLoader /> : <p>{failed ? 'Unable to load profile.' : 'Student not found in this school.'} <button onClick={() => setRefresh(r => r + 1)}>Retry</button></p>)}
+    {!student && (busy ? <PageLoader /> : <p>{failed ? 'Unable to load profile.' : 'Student not found in this school.'} <button onClick={() => setRefresh(r => r + 1)}><AdminActionIcon action="refresh" />Retry</button></p>)}
   </main>;
 }
 

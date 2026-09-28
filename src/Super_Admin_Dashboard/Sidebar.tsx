@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './Sidebar.css';
 import { SchoolIcon } from './TeacherWorkspace';
+import { AssignmentIcon, ClipboardIcon, EmailIcon, EmployeesIcon, IdCardIcon, LeaveIcon, PaymentIcon, ProfileIcon, ReceiptIcon, SchoolIcon as AdminSchoolIcon, StudentsIcon, SubjectsIcon, TimeTableIcon, VehicleIcon } from '../components/Icons/Icons';
 import { PAGE_PERMISSIONS, usePermissions } from '../security/Permissions';
 import { SECURITY_UI_ENABLED } from '../security/features';
 import { profilePictureUrl } from './ProfilePictureInput';
@@ -66,6 +67,16 @@ const menuGroups = [
     items: [{ label: 'Academic Exam', children: ['Exam Management'] }],
   },
 ];
+
+const adminMenuIcons: Record<string, React.ComponentType<{ size?: number }>> = {
+  'Dashboard': AdminSchoolIcon, 'Academic Year': LeaveIcon, 'Student Promotion': StudentsIcon,
+  'School List': AdminSchoolIcon, 'Class List': TimeTableIcon, 'Staff List': EmployeesIcon,
+  'Role & Permissions': IdCardIcon, 'Student List': StudentsIcon, 'Student Services': AssignmentIcon,
+  'Student Messages': EmailIcon, 'Hall Tickets': IdCardIcon, 'Parent List': ProfileIcon,
+  'Transport Management': VehicleIcon, 'Subject List': SubjectsIcon, 'Fee Management': PaymentIcon,
+  'Salary Management': ReceiptIcon, 'Exam Management': ClipboardIcon,
+  'Student Attendance': StudentsIcon, 'Staff Attendance': EmployeesIcon,
+};
 
 const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, userRole, schoolName, schoolLogoUrl, attendanceType }) => {
   const { can } = usePermissions();
@@ -234,7 +245,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, 
       <nav className="sidebar-nav admin-sidebar-nav" aria-label="Admin navigation">
         {can('dashboard.dashboard', 'read') && (
           <button className={`nav-item ${activePage === 'Dashboard' ? 'active' : ''}`} aria-current={activePage === 'Dashboard' ? 'page' : undefined} onClick={() => onNavigate('Dashboard')}>
-            Dashboard
+            <AdminSchoolIcon size={19} />
+            <span>Dashboard</span>
           </button>
         )}
         {filteredMenuGroups.map(({ group, items }) => (
@@ -243,9 +255,11 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, 
             {items.flatMap(({ label, children }) => children.map((child) => {
               const active = isActiveChild(child, label);
               const name = child === 'Attendance' ? `${label === 'Students' ? 'Student' : 'Staff'} Attendance` : child;
+              const Icon = adminMenuIcons[name] || ClipboardIcon;
               return (
                 <button key={`${label}-${child}`} className={`nav-item ${active ? 'active' : ''}`} aria-current={active ? 'page' : undefined} onClick={() => handleAttendanceClick(child, label)}>
-                  {name}
+                  <Icon size={19} />
+                  <span>{name}</span>
                 </button>
               );
             }))}

@@ -1,3 +1,4 @@
+import AdminActionIcon from './AdminActionIcon';
 import React, { useEffect, useRef, useState } from 'react';
 import { API_BASE_URL } from '../config';
 import { CloseIcon } from '../components/Icons/Icons';
@@ -53,7 +54,7 @@ const ProfilePictureInput: React.FC<Props> = ({ id, currentUrl, file, onChange, 
           onChange(selected);
         }} />
       <small>JPG, PNG or WebP · Max 5 MB</small>
-      {file && !undoAsIcon && <button type="button" className="btn" onClick={undoChange}>Undo {label.toLowerCase()} change</button>}
+      {file && !undoAsIcon && <button type="button" className="btn" onClick={undoChange}><AdminActionIcon action="back" />Undo {label.toLowerCase()} change</button>}
       {error && <p role="alert" className="error-message">{error}</p>}
     </div>
   );

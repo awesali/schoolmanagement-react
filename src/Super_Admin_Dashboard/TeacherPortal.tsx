@@ -905,9 +905,13 @@ function Profile({ onNavigate, schoolName, schoolLogoUrl }: { onNavigate: Naviga
 export default function TeacherPortal({
   page,
   onNavigate,
+  schoolName,
+  schoolLogoUrl,
 }: {
   page: TeacherPortalPage;
   onNavigate: Navigate;
+  schoolName?: string;
+  schoolLogoUrl?: string | null;
 }) {
   if (page === "Syllabus Progress") return <SyllabusProgress date={localDate()} teacher />;
   if (page === "Homework & Assignments") return <Homework />;

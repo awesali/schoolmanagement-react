@@ -1,3 +1,4 @@
+import AdminActionIcon from './AdminActionIcon';
 import React, { useEffect, useState } from 'react';
 import { API_BASE_URL } from '../config';
 import { PageLoader } from '../components/Loader/Loader';
@@ -134,13 +135,13 @@ export default function StudentServicesManagement({ schoolId }: { schoolId: numb
         <div className="tsc-review">
           <label>Status<select value={responses[x.id]?.status || x.status} onChange={e => setResponses({ ...responses, [x.id]: { status: e.target.value, response: responses[x.id]?.response || x.response || '' } })}>{['Pending','Approved','Rejected','Resolved'].map(status => <option key={status}>{status}</option>)}</select></label>
           <label className="tsc-full">Response<textarea rows={2} value={responses[x.id]?.response ?? x.response ?? ''} onChange={e => setResponses({ ...responses, [x.id]: { status: responses[x.id]?.status || x.status, response: e.target.value } })}/></label>
-          <button type="button" className="btn btn-primary" disabled={saving || !responses[x.id]} onClick={() => void respond(x.id)}>Save response</button>
+          <button type="button" className="btn btn-primary" disabled={saving || !responses[x.id]} onClick={() => void respond(x.id)}><AdminActionIcon action="save" />Save response</button>
         </div>
       </article>) : !loading && <p className="tw-empty">No student requests.</p>}</section>}
     {tab !== 'Requests' && <>
-      <div className="tsc-actions"><h3>{tab}</h3><button type="button" className="btn btn-primary" onClick={add}>Add {tab === 'Achievements' ? 'achievement' : tab === 'Events' ? 'event' : 'announcement'}</button></div>
+      <div className="tsc-actions"><h3>{tab}</h3><button type="button" className="btn btn-primary" onClick={add}><AdminActionIcon action="add" />Add {tab === 'Achievements' ? 'achievement' : tab === 'Events' ? 'event' : 'announcement'}</button></div>
       {formOpen && <form className="tw-panel tsc-form" onSubmit={save}>
-        <div className="tsc-form-head"><h3>{editingId === null ? 'Add' : 'Edit'} {tab.toLowerCase()}</h3><button type="button" className="btn" onClick={() => setFormOpen(false)}>Cancel</button></div>
+        <div className="tsc-form-head"><h3>{editingId === null ? 'Add' : 'Edit'} {tab.toLowerCase()}</h3><button type="button" className="btn" onClick={() => setFormOpen(false)}><AdminActionIcon action="close" />Cancel</button></div>
         {tab === 'Achievements' && <label>Student<select required value={form.studentId} onChange={e => setForm({ ...form, studentId: e.target.value })}><option value="">Choose student</option>{students.map(x => <option value={x.id || x.studentId} key={x.id || x.studentId}>{x.studentName || x.name}</option>)}</select></label>}
         <label className="tsc-full">Title<input required maxLength={200} value={form.title} onChange={e => setForm({ ...form, title: e.target.value })}/></label>
         {tab === 'Announcements' ? <>
@@ -152,11 +153,11 @@ export default function StudentServicesManagement({ schoolId }: { schoolId: numb
           <label className="tsc-full">Description<textarea rows={3} maxLength={1000} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}/></label>
           <label>{tab === 'Events' ? 'Event date' : 'Award date'}<input required type="date" value={tab === 'Events' ? form.eventDate : form.awardedAt} onChange={e => setForm({ ...form, [tab === 'Events' ? 'eventDate' : 'awardedAt']: e.target.value })}/></label>
         </>}
-        <button className="btn btn-primary" disabled={saving}>{saving ? 'Saving...' : editingId === null ? 'Save' : 'Save changes'}</button>
+        <button className="btn btn-primary" disabled={saving}><AdminActionIcon action="save" />{saving ? 'Saving...' : editingId === null ? 'Save' : 'Save changes'}</button>
       </form>}
       <section className="tsc-list" aria-label={`${tab} list`}>{rows.length ? rows.map(row =>
         <article className="tw-panel tsc-record" key={row.id}>
-          <div className="tsc-record-head"><h4>{row.title}</h4><button type="button" className="btn" onClick={() => edit(row)}>Edit</button></div>
+          <div className="tsc-record-head"><h4>{row.title}</h4><button type="button" className="btn" onClick={() => edit(row)}><AdminActionIcon action="edit" />Edit</button></div>
           <small>{listMeta(row)}</small>
           {listDetail(row) && <p>{listDetail(row)}</p>}
         </article>) : !loading && <p className="tw-empty">No {tab.toLowerCase()} added yet.</p>}</section>

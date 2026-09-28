@@ -1,5 +1,5 @@
+import StudentIcon from './StudentIcon';
 import React, { useState } from 'react';
-import { PreviewIcon } from '../components/Icons/Icons';
 import '../Super_Admin_Dashboard/TimeTable.css';
 import './StudentExamTimetable.css';
 
@@ -22,9 +22,9 @@ export default function StudentExamTimetable({ papers, initialExam = null }: { p
   if (!papers.length) return <div className="sp-empty">No published exam schedule yet.</div>;
   const exams = Array.from(new Set(papers.map(paper => paper.examName)));
   if (!openExam || !exams.includes(openExam)) return <div className="student-exam-choices">{exams.map(examName => <button type="button" className="student-exam-choice" aria-label={examName + ' View timetable'} key={examName} onClick={() => setOpenExam(examName)}>
-    <span><small>EXAM TIMETABLE</small><strong>{examName}</strong></span><span className="sp-view-eye" title="View timetable"><PreviewIcon size={21}/></span>
+    <span><small>EXAM TIMETABLE</small><strong>{examName}</strong></span><span className="sp-view-eye" title="View timetable"><StudentIcon name="preview" size={21} /></span>
   </button>)}</div>;
-  return <div className="student-exam-timetables"><button type="button" className="student-exam-back" onClick={() => setOpenExam(null)}>← Back to exam timetables</button>{exams.filter(name => name === openExam).map(examName => {
+  return <div className="student-exam-timetables"><button type="button" className="student-exam-back" onClick={() => setOpenExam(null)}><StudentIcon name="back" />Back to exam timetables</button>{exams.filter(name => name === openExam).map(examName => {
     const examPapers = papers.filter(paper => paper.examName === examName && dateKey(paper.examDate));
     const dates = Array.from(new Set(examPapers.map(paper => dateKey(paper.examDate)))).sort();
     const slots = Array.from(new Map(examPapers.map(paper => [slotKey(paper), {

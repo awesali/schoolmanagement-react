@@ -1,3 +1,4 @@
+import AdminActionIcon from './AdminActionIcon';
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import { useToastResultState } from '../components/Toast/Toast';
@@ -224,7 +225,7 @@ const CreateExamSchedule: React.FC<CreateExamScheduleProps> = ({ selectedSchoolI
             <LoadingButton className="btn btn-primary" onClick={handleSubmit} loading={saving} loadingText="Saving...">
               Save Schedule
             </LoadingButton>
-            <button className="btn" style={{ border: '1px solid #e2e8f0' }} onClick={handleReset}>Reset</button>
+            <button className="btn" style={{ border: '1px solid #e2e8f0' }} onClick={handleReset}><AdminActionIcon action="reset" />Reset</button>
           </div>
         </>
       )}

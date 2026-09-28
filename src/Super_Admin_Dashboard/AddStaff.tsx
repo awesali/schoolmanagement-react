@@ -1,3 +1,4 @@
+import AdminActionIcon from './AdminActionIcon';
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import { importDateError, formatImportDate } from '../utils/importDate';
@@ -311,8 +312,7 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
           <div className="documents-section">
             <div className="documents-header">
               <label>Documents</label>
-              <button type="button" className="btn-add-doc" onClick={handleAddDocument}>
-                + Add Document
+              <button type="button" className="btn-add-doc" onClick={handleAddDocument}><AdminActionIcon action="add" />Add Document
               </button>
             </div>
             {documents.map((doc, index) => (
@@ -339,9 +339,7 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
                     {doc.file ? doc.file.name : 'Upload'}
                   </label>
                 </div>
-                <button type="button" className="btn-remove" onClick={() => handleRemoveDocument(index)}>
-                  ✕
-                </button>
+                <button type="button" className="btn-remove" onClick={() => handleRemoveDocument(index)} aria-label="Remove document"><AdminActionIcon action="delete" /></button>
               </div>
             ))}
           </div>

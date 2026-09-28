@@ -1,3 +1,4 @@
+import AdminActionIcon from './AdminActionIcon';
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CreateSchool from './CreateSchool';
@@ -84,7 +85,7 @@ const Dashboard: React.FC = () => {
   const [isCreateSchoolOpen, setIsCreateSchoolOpen] = useState(false);
   const [activePage, setActivePage] = useState(() => {
     const page = new URLSearchParams(window.location.search).get('page');
-    return page && ['Staff List', 'Student List', 'Parent List'].includes(page) ? page : 'Dashboard';
+    return page && (PAGE_PERMISSIONS[page] || page === 'Student Messages' || page === 'Attendance') ? page : 'Dashboard';
   });
   const [parentToOpen, setParentToOpen] = useState<number | null>(() => {
     const id = Number(new URLSearchParams(window.location.search).get('parentId'));
@@ -114,7 +115,10 @@ const Dashboard: React.FC = () => {
   });
   const [teacherAttendanceDirty, setTeacherAttendanceDirty] = useState(false);
   const [teacherSection, setTeacherSection] = useState<number | undefined>();
-  const [attendanceType, setAttendanceType] = useState<'student' | 'staff' | null>(null);
+  const [attendanceType, setAttendanceType] = useState<'student' | 'staff' | null>(() => {
+    const type = new URLSearchParams(window.location.search).get('attendanceType');
+    return type === 'student' || type === 'staff' ? type : null;
+  });
   const [showAttendancePopup, setShowAttendancePopup] = useState(false);
   const [publishedResults, setPublishedResults] = useState<DashboardExam[]>([]);
   const [upcomingExamEvents, setUpcomingExamEvents] = useState<DashboardExamEvent[]>([]);
@@ -391,7 +395,7 @@ const Dashboard: React.FC = () => {
             )}
             {userRole === '2' ? (
               <button className="btn btn-primary" title="Open your assigned classes and daily actions" onClick={() => handleNavigate('My Classes')}>
-                + Quick action
+                <AdminActionIcon action="add" />Quick action
               </button>
             ) : (
               <>
@@ -792,7 +796,7 @@ const Dashboard: React.FC = () => {
                 handleNavigate('Attendance', 'staff');
               }}
             >
-              Mark Attendance Now
+              <AdminActionIcon action="present" />Mark Attendance Now
             </button>
             <button
               className="btn"
@@ -804,7 +808,7 @@ const Dashboard: React.FC = () => {
               }}
               onClick={() => setShowAttendancePopup(false)}
             >
-              Remind Me Later
+              <AdminActionIcon action="close" />Remind Me Later
             </button>
           </div>
         </div>

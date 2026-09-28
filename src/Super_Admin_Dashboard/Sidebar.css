@@ -212,3 +212,5 @@
 .admin-sidebar-nav .nav-item.active,
 .admin-sidebar-nav .nav-item.active:hover { background: #dcf1e8; color: #143e3c; font-weight: 600; }
 .admin-sidebar-nav .nav-item:focus-visible { outline: 3px solid #389894; outline-offset: 2px; }
+.admin-sidebar-nav .nav-item svg { width: 19px; height: 19px; flex: 0 0 19px; }
+.admin-sidebar-nav .nav-item span { min-width: 0; }

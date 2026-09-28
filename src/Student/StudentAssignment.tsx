@@ -1,4 +1,5 @@
-﻿import React, { useState } from 'react';
+import StudentIcon from './StudentIcon';
+import React, { useState } from 'react';
 import { API_BASE_URL } from '../config';
 import { LoadingButton } from '../components/Loader/Loader';
 
@@ -45,14 +46,14 @@ export default function StudentAssignment({ assignment, submission, onComplete, 
   };
   return <div className="sp-modal-backdrop" role="presentation" onMouseDown={onClose}>
     <section className="sp-modal" role="dialog" aria-modal="true" aria-labelledby="assignment-title" onMouseDown={e => e.stopPropagation()}>
-      <button className="sp-modal-close" onClick={onClose} aria-label="Close">×</button>
+      <button className="sp-modal-close" onClick={onClose} aria-label="Close"><StudentIcon name="close" size={20} /></button>
       <span className="sp-tag">{assignment.subjectName}</span>
       <h2 id="assignment-title">{assignment.title}</h2>
       <p>{assignment.description}</p>
       <div className="sp-assignment-meta"><span>Assigned {new Date(assignment.assignedDate).toLocaleDateString()}</span><span>Due {new Date(assignment.dueDate).toLocaleString()}</span>{assignment.totalMarks != null && <span>{assignment.totalMarks} marks</span>}</div>
-      {assignment.resourceUrl && /^https?:\/\//i.test(assignment.resourceUrl) && <a href={assignment.resourceUrl} target="_blank" rel="noreferrer">Open teacher's resource ↗</a>}
-      {submission && <div className="sp-submission-status"><strong>{submission.status}</strong><span>Submitted {new Date(submission.submittedAt).toLocaleString()}</span>{submission.marks != null && <span>Marks: {submission.marks}</span>}{submission.teacherFeedback && <p>Teacher feedback: {submission.teacherFeedback}</p>}{submission.hasFile && <button className="sp-text-button" onClick={() => void download()}>Download my file</button>}</div>}
-      {canSubmit && <form onSubmit={submit} className="sp-submit-form"><label>Text answer<textarea rows={5} maxLength={4000} value={answer} onChange={e => setAnswer(e.target.value)} placeholder="Write your answer or add a note about the attached work"/></label><label>Upload PDF, Word or image<input type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp" onChange={e => setFile(e.target.files?.[0] || null)}/></label>{error && <div className="sp-error" role="alert">{error}</div>}<LoadingButton className="btn btn-primary" loading={saving} loadingText="Submitting assignment…">Submit assignment</LoadingButton></form>}
+      {assignment.resourceUrl && /^https?:\/\//i.test(assignment.resourceUrl) && <a href={assignment.resourceUrl} target="_blank" rel="noreferrer">Open teacher's resource <StudentIcon name="external" /></a>}
+      {submission && <div className="sp-submission-status"><strong>{submission.status}</strong><span>Submitted {new Date(submission.submittedAt).toLocaleString()}</span>{submission.marks != null && <span>Marks: {submission.marks}</span>}{submission.teacherFeedback && <p>Teacher feedback: {submission.teacherFeedback}</p>}{submission.hasFile && <button className="sp-text-button" onClick={() => void download()}><StudentIcon name="download" />Download my file</button>}</div>}
+      {canSubmit && <form onSubmit={submit} className="sp-submit-form"><label>Text answer<textarea rows={5} maxLength={4000} value={answer} onChange={e => setAnswer(e.target.value)} placeholder="Write your answer or add a note about the attached work"/></label><label>Upload PDF, Word or image<input type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp" onChange={e => setFile(e.target.files?.[0] || null)}/></label>{error && <div className="sp-error" role="alert">{error}</div>}<LoadingButton className="btn btn-primary" loading={saving} loadingText="Submitting assignment…"><StudentIcon name="send" />Submit assignment</LoadingButton></form>}
       {!canSubmit && error && <div className="sp-error">{error}</div>}
     </section>
   </div>;

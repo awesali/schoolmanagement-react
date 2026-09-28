@@ -1,3 +1,4 @@
+import AdminActionIcon from './AdminActionIcon';
 import React, { useCallback, useEffect, useState } from 'react';
 import { API_BASE_URL } from '../config';
 import { PageLoader } from '../components/Loader/Loader';
@@ -74,11 +75,11 @@ export default function StudentMessageInbox() {
         </button>) : <p className="smi-empty">No student conversations yet.</p>}
       </nav>
       <div className="smi-thread">{selectedStudentId === null ? <p className="smi-empty">Choose a student to open their conversation.</p> : <>
-        <header><h3>{selected?.studentName || 'Student'}</h3><button type="button" onClick={() => { setSelectedStudentId(null); setMessages([]); }}>Close</button></header>
+        <header><h3>{selected?.studentName || 'Student'}</h3><button type="button" onClick={() => { setSelectedStudentId(null); setMessages([]); }}><AdminActionIcon action="close" />Close</button></header>
         <div className="smi-messages" aria-live="polite">{messages.map(message => <div className={'smi-bubble' + (message.fromStudent ? ' incoming' : ' outgoing')} key={message.id}>
           <p>{message.body}</p><small>{when(message.sentAt)}{message.fromStudent ? '' : message.readAt ? ' · Read' : ' · Sent'}</small>
         </div>)}</div>
-        <form className="smi-compose" onSubmit={event => void send(event)}><textarea aria-label="Reply to student" rows={2} maxLength={2000} placeholder="Write a reply" value={draft} onChange={event => setDraft(event.target.value)} /><button className="btn btn-primary" disabled={saving || !draft.trim()}>{saving ? 'Sending...' : 'Send'}</button></form>
+        <form className="smi-compose" onSubmit={event => void send(event)}><textarea aria-label="Reply to student" rows={2} maxLength={2000} placeholder="Write a reply" value={draft} onChange={event => setDraft(event.target.value)} /><button className="btn btn-primary" disabled={saving || !draft.trim()}><AdminActionIcon action="send" />{saving ? 'Sending...' : 'Send'}</button></form>
       </>}</div>
     </div>}
   </section>;

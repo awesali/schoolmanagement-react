@@ -1,3 +1,4 @@
+import AdminActionIcon from './AdminActionIcon';
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import { useToast, useToastMessageState } from '../components/Toast/Toast';
@@ -229,8 +230,7 @@ const AddClass: React.FC<AddClassProps> = ({ isOpen, onClose, schoolId, onSucces
         <div className="documents-section">
           <div className="documents-header">
             <label>Sections</label>
-            <button type="button" className="btn-add-doc" onClick={handleAddSection}>
-              + Add Section
+            <button type="button" className="btn-add-doc" onClick={handleAddSection}><AdminActionIcon action="add" />Add Section
             </button>
           </div>
           {sections.map((section, index) => (
@@ -261,9 +261,7 @@ const AddClass: React.FC<AddClassProps> = ({ isOpen, onClose, schoolId, onSucces
                   type="button" 
                   className="btn-remove" 
                   onClick={() => handleRemoveSection(index)}
-                >
-                  ✕
-                </button>
+                 aria-label="Remove section"><AdminActionIcon action="delete" /></button>
               )}
             </div>
           ))}

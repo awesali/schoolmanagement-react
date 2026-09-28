@@ -29,3 +29,8 @@
 .staff-profile-meta { display: flex; flex-wrap: wrap; gap: 12px 20px; margin: 10px 0; }
 .staff-profile-meta span { min-width: 0; overflow-wrap: anywhere; }
 .staff-profile-meta svg { color: #64748b; }
+
+.staff-profile-back { width: max-content; max-width: 100%; padding: 10px 15px; border: 1px solid #a9d9d6; border-radius: 9px; background: #e8f5f3; color: #185966; font-size: 13px; font-weight: 700; text-decoration: none; box-shadow: 0 2px 6px rgba(16, 46, 53, .06); transition: background .2s, border-color .2s, transform .2s; }
+.staff-profile-back:hover { background: #d5eeeb; border-color: #67a89c; transform: translateX(-2px); }
+.staff-profile-back:focus-visible { outline: 3px solid #22a7b8; outline-offset: 2px; }
+.staff-profile-back svg { width: 18px; height: 18px; flex: none; }

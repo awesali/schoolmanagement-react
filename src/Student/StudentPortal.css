@@ -1,4 +1,4 @@
-﻿.sp-layout{--sp-bg:var(--background);--sp-surface:var(--surface);--sp-text:var(--text-primary);--sp-muted:var(--text-secondary);--sp-border:var(--border);display:flex;min-height:100vh;background:var(--sp-bg);color:var(--sp-text)}
+.sp-layout{--sp-bg:var(--background);--sp-surface:var(--surface);--sp-text:var(--text-primary);--sp-muted:var(--text-secondary);--sp-border:var(--border);display:flex;min-height:100vh;background:var(--sp-bg);color:var(--sp-text)}
 .sp-layout button,.sp-layout input{font:inherit}.sp-layout button{cursor:pointer}.sp-layout button:focus-visible,.sp-layout input:focus-visible,.sp-layout a:focus-visible{outline:3px solid var(--primary-color);outline-offset:2px}
 .sp-side{width:240px;flex:0 0 240px;background:#102e35;color:#fff;display:flex;flex-direction:column;min-height:100vh;position:sticky;top:0;height:100vh;overflow-y:auto;z-index:20}
 .sp-brand{display:flex;align-items:center;gap:11px;padding:23px 18px;border-bottom:1px solid #ffffff1c;min-height:84px}.sp-brand-mark{width:38px;height:38px;border-radius:50%;background:#e8f5f3;color:#16676b;display:grid;place-items:center;font-weight:800;font-size:20px;flex:none}.sp-brand strong{display:block;font-size:14px;line-height:1.2}.sp-brand small{display:block;margin-top:5px;color:#a4bcc1;font-size:11px}
@@ -147,4 +147,16 @@
 .sp-now span { color: #d7eded; }
 .sp-layout select:focus-visible, .sp-layout textarea:focus-visible { outline: 3px solid #22a7b8; outline-offset: 2px; }
 .sp-dark .sp-modal-close:hover, .sp-dark .sp-profile-dropdown button:hover, .sp-dark .sp-profile-dropdown button:focus-visible { background: #20424a; color: #fff; }
-.sp-dark .sp-bottom button.active { background: #20424a; color: #d7eded; }
+.sp-dark .sp-bottom button.active { background: #20424a; color: #d7eded; }/* Consistent action icons across the student portal and its pages. */
+.sp-action-icon { display: inline-block; flex: none; vertical-align: -3px; margin-right: 6px; }
+.sp-nav-group button { display: flex; align-items: center; gap: 10px; }
+.sp-nav-group button .sp-action-icon, .sp-bottom button .sp-action-icon { margin-right: 0; }
+.sp-bottom button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
+.sp-filter button, .student-exam-tabs button { display: inline-flex; align-items: center; gap: 6px; }
+.sp-filter button .sp-action-icon, .student-exam-tabs button .sp-action-icon { margin-right: 0; }
+.sp-view-action .sp-action-icon, .sp-modal-close .sp-action-icon, .sp-menu-button .sp-action-icon, .sp-notification-delete .sp-action-icon, .sp-document-view .sp-action-icon { margin-right: 0; }
+.sp-menu-button { align-items: center; justify-content: center; }
+.sp-material-save .sp-action-icon, .sp-record-foot button .sp-action-icon, .sp-text-button .sp-action-icon { vertical-align: -3px; }
+@media print { .sp-action-icon { display: none !important; } }
+
+.sp-view-eye .sp-action-icon { margin-right: 0; }

@@ -1,3 +1,4 @@
+import StudentIcon from './StudentIcon';
 import React, { useState } from 'react';
 import { API_BASE_URL } from '../config';
 
@@ -48,7 +49,7 @@ export default function StudentChangePassword() {
         <input id="student-confirm-password" type="password" autoComplete="new-password" required minLength={8} maxLength={128} value={passwords.confirmPassword} onChange={event => setPasswords(value => ({ ...value, confirmPassword: event.target.value }))} />
         {error && <p className="sp-password-error" role="alert">{error}</p>}
         {success && <p className="sp-password-success" role="status">{success}</p>}
-        <button type="submit" className="btn btn-primary" disabled={busy}>{busy ? 'Changing password...' : 'Change Password'}</button>
+        <button type="submit" className="btn btn-primary" disabled={busy}><StudentIcon name="check" />{busy ? 'Changing password...' : 'Change Password'}</button>
       </form>
     </section>
   </div>;

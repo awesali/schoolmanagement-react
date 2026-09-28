@@ -1,7 +1,8 @@
-﻿import React, { useCallback, useEffect, useRef, useState } from 'react';
+import StudentIcon from './StudentIcon';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../config';
-import { BellIcon, LogoutIcon, PreviewIcon, ProfileIcon, ResetIcon } from '../components/Icons/Icons';
+import { BellIcon, LogoutIcon, ProfileIcon, ResetIcon } from '../components/Icons/Icons';
 import { profilePictureUrl } from '../Super_Admin_Dashboard/ProfilePictureInput';
 import { PageLoader } from '../components/Loader/Loader';
 import StudentAssignment from './StudentAssignment';
@@ -50,6 +51,7 @@ const buildNotifications = (data: Overview): NotificationItem[] => {
   return items.sort((a, b) => Date.parse(b.at) - Date.parse(a.at)).slice(0, 100);
 };
 type Page = 'Today' | 'Timetable' | 'Class Diary' | 'Homework' | 'Study Materials' | 'Announcements' | 'Attendance' | 'Exams' | 'Results' | 'Events' | 'Teachers' | 'Messages' | 'Requests' | 'Achievements' | 'Fees' | 'Transport' | 'Documents' | 'My Profile';
+const pageIcons: Record<Page, React.ComponentProps<typeof StudentIcon>['name']> = {"Today":"home","Timetable":"timetable","Class Diary":"book","Homework":"assignment","Study Materials":"document","Attendance":"check","Exams":"calendar","Results":"clipboard","Events":"calendar","Announcements":"bell","Teachers":"teacher","Messages":"chat","Requests":"send","Achievements":"trophy","Fees":"payment","Transport":"vehicle","Documents":"document","My Profile":"profile"};
 const groups: { title: string; items: Page[] }[] = [
   { title: 'Daily', items: ['Today', 'Timetable', 'Class Diary', 'Homework', 'Study Materials'] },
   { title: 'Academics', items: ['Attendance', 'Exams', 'Results', 'Events'] },
@@ -197,7 +199,7 @@ export default function StudentPortal() {
   const openRecentResult = (result: Row, index: number) => { switchPage('Results'); setSelectedRecentResult(String(result.examId ?? result.examName + '-' + index)); };
   const panel = (title: string, children: React.ReactNode, action?: React.ReactNode) => <section className="sp-panel"><div className="sp-panel-title"><h2>{title}</h2>{action}</div>{children}</section>;
   const empty = (message: string) => <div className="sp-empty">{message}</div>;
-  const link = (url: string, label = 'Open resource ?') => safeLink(url) ? <a href={url} target="_blank" rel="noreferrer">{label}</a> : null;
+  const link = (url: string, label = 'Open resource ?') => safeLink(url) ? <a href={url} target="_blank" rel="noreferrer"><StudentIcon name="external" />{label}</a> : null;
   const documentUrl = (value: unknown) => {
     if (typeof value !== 'string') return null;
     const url = value.trim();
@@ -205,7 +207,7 @@ export default function StudentPortal() {
     return safeLink(url) ? url : null;
   };
   if (loading && !data) return <PageLoader label="Loading your school day·" />;
-  if (error && !data) return <div className="sp-retry"><div className="sp-retry-card"><h1>Could not open your student portal</h1><p>{error}</p><div><button className="btn btn-primary" onClick={() => void load()}>Try again</button><button className="btn" onClick={logout}>Back to login</button></div></div></div>;
+  if (error && !data) return <div className="sp-retry"><div className="sp-retry-card"><h1>Could not open your student portal</h1><p>{error}</p><div><button className="btn btn-primary" onClick={() => void load()}><StudentIcon name="retry" />Try again</button><button className="btn" onClick={logout}><StudentIcon name="back" />Back to login</button></div></div></div>;
   if (!data) return null;
 
   const now = new Date();
@@ -252,7 +254,7 @@ export default function StudentPortal() {
     if (filter === 'Past due') return dateOnly(assignment.dueDate) < currentDate;
     return false;
   });
-  const homeworkCard = (x: Row) => <article className="sp-record" key={x.id}><div className="sp-record-head"><span className="sp-tag">{x.subjectName}</span><span>{shortDate(x.dueDate)}</span></div><h3>{x.title}</h3><p>{x.description}</p><div className="sp-record-foot"><span>Due {shortDate(x.dueDate)}</span>{x.totalMarks != null && <span>{x.totalMarks} marks</span>}{link(x.resourceUrl || '')}<button onClick={() => setSelectedHomework(x)}>{(data.submissions || []).find(y => y.assignmentId === x.id)?.status || "Open assignment"} ?</button></div></article>;
+  const homeworkCard = (x: Row) => <article className="sp-record" key={x.id}><div className="sp-record-head"><span className="sp-tag">{x.subjectName}</span><span>{shortDate(x.dueDate)}</span></div><h3>{x.title}</h3><p>{x.description}</p><div className="sp-record-foot"><span>Due {shortDate(x.dueDate)}</span>{x.totalMarks != null && <span>{x.totalMarks} marks</span>}{link(x.resourceUrl || '')}<button onClick={() => setSelectedHomework(x)}><StudentIcon name="assignment" />{(data.submissions || []).find(y => y.assignmentId === x.id)?.status || "Open assignment"}</button></div></article>;
   const allNotifications = buildNotifications(data);
   const notifications = allNotifications.filter(item => notificationState[item.key] !== 'deleted');
   const unreadCount = notifications.filter(item => notificationState[item.key] !== 'read').length;
@@ -270,7 +272,7 @@ export default function StudentPortal() {
     if (item.kind === 'exam') { setSelectedExamTab('timetable'); setSelectedExamTarget(item.target || null); }
     if (item.kind === 'homework' && item.target) setSelectedHomework(data.homework.find(row => String(row.id) === item.target) || null);
   };
-  const nav = <nav aria-label="Student navigation">{groups.map(group => <div className="sp-nav-group" key={group.title}><small>{group.title}</small>{group.items.map(item => <button type="button" className={page === item ? 'active' : ''} onClick={() => switchPage(item)} key={item}>{item}</button>)}</div>)}</nav>;
+  const nav = <nav aria-label="Student navigation">{groups.map(group => <div className="sp-nav-group" key={group.title}><small>{group.title}</small>{group.items.map(item => <button type="button" className={page === item ? 'active' : ''} onClick={() => switchPage(item)} key={item}><StudentIcon name={pageIcons[item]} />{item}</button>)}</div>)}</nav>;
   const sectionHeading = (title: string, detail: string) => <div className="sp-section-intro"><h2>{title}</h2><p>{detail}</p></div>;
 
   return <div className={"sp-layout" + (sidebarCollapsed ? " sp-sidebar-collapsed" : "")}>
@@ -281,7 +283,7 @@ export default function StudentPortal() {
           <button type="button" className="sp-menu-button" aria-label="Toggle navigation" aria-expanded={mobileMenu || !sidebarCollapsed} onClick={() => {
             if (window.innerWidth <= 920) setMobileMenu(open => !open);
             else setSidebarCollapsed(collapsed => !collapsed);
-          }}>☰</button>
+          }}><StudentIcon name="menu" size={20} /></button>
           <h1>{page === 'Today' ? `Good ${now.getHours() < 12 ? 'morning' : now.getHours() < 17 ? 'afternoon' : 'evening'}, ${String(data.profile.studentName || 'Student').split(' ')[0]}` : page}</h1>
         </div>
         <div className="sp-header-actions">
@@ -294,7 +296,7 @@ export default function StudentPortal() {
               <div className="sp-notification-heading"><strong>Notifications</strong><span>{unreadCount} unread</span></div>
               <div className="sp-notification-list">{notifications.length ? notifications.map(item => <div className={'sp-notification-item' + (notificationState[item.key] !== 'read' ? ' unread' : '')} key={item.key}>
                 <button type="button" className="sp-notification-open" onClick={() => openNotification(item)}><span className="sp-notification-kind">{item.kind}</span><strong>{item.title}</strong><small>{item.detail}</small><time>{shortDate(item.at)}</time></button>
-                <button type="button" className="sp-notification-delete" aria-label={'Delete notification: ' + item.title} title="Delete notification" onClick={() => updateNotification(item.key, 'deleted')}>×</button>
+                <button type="button" className="sp-notification-delete" aria-label={'Delete notification: ' + item.title} title="Delete notification" onClick={() => updateNotification(item.key, 'deleted')}><StudentIcon name="remove" size={15} /></button>
               </div>) : <p className="sp-notification-empty">No notifications.</p>}</div>
             </div>}
           </div>          <button type="button" className="sp-refresh-button" aria-label={loading ? 'Refreshing' : 'Refresh'} title={loading ? 'Refreshing' : 'Refresh'} onClick={() => void load()} disabled={loading}><ResetIcon size={22} className={loading ? 'sp-refresh-spinning' : ''} /></button>
@@ -310,27 +312,27 @@ export default function StudentPortal() {
         </div>
       </header>
 
-    {error && <div className="sp-error" role="alert">{error}<button onClick={() => void load()}>Retry</button></div>}
+    {error && <div className="sp-error" role="alert">{error}<button onClick={() => void load()}><StudentIcon name="retry" />Retry</button></div>}
     {page === 'Today' && <>
       {(currentClass || nextClass) && <div className="sp-now"><div><small>{currentClass ? 'NOW' : 'NEXT'}</small><strong>{(currentClass || nextClass)?.subjectName}</strong><span>{shortTime((currentClass || nextClass)?.startTime)}·{shortTime((currentClass || nextClass)?.endTime)}</span></div>{currentClass && nextClass && <div><small>NEXT</small><strong>{nextClass.subjectName}</strong><span>{shortTime(nextClass.startTime)}</span></div>}</div>}
       <div className="sp-stats sp-stats-today">{[['Classes today', todayClasses.filter(x => !x.isBreak).length], ['Homework upcoming', due.length], ['Attendance', attendancePercent == null ? '·' : `${attendancePercent}%`], ['Upcoming exams', upcomingExamCount], ['New announcements', (data.announcements || []).filter(x => dateOnly(x.createdAt) === currentDate).length], ['Pending assignments', due.length + late.length]].map(([label, value]) => <div key={String(label)}><small>{label}</small><strong>{value}</strong></div>)}</div>
       <div className="sp-grid">
-        {panel("Today's classes", todayClasses.length ? todayClasses.map(x => <div className="sp-line" key={x.periodNumber}><span className="sp-line-date">{shortTime(x.startTime)}<br/>{shortTime(x.endTime)}</span><div><strong>{x.subjectName}</strong><small>Period {x.periodNumber}</small></div></div>) : empty('No classes scheduled today.'), <button className="sp-text-button" onClick={() => switchPage('Timetable')}>Full timetable</button>)}
-        {panel('Things to do', due.length ? due.slice(0, 4).map(x => <div className="sp-line" key={x.id}><span className="sp-dot"/><div><strong>{x.title}</strong><small>{x.subjectName} · Due {shortDate(x.dueDate)}</small></div></div>) : empty('No upcoming homework.'), <button type="button" className="sp-view-action" aria-label="View homework" title="View homework" onClick={() => switchPage('Homework')}><PreviewIcon size={20}/></button>)}
+        {panel("Today's classes", todayClasses.length ? todayClasses.map(x => <div className="sp-line" key={x.periodNumber}><span className="sp-line-date">{shortTime(x.startTime)}<br/>{shortTime(x.endTime)}</span><div><strong>{x.subjectName}</strong><small>Period {x.periodNumber}</small></div></div>) : empty('No classes scheduled today.'), <button className="sp-text-button" onClick={() => switchPage('Timetable')}><StudentIcon name="timetable" />Full timetable</button>)}
+        {panel('Things to do', due.length ? due.slice(0, 4).map(x => <div className="sp-line" key={x.id}><span className="sp-dot"/><div><strong>{x.title}</strong><small>{x.subjectName} · Due {shortDate(x.dueDate)}</small></div></div>) : empty('No upcoming homework.'), <button type="button" className="sp-view-action" aria-label="View homework" title="View homework" onClick={() => switchPage('Homework')}><StudentIcon name="preview" size={20} /></button>)}
         {panel('Upcoming', upcomingExams.length ? upcomingExams.slice(0, 4).map(x => <div className="sp-line" key={x.id}><span className="sp-line-date">{shortDate(x.examDate)}</span><div><strong>{x.subjectName}</strong><small>{x.examName} · {shortTime(x.startTime)}</small></div></div>) : empty('No upcoming exams.'))}
-        {panel('Recent results', data.results.length ? data.results.slice(0, 4).map((x, i) => <div className="sp-line" key={x.examId ?? i}><div><strong>{x.examName}</strong></div><button type="button" className="sp-view-action" aria-label={'View result: ' + x.examName} title="View result" onClick={() => openRecentResult(x, i)}><PreviewIcon size={20}/></button></div>) : empty('No published results.'))}
+        {panel('Recent results', data.results.length ? data.results.slice(0, 4).map((x, i) => <div className="sp-line" key={x.examId ?? i}><div><strong>{x.examName}</strong></div><button type="button" className="sp-view-action" aria-label={'View result: ' + x.examName} title="View result" onClick={() => openRecentResult(x, i)}><StudentIcon name="preview" size={20} /></button></div>) : empty('No published results.'))}
       </div>
-      {late.length > 0 && <div className="sp-notice"><strong>{late.length} past-due assignments</strong><span>Ask your teacher about submission options.</span><button type="button" className="sp-view-action" aria-label="View assignments" title="View assignments" onClick={() => switchPage('Homework')}><PreviewIcon size={20}/></button></div>}
+      {late.length > 0 && <div className="sp-notice"><strong>{late.length} past-due assignments</strong><span>Ask your teacher about submission options.</span><button type="button" className="sp-view-action" aria-label="View assignments" title="View assignments" onClick={() => switchPage('Homework')}><StudentIcon name="preview" size={20} /></button></div>}
     </>}
     {page === 'Class Diary' && <>{sectionHeading('Class diary', 'What your teachers taught and assigned each day.')}{(data.diary || []).length ? (data.diary || []).map(x => panel(shortDate(x.entryDate) + ' · ' + x.subjectName, <><strong>{x.topic}</strong>{x.pages && <p>Pages: {x.pages}</p>}{x.homework && <p>Homework: {x.homework}</p>}<small>Teacher: {x.teacherName}</small></>)) : empty('No diary entries published yet.')}</>}
     {page === 'Announcements' && <>{sectionHeading('Announcements', 'Notices published by your school and teachers.')}{(data.announcements || []).length ? (data.announcements || []).map(x => panel(x.title, <><small>{shortDate(x.createdAt)}{x.isPinned ? ' · Pinned' : ''}</small><p className="sp-announcement-body">{x.body}</p></>)) : empty('No announcements yet.')}</>}
     {page === 'Timetable' && <>{sectionHeading('Weekly timetable', `${data.profile.className} ${data.profile.sectionName} - Periods set by your school.`)}<StudentTimetable slots={data.timetable} formatTime={shortTime} /></>}
-    {page === 'Homework' && <>{sectionHeading('Homework & assignments', 'Work published by your teachers for this class.')}<div className="sp-filter">{['All','Upcoming','Past due','Submitted'].map(x => <button className={filter === x || (!filter && x === 'All') ? 'active' : ''} onClick={() => setFilter(x === 'All' ? '' : x)} key={x}>{x}</button>)}</div>{filteredHomework.length ? <div className="sp-card-grid">{filteredHomework.map(homeworkCard)}</div> : empty('No assignments in this view.')}</>}
+    {page === 'Homework' && <>{sectionHeading('Homework & assignments', 'Work published by your teachers for this class.')}<div className="sp-filter">{['All','Upcoming','Past due','Submitted'].map(x => <button className={filter === x || (!filter && x === 'All') ? 'active' : ''} onClick={() => setFilter(x === 'All' ? '' : x)} key={x}><StudentIcon name={x === 'Submitted' ? 'check' : x === 'Past due' ? 'calendar' : x === 'Upcoming' ? 'timetable' : 'list'} />{x}</button>)}</div>{filteredHomework.length ? <div className="sp-card-grid">{filteredHomework.map(homeworkCard)}</div> : empty('No assignments in this view.')}</>}
     {page === 'Study Materials' && <>
       {sectionHeading('Study materials', 'Notes, worksheets and links shared by your teachers.')}
       <div className="sp-filter">
-        <button className={!filter ? 'active' : ''} onClick={() => setFilter('')}>All</button>
-        <button className={filter === 'Saved' ? 'active' : ''} onClick={() => setFilter('Saved')}>Saved</button>
+        <button className={!filter ? 'active' : ''} onClick={() => setFilter('')}><StudentIcon name="list" />All</button>
+        <button className={filter === 'Saved' ? 'active' : ''} onClick={() => setFilter('Saved')}><StudentIcon name="bookmark" />Saved</button>
       </div>
       {data.materials.filter(x => filter !== 'Saved' || bookmarks.includes(x.id)).length ?
         <div className="sp-card-grid sp-material-grid">
@@ -338,7 +340,7 @@ export default function StudentPortal() {
             <article className="sp-record sp-material-card" key={x.id}>
               <div className="sp-record-head">
                 <span className="sp-tag">{x.resourceType}</span>
-                <button className="sp-material-save" onClick={() => saveBookmarks(bookmarks.includes(x.id) ? bookmarks.filter(id => id !== x.id) : [...bookmarks, x.id])}>{bookmarks.includes(x.id) ? 'Saved' : 'Save'}</button>
+                <button className="sp-material-save" onClick={() => saveBookmarks(bookmarks.includes(x.id) ? bookmarks.filter(id => id !== x.id) : [...bookmarks, x.id])}><StudentIcon name="bookmark" />{bookmarks.includes(x.id) ? 'Saved' : 'Save'}</button>
               </div>
               <div className="sp-material-body">
                 <h3>{x.title}</h3>
@@ -348,11 +350,11 @@ export default function StudentPortal() {
               <div className="sp-record-foot">
                 {isUploadedStudyMaterial(x.resourceUrl) ?
                   <button className="sp-material-action" type="button" onClick={() => void downloadStudyMaterial(x.id, x.title).catch((failure: Error) => setError(failure.message))}>
-                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v3h16v-3" /></svg>
+                    <StudentIcon name="download" size={18} />
                     Download file
                   </button> : safeLink(x.resourceUrl) ?
                   <a className="sp-material-action" href={x.resourceUrl} target="_blank" rel="noreferrer">
-                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 5h5v5m0-5-9 9" /><path d="M19 13v6H5V5h6" /></svg>
+                    <StudentIcon name="external" size={18} />
                     Open link
                   </a> : null}
               </div>
@@ -366,7 +368,7 @@ export default function StudentPortal() {
     {page === 'Achievements' && <>{sectionHeading('Achievements', 'Awards and recognition recorded by your school.')}{(data.achievements || []).length ? <div className="sp-card-grid">{data.achievements.map(x => <article className="sp-record" key={x.id}><span className="sp-tag">{shortDate(x.awardedAt)}</span><h3>{x.title}</h3><p>{x.description}</p></article>)}</div> : empty('No achievements recorded yet.')}</>}
     {page === 'Requests' && <>
       {sectionHeading('My requests', 'Choose who receives your request. Only that selected person can review it.')}
-      <div className="sp-request-actions"><button type="button" className="btn btn-primary" onClick={() => setShowRequestForm(open => !open)} aria-expanded={showRequestForm}>{showRequestForm ? 'Close form' : 'New request'}</button></div>
+      <div className="sp-request-actions"><button type="button" className="btn btn-primary" onClick={() => setShowRequestForm(open => !open)} aria-expanded={showRequestForm}><StudentIcon name={showRequestForm ? 'close' : 'plus'} />{showRequestForm ? 'Close form' : 'New request'}</button></div>
       {showRequestForm && panel('New request', <form className="sp-action-form" onSubmit={async e => {
         e.preventDefault();
         if (await postAction('requests', { ...requestForm, recipientRoleId: Number(requestForm.recipientRoleId), recipientUserId: Number(requestForm.recipientUserId) })) {
@@ -381,7 +383,7 @@ export default function StudentPortal() {
         <label>Subject<input required maxLength={200} value={requestForm.subject} onChange={e => setRequestForm({ ...requestForm, subject: e.target.value })}/></label>
         {requestForm.type === 'Leave' && <><label>From<input type="date" required value={requestForm.fromDate} onChange={e => setRequestForm({ ...requestForm, fromDate: e.target.value })}/></label><label>To<input type="date" required value={requestForm.toDate} onChange={e => setRequestForm({ ...requestForm, toDate: e.target.value })}/></label></>}
         <label>Details<textarea required rows={4} maxLength={2000} value={requestForm.details} onChange={e => setRequestForm({ ...requestForm, details: e.target.value })}/></label>
-        <div className="sp-request-form-actions"><button className="btn btn-primary" disabled={savingAction || !requestForm.recipientUserId}>{savingAction ? 'Submitting...' : 'Submit request'}</button><button type="button" className="btn" onClick={() => setShowRequestForm(false)}>Cancel</button></div>
+        <div className="sp-request-form-actions"><button className="btn btn-primary" disabled={savingAction || !requestForm.recipientUserId}><StudentIcon name="send" />{savingAction ? 'Submitting...' : 'Submit request'}</button><button type="button" className="btn" onClick={() => setShowRequestForm(false)}><StudentIcon name="close" />Cancel</button></div>
       </form>)}
       {panel('Request history', (data.requests || []).length ? data.requests.map(x => <div className="sp-line" key={x.id}><span className="sp-tag">{x.status}</span><div><strong>{x.type} · {x.subject}</strong><small>{shortDate(x.createdAt)} · {x.details}{x.recipientUserId ? ` · Sent to ${requestRecipients.recipients.find(person => person.id === x.recipientUserId)?.name || 'selected recipient'}` : ''}</small>{x.response && <p>Response: {x.response}</p>}</div></div>) : empty('No requests yet.'))}
     </>}
@@ -399,7 +401,7 @@ export default function StudentPortal() {
           <div className="sp-fee-amounts"><span>Total {money(fee.amount)}</span><span>Paid {money(fee.paid)}</span><strong>Pending {money(fee.pending)}</strong></div>
         </div>) : empty('No fees assigned.'))}
       {panel('Payment history', data.payments.length ? data.payments.map(x =>
-        <div className="sp-line" key={x.id}><div><strong>{money(Number(x.amountPaid) || 0)} · {shortDate(x.payment_Date)}</strong><small>Receipt {x.receipt_Number} · {x.payment_Mode}</small></div><button type="button" className="sp-view-action" aria-label={'View receipt: ' + (x.receipt_Number || x.id)} title="View receipt" onClick={() => setReceipt(x)}><PreviewIcon size={20}/></button></div>) : empty('No payments recorded.'))}
+        <div className="sp-line" key={x.id}><div><strong>{money(Number(x.amountPaid) || 0)} · {shortDate(x.payment_Date)}</strong><small>Receipt {x.receipt_Number} · {x.payment_Mode}</small></div><button type="button" className="sp-view-action" aria-label={'View receipt: ' + (x.receipt_Number || x.id)} title="View receipt" onClick={() => setReceipt(x)}><StudentIcon name="receipt" size={20}/></button></div>) : empty('No payments recorded.'))}
     </>}    {page === 'Transport' && <>
       {sectionHeading('My transport', 'Route details, transport bills and recorded payments for your current session.')}
       {data.transport ? <section className="sp-transport-card">
@@ -423,7 +425,7 @@ export default function StudentPortal() {
       {panel('Payment history', transportTransactions.length ? transportTransactions.map(payment =>
         <div className="sp-line sp-transport-payment" key={payment.id}>
           <div><strong>{money(Number(payment.amount) || 0)}</strong><small>{shortDate(payment.paymentDate)} · {payment.paymentMode || 'Payment'}</small><small>Receipt {payment.receiptNumber || '—'}{payment.referenceNumber ? ' · Ref ' + payment.referenceNumber : ''}</small></div>
-          <span className="sp-tag">{transportBills.find(bill => bill.id === payment.transportFeeId) ? transportPeriod(Number(transportBills.find(bill => bill.id === payment.transportFeeId)?.feeMonth), Number(transportBills.find(bill => bill.id === payment.transportFeeId)?.feeYear)) : 'Transport'}</span><button type="button" className="sp-view-action" aria-label={'View receipt: ' + (payment.receiptNumber || payment.id)} title="View receipt" onClick={() => setTransportReceipt(payment)}><PreviewIcon size={20}/></button>
+          <span className="sp-tag">{transportBills.find(bill => bill.id === payment.transportFeeId) ? transportPeriod(Number(transportBills.find(bill => bill.id === payment.transportFeeId)?.feeMonth), Number(transportBills.find(bill => bill.id === payment.transportFeeId)?.feeYear)) : 'Transport'}</span><button type="button" className="sp-view-action" aria-label={'View receipt: ' + (payment.receiptNumber || payment.id)} title="View receipt" onClick={() => setTransportReceipt(payment)}><StudentIcon name="receipt" size={20}/></button>
         </div>) : empty('No transport payments recorded yet.'))}
     </>}
     {page === 'Documents' && <>
@@ -432,7 +434,7 @@ export default function StudentPortal() {
         <div className="sp-line sp-document-line" key={document.id}>
           <div><strong>{document.documentName || document.fileName}</strong><small>{shortDate(document.createdDate)}</small></div>
           {documentUrl(document.fileUrl)
-            ? <a className="sp-document-view" aria-label={'View document: ' + (document.documentName || document.fileName)} title="View document" href={documentUrl(document.fileUrl)!} target="_blank" rel="noopener noreferrer"><PreviewIcon size={20}/></a>
+            ? <a className="sp-document-view" aria-label={'View document: ' + (document.documentName || document.fileName)} title="View document" href={documentUrl(document.fileUrl)!} target="_blank" rel="noopener noreferrer"><StudentIcon name="preview" size={20} /></a>
             : <span className="sp-document-unavailable">File unavailable</span>}
         </div>) : empty('No documents uploaded yet.'))}
     </>}
@@ -456,6 +458,6 @@ export default function StudentPortal() {
       description={data.fees.find(x => Number(x.id) === Number(receipt.studentFeeId))?.feeType || 'School fee'}
       onClose={() => setReceipt(null)}
     />}    </main>
-    <nav className="sp-bottom" aria-label="Quick navigation">{(['Today','Timetable','Homework','Documents'] as Page[]).map(item => <button className={page === item ? 'active' : ''} key={item} onClick={() => switchPage(item)}>{item}</button>)}</nav>
+    <nav className="sp-bottom" aria-label="Quick navigation">{(['Today','Timetable','Homework','Documents'] as Page[]).map(item => <button className={page === item ? 'active' : ''} key={item} onClick={() => switchPage(item)}><StudentIcon name={pageIcons[item]} size={20} />{item}</button>)}</nav>
   </div>;
 }

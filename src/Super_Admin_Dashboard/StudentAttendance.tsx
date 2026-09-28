@@ -1,3 +1,4 @@
+import AdminActionIcon from './AdminActionIcon';
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import Pagination from './Pagination';
@@ -255,7 +256,7 @@ const StudentAttendance: React.FC = () => {
     <div className="staff-list-container">
       <div className="staff-list-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={() => setView('select')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px' }}>←</button>
+          <button onClick={() => setView('select')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px' }} aria-label="Back"><AdminActionIcon action="back" /></button>
           <h2>Mark Attendance</h2>
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -298,8 +299,8 @@ const StudentAttendance: React.FC = () => {
                   <td>{student.academicSession.split('-')[0]}</td>
                   <td>
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      <button onClick={() => handleMark(student.id, 'Present')} style={{ padding: '6px 16px', borderRadius: '8px', border: '2px solid', cursor: 'pointer', fontWeight: 600, fontSize: '13px', borderColor: attendance[student.id] === 'Present' ? '#22543d' : '#e2e8f0', background: attendance[student.id] === 'Present' ? '#c6f6d5' : 'white', color: attendance[student.id] === 'Present' ? '#22543d' : '#718096' }}>Present</button>
-                      <button onClick={() => handleMark(student.id, 'Absent')} style={{ padding: '6px 16px', borderRadius: '8px', border: '2px solid', cursor: 'pointer', fontWeight: 600, fontSize: '13px', borderColor: attendance[student.id] === 'Absent' ? '#742a2a' : '#e2e8f0', background: attendance[student.id] === 'Absent' ? '#fed7d7' : 'white', color: attendance[student.id] === 'Absent' ? '#742a2a' : '#718096' }}>Absent</button>
+                      <button onClick={() => handleMark(student.id, 'Present')} style={{ padding: '6px 16px', borderRadius: '8px', border: '2px solid', cursor: 'pointer', fontWeight: 600, fontSize: '13px', borderColor: attendance[student.id] === 'Present' ? '#22543d' : '#e2e8f0', background: attendance[student.id] === 'Present' ? '#c6f6d5' : 'white', color: attendance[student.id] === 'Present' ? '#22543d' : '#718096' }}><AdminActionIcon action="present" />Present</button>
+                      <button onClick={() => handleMark(student.id, 'Absent')} style={{ padding: '6px 16px', borderRadius: '8px', border: '2px solid', cursor: 'pointer', fontWeight: 600, fontSize: '13px', borderColor: attendance[student.id] === 'Absent' ? '#742a2a' : '#e2e8f0', background: attendance[student.id] === 'Absent' ? '#fed7d7' : 'white', color: attendance[student.id] === 'Absent' ? '#742a2a' : '#718096' }}><AdminActionIcon action="absent" />Absent</button>
                     </div>
                   </td>
                 </tr>
@@ -326,7 +327,7 @@ const StudentAttendance: React.FC = () => {
     <div className="staff-list-container">
       <div className="staff-list-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={() => setView('select')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px' }}>←</button>
+          <button onClick={() => setView('select')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px' }} aria-label="Back"><AdminActionIcon action="back" /></button>
           <h2>Attendance History</h2>
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>

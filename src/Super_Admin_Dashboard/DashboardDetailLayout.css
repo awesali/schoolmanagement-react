@@ -1,0 +1,6 @@
+.dashboard-detail-layout .dashboard-detail-header { min-height: 72px; }
+.dashboard-detail-layout .dashboard-detail-header .header-left { align-items: center; }
+.dashboard-detail-header small { display: block; color: var(--text-secondary); font-size: 12px; margin-bottom: 3px; }
+.dashboard-detail-header h1 { margin: 0; font-size: 21px; }
+.dashboard-detail-body { flex: 1; min-width: 0; }
+.dashboard-detail-body .staff-profile { max-width: 1400px; }

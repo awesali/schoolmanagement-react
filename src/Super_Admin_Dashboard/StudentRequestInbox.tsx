@@ -1,3 +1,4 @@
+import AdminActionIcon from './AdminActionIcon';
 import React, { useEffect, useState } from 'react';
 import { API_BASE_URL } from '../config';
 import { PageLoader } from '../components/Loader/Loader';
@@ -51,7 +52,7 @@ export default function StudentRequestInbox() {
       <div className="tsc-review">
         <label>Status<select value={reviews[row.id]?.status || row.status} onChange={e => setReviews(current => ({ ...current, [row.id]: { status: e.target.value, response: current[row.id]?.response ?? row.response ?? '' } }))}>{['Pending','Approved','Rejected','Resolved'].map(x => <option key={x}>{x}</option>)}</select></label>
         <label className="tsc-full">Response<textarea rows={2} maxLength={2000} value={reviews[row.id]?.response ?? row.response ?? ''} onChange={e => setReviews(current => ({ ...current, [row.id]: { status: current[row.id]?.status || row.status, response: e.target.value } }))}/></label>
-        <button type="button" className="btn btn-primary" disabled={savingId !== null || !reviews[row.id]} onClick={() => void respond(row)}>Save response</button>
+        <button type="button" className="btn btn-primary" disabled={savingId !== null || !reviews[row.id]} onClick={() => void respond(row)}><AdminActionIcon action="save" />Save response</button>
       </div>
     </article>) : <p className="tw-empty">No requests addressed to you yet.</p>}</section>}
   </div>;

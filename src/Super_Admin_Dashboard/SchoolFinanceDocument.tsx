@@ -1,3 +1,4 @@
+import AdminActionIcon from './AdminActionIcon';
 import React from 'react';
 import { profilePictureUrl } from './ProfilePictureInput';
 import '../Student/StudentPaymentReceipt.css';
@@ -42,7 +43,7 @@ export default function SchoolFinanceDocument({ title, kind, schoolName = 'Schoo
   };
   return <div className="sp-modal-backdrop sp-payment-receipt-overlay" onMouseDown={onClose}>
     <section className="sp-modal sp-payment-receipt school-finance-document" role="dialog" aria-modal="true" aria-label={title} onMouseDown={event => event.stopPropagation()}>
-      <button type="button" className="sp-modal-close" aria-label={'Close ' + title} onClick={onClose}>×</button>
+      <button type="button" className="sp-modal-close" aria-label={'Close ' + title} onClick={onClose}><AdminActionIcon action="close" /></button>
       <header className="sp-payment-receipt-header">
         <div className="sp-payment-receipt-logo">{logo ? <img src={logo} alt={schoolName + ' logo'} /> : <span>{initials || 'S'}</span>}</div>
         <div><strong>{schoolName}</strong>{schoolAddress && <address>{schoolAddress}</address>}</div>
@@ -67,7 +68,7 @@ export default function SchoolFinanceDocument({ title, kind, schoolName = 'Schoo
       </section>}
       <div className="sp-payment-receipt-total"><span>{totalLabel}</span><strong>{money(total)}</strong></div>
       <p className="sp-payment-receipt-note">{kind === 'payslip' ? 'This statement reflects the recorded salary payment.' : 'Payment received by ' + schoolName + '. Keep this receipt for your records.'}</p>
-      <div className="sp-payment-receipt-actions"><button type="button" className="btn btn-primary" onClick={print}>{printLabel}</button></div>
+      <div className="sp-payment-receipt-actions"><button type="button" className="btn btn-primary" onClick={print}><AdminActionIcon action="print" />{printLabel}</button></div>
     </section>
   </div>;
 }

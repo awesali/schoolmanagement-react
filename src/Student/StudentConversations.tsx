@@ -1,3 +1,4 @@
+import StudentIcon from './StudentIcon';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { API_BASE_URL } from '../config';
 import './StudentConversations.css';
@@ -93,10 +94,10 @@ export default function StudentConversations({ initialMessages, initialStaffId =
       {roleId && !staff.some(x => String(x.roleId) === roleId) && <small>No active staff member is available for this role.</small>}</div>
     <div className="scv-layout"><nav className="scv-list" aria-label="Conversations">{conversations.length ? conversations.map(item => <button type="button" key={item.staffId}
       className={'scv-person' + (item.staffId === selectedId ? ' selected' : '') + (item.unreadCount ? ' unread' : '')}
-      onClick={() => void open(item.staffId, item.roleId)}><span><strong>{item.staffName}</strong><small>{roles.find(x => x.id === item.roleId)?.roleName || 'Staff'} · {item.lastMessage}</small></span><span><small>{when(item.lastSentAt)}</small>{item.unreadCount > 0 && <b>{item.unreadCount} new</b>}</span></button>) : <p className="scv-empty">No conversations yet.</p>}</nav>
+      onClick={() => void open(item.staffId, item.roleId)}><StudentIcon name="chat" /><span><strong>{item.staffName}</strong><small>{roles.find(x => x.id === item.roleId)?.roleName || 'Staff'} · {item.lastMessage}</small></span><span><small>{when(item.lastSentAt)}</small>{item.unreadCount > 0 && <b>{item.unreadCount} new</b>}</span></button>) : <p className="scv-empty">No conversations yet.</p>}</nav>
       <div className="scv-thread">{!selectedId ? <p className="scv-empty">Select a staff member to start or open a conversation.</p> : <><header><h3>{selectedStaff?.name || selectedConversation?.staffName || 'Staff member'}</h3><small>{roles.find(x => String(x.id) === roleId)?.roleName || 'Staff'}</small></header>
         <div className="scv-messages" aria-live="polite">{thread.length ? thread.map(message => <div key={message.id} className={'scv-bubble' + (message.fromStudent ? ' mine' : '')}><p>{message.body}</p><small>{when(message.sentAt)}{message.fromStudent ? message.readAt ? ' · Read' : ' · Sent' : ''}</small></div>) : <p className="scv-empty">No messages yet. Say hello.</p>}</div>
-        <form className="scv-compose" onSubmit={event => void send(event)}><textarea aria-label="Write message" rows={2} maxLength={2000} value={draft} onChange={event => setDraft(event.target.value)} placeholder="Write a message" /><button className="btn btn-primary" disabled={saving || !draft.trim()}>{saving ? 'Sending...' : 'Send'}</button></form>
+        <form className="scv-compose" onSubmit={event => void send(event)}><textarea aria-label="Write message" rows={2} maxLength={2000} value={draft} onChange={event => setDraft(event.target.value)} placeholder="Write a message" /><button className="btn btn-primary" disabled={saving || !draft.trim()}><StudentIcon name="send" />{saving ? 'Sending...' : 'Send'}</button></form>
       </>}</div>
     </div>
   </section>;

@@ -1,5 +1,6 @@
 ﻿import StudentProfile from './Super_Admin_Dashboard/StudentProfile';
 import StaffProfile from './Super_Admin_Dashboard/StaffProfile';
+import DashboardDetailLayout from './Super_Admin_Dashboard/DashboardDetailLayout';
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './Login/Login';
@@ -17,8 +18,8 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/student" element={<StudentPortal />} />
-          <Route path="/dashboard/schools/:schoolId/students/:studentId" element={<StudentProfile />} />
-          <Route path="/dashboard/schools/:schoolId/staff/:staffId" element={<StaffProfile />} />
+          <Route path="/dashboard/schools/:schoolId/students/:studentId" element={<DashboardDetailLayout kind="student"><StudentProfile /></DashboardDetailLayout>} />
+          <Route path="/dashboard/schools/:schoolId/staff/:staffId" element={<DashboardDetailLayout kind="staff"><StaffProfile /></DashboardDetailLayout>} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<AccountProfile />} />
           <Route path="/" element={<Navigate to="/login" replace />} />

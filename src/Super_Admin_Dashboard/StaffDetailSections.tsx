@@ -1,3 +1,4 @@
+import AdminActionIcon from './AdminActionIcon';
 import React from 'react';
 
 export const staffDetailGroups = [
@@ -72,7 +73,7 @@ const StaffDetailSections: React.FC<{ values: StaffDetailValues; onChange: (key:
     {staffDetailGroups.map((group, groupIndex) => <fieldset className="staff-detail-section" key={group.title} disabled={disabled}>
       <legend>{group.title}</legend>
       {[values, ...(groupIndex ? additional[group.title] || [] : [])].map((row, index) => <div className="staff-detail-entry" key={index}>
-        {groupIndex > 0 && <div className="staff-detail-entry-heading"><strong>Record {index + 1}</strong>{index > 0 && <button type="button" className="btn btn-secondary" onClick={() => update(group.title, additional[group.title].filter((_, i) => i !== index - 1))}>Remove</button>}</div>}
+        {groupIndex > 0 && <div className="staff-detail-entry-heading"><strong>Record {index + 1}</strong>{index > 0 && <button type="button" className="btn btn-secondary" onClick={() => update(group.title, additional[group.title].filter((_, i) => i !== index - 1))}><AdminActionIcon action="delete" />Remove</button>}</div>}
         <div className="form-grid">{group.fields.map(([key, label, type, maxLength]) => {
           const id = 'staff-detail-' + key + (index ? '-' + index : '');
           const change = (value: string) => {
@@ -92,7 +93,7 @@ const StaffDetailSections: React.FC<{ values: StaffDetailValues; onChange: (key:
           </div>;
         })}</div>
       </div>)}
-      {groupIndex > 0 && <div className="staff-detail-add"><button type="button" className="btn btn-secondary" onClick={() => update(group.title, [...(additional[group.title] || []), {}])}>+ Add More</button></div>}
+      {groupIndex > 0 && <div className="staff-detail-add"><button type="button" className="btn btn-secondary" onClick={() => update(group.title, [...(additional[group.title] || []), {}])}><AdminActionIcon action="add" />Add More</button></div>}
     </fieldset>)}
   </div>;
 };

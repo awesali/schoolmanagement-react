@@ -1,3 +1,4 @@
+import AdminActionIcon from './AdminActionIcon';
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import { useToastMessageState } from '../components/Toast/Toast';
@@ -196,8 +197,7 @@ const AssignSubjects: React.FC<AssignSubjectsProps> = ({
             {subjects.length === 0 ? (
               <div style={{ padding: '16px', textAlign: 'center', color: '#666' }}>
                 <p>No subjects found for this school.</p>
-                <button type="button" className="btn btn-primary" onClick={() => { onClose(); onNavigateToSubjects?.(); }}>
-                  + Add Subject
+                <button type="button" className="btn btn-primary" onClick={() => { onClose(); onNavigateToSubjects?.(); }}><AdminActionIcon action="add" />Add Subject
                 </button>
               </div>
             ) : (

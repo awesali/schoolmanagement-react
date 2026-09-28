@@ -1,3 +1,4 @@
+import StudentIcon from './StudentIcon';
 import React from 'react';
 import { profilePictureUrl } from '../Super_Admin_Dashboard/ProfilePictureInput';
 import './StudentPaymentReceipt.css';
@@ -38,7 +39,7 @@ export default function StudentPaymentReceipt({ kind, payment, profile, descript
   return <div className="sp-modal-backdrop sp-payment-receipt-overlay" onMouseDown={onClose}>
     <section className="sp-modal sp-payment-receipt" role="dialog" aria-modal="true"
       aria-label={isTransport ? 'Transport receipt' : 'Fee receipt'} onMouseDown={event => event.stopPropagation()}>
-      <button type="button" className="sp-modal-close" aria-label={isTransport ? 'Close transport receipt' : 'Close fee receipt'} onClick={onClose}>×</button>
+      <button type="button" className="sp-modal-close" aria-label={isTransport ? 'Close transport receipt' : 'Close fee receipt'} onClick={onClose}><StudentIcon name="close" /></button>
       <header className="sp-payment-receipt-header">
         <div className="sp-payment-receipt-logo">
           {logo ? <img src={logo} alt={schoolName + ' logo'} /> : <span>{schoolInitials || 'S'}</span>}
@@ -72,7 +73,7 @@ export default function StudentPaymentReceipt({ kind, payment, profile, descript
       </section>
       <div className="sp-payment-receipt-total"><span>Amount received</span><strong>{amountText(amount)}</strong></div>
       <p className="sp-payment-receipt-note">Payment received by {schoolName}. Keep this receipt for your records.</p>
-      <div className="sp-payment-receipt-actions"><button type="button" className="btn btn-primary" onClick={print}>Print / Save PDF</button></div>
+      <div className="sp-payment-receipt-actions"><button type="button" className="btn btn-primary" onClick={print}><StudentIcon name="print" />Print / Save PDF</button></div>
     </section>
   </div>;
 }

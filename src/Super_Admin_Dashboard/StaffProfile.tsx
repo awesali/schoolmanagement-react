@@ -1,3 +1,4 @@
+import AdminActionIcon from './AdminActionIcon';
 import StaffLeaveAllowance from './StaffLeaveAllowanceEditor';
 import { staffTimetableSlots } from './staffTimetable';
 import { StaffCareerActions, StaffChangeHistory } from './StaffCareer';
@@ -128,7 +129,7 @@ export default function StaffProfile() {
       <section className="staff-profile-content">
         <h2>{tab}</h2>
         {['Attendance', 'Salary'].includes(tab) && <label>Month <input type="month" value={month} onChange={e => { if (/^\d{4}-\d{2}$/.test(e.target.value)) setMonth(e.target.value); }} /></label>}
-        {busy ? <PageLoader /> : failed ? <button className="btn btn-secondary" onClick={() => setRevision(r => r + 1)}>Retry loading</button> : <>
+        {busy ? <PageLoader /> : failed ? <button className="btn btn-secondary" onClick={() => setRevision(r => r + 1)}><AdminActionIcon action="refresh" />Retry loading</button> : <>
           {tab === 'Overview' && <><dl className="staff-detail-summary"><div><dt>Date of Birth</dt><dd>{date(staff.dob)}</dd></div><div><dt>Date of Joining</dt><dd>{date(staff.doj)}</dd></div><div><dt>Gender</dt><dd>{genderLabel(staff.genderCode)}</dd></div></dl><StaffDetailSummary record={staff} /></>}
           {tab === 'Attendance' && <><p>{(data.attendance || []).filter((r: Row) => r.status === 'Present').length} Present - {(data.attendance || []).filter((r: Row) => r.status === 'Absent').length} Absent - {(data.attendance || []).length} recorded days</p><Grid headings={['Date', 'Status']} rows={(data.attendance || []).map((r: Row) => [date(r.attendanceDate), r.status])} empty="No attendance recorded for this month." /></>}
           {tab === 'Salary' && <>
@@ -189,6 +190,6 @@ export default function StaffProfile() {
       <EditStaff isOpen={edit} onClose={() => setEdit(false)} staff={staff as any} onSuccess={() => { setEdit(false); setStaff(null); setRevision(r => r + 1); }} />
       <Modal showSubmit={false} showCancel={false} isOpen={photo} onClose={() => setPhoto(false)} title={staff.name}><img className="staff-profile-photo" src={profilePictureUrl(staff.profilePictureUrl) || ''} alt={staff.name} /></Modal>
     </>}
-    {!staff && (busy ? <PageLoader /> : <p>{failed ? 'Unable to load profile.' : 'Staff not found in this school.'} <button onClick={() => setRevision(r => r + 1)}>Retry</button></p>)}
+    {!staff && (busy ? <PageLoader /> : <p>{failed ? 'Unable to load profile.' : 'Staff not found in this school.'} <button onClick={() => setRevision(r => r + 1)}><AdminActionIcon action="refresh" />Retry</button></p>)}
   </main>;
 }

@@ -1,3 +1,4 @@
+import AdminActionIcon from './AdminActionIcon';
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import { PageLoader } from '../components/Loader/Loader';
@@ -535,7 +536,7 @@ const AssignSalaryForm: React.FC<{
             disabled={editingSalary || saving}
             style={{ marginTop: '10px', background: editingSalary ? '#e2e8f0' : 'white', border: '1px solid #d97706' }}
           >
-            {editingSalary ? 'Editing Enabled' : 'Edit Salary'}
+            <AdminActionIcon action="edit" />{editingSalary ? 'Editing Enabled' : 'Edit Salary'}
           </button>
         </div>
       )}
@@ -560,7 +561,7 @@ const AssignSalaryForm: React.FC<{
       {formMsg && <div style={messageStyle(false)}>{formMsg}</div>}
       {(!assignedSalary || editingSalary) && (
         <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={saving || checkingSalary || !selectedStaff}>
-          {saving ? 'Saving...' : editingSalary ? 'Update Salary' : 'Assign Salary'}
+          <AdminActionIcon action="save" />{saving ? 'Saving...' : editingSalary ? 'Update Salary' : 'Assign Salary'}
         </button>
       )}
     </form>
@@ -704,7 +705,7 @@ const PaySalaryForm: React.FC<{
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
           <div style={{ fontWeight: 700, color: '#1e2a3a' }}>Employee Payment List</div>
           <button type="button" className="btn" onClick={toggleAllStaff} disabled={visibleRecords.length === 0 || saving}>
-            {allSelected ? 'Clear All' : 'Select All'}
+            <AdminActionIcon action={allSelected ? 'reset' : 'select'} />{allSelected ? 'Clear All' : 'Select All'}
           </button>
         </div>
         <div className="staff-table-wrapper" style={{ maxHeight: '340px', overflowY: 'auto', marginBottom: '20px' }}>
@@ -759,7 +760,7 @@ const PaySalaryForm: React.FC<{
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', marginTop: '20px', flexWrap: 'wrap' }}>
           <div><span style={{ color: '#64748b', fontSize: '13px' }}>Total amount to be paid</span><div style={{ fontSize: '26px', fontWeight: 800, color: '#047857' }}>{money(totalAmount)}</div></div>
           <button type="submit" className="btn btn-primary" style={{ minWidth: '220px', padding: '12px 20px' }} disabled={saving || selectedStaffIds.length === 0}>
-            {saving ? 'Processing Payment...' : `Pay ${selectedStaffIds.length} Employee${selectedStaffIds.length === 1 ? '' : 's'}`}
+            <AdminActionIcon action="collect" />{saving ? 'Processing Payment...' : `Pay ${selectedStaffIds.length} Employee${selectedStaffIds.length === 1 ? '' : 's'}`}
           </button>
         </div>
       </div>
@@ -805,7 +806,7 @@ const SalaryHistoryView: React.FC<{
           <div><label style={labelStyle}>Month</label><select value={month} onChange={e => setMonth(Number(e.target.value))} style={{ ...selectStyle, width: '100%' }}>{Array.from({ length: 12 }, (_, i) => <option key={i + 1} value={i + 1}>{monthName(i + 1)}</option>)}</select></div>
           <div><label style={labelStyle}>Year</label><input type="number" value={year} onChange={e => setYear(Number(e.target.value))} style={{ ...selectStyle, width: '100%' }} /></div>
           <div><label style={labelStyle}>Search Employee</label><input type="search" value={search} onChange={e => setSearch(e.target.value)} placeholder="Name, employee ID, or department" style={{ ...selectStyle, width: '100%' }} /></div>
-          <div style={{ display: 'flex', alignItems: 'end' }}><button type="button" className="btn btn-primary" onClick={loadHistory} disabled={loading} style={{ width: '100%' }}>{loading ? 'Loading...' : 'Refresh History'}</button></div>
+          <div style={{ display: 'flex', alignItems: 'end' }}><button type="button" className="btn btn-primary" onClick={loadHistory} disabled={loading} style={{ width: '100%' }}><AdminActionIcon action="refresh" />{loading ? 'Loading...' : 'Refresh History'}</button></div>
         </div>
       </div>
 
@@ -843,7 +844,7 @@ const SalaryHistoryView: React.FC<{
                   <td>{money(record.netSalary)}</td>
                   <td>{record.paymentMethod?.replace('_', ' ') || '-'}</td>
                   <td>{record.paymentDate ? new Date(record.paymentDate).toLocaleDateString() : '-'}</td>
-                  <td><button type="button" className="btn" onClick={() => setSelectedPayslip(record)}>View Payslip</button></td>
+                  <td><button type="button" className="btn" onClick={() => setSelectedPayslip(record)}><AdminActionIcon action="view" />View Payslip</button></td>
                 </tr>
               ))}
             </tbody>
@@ -894,7 +895,7 @@ const PendingSalariesView: React.FC<{
     <>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: '12px', flexWrap: 'wrap' }}>
         <h3 style={{ margin: 0, color: '#1e2a3a' }}>Pending Salaries</h3>
-        <button onClick={onRefresh} className="btn btn-primary">Refresh</button>
+        <button onClick={onRefresh} className="btn btn-primary"><AdminActionIcon action="refresh" />Refresh</button>
       </div>
 
       {pendingSalaries.length === 0 ? (

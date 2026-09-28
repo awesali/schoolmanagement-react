@@ -1,4 +1,5 @@
-﻿import React, { useEffect, useRef, useState } from 'react';
+import AdminActionIcon from './AdminActionIcon';
+import React, { useEffect, useRef, useState } from 'react';
 import { API_BASE_URL } from '../config';
 import { PageLoader } from '../components/Loader/Loader';
 import './TeacherStudentContent.css';
@@ -149,8 +150,8 @@ export default function HallTicketManagement({ schoolId }: { schoolId: number })
     {loading && <PageLoader label="Loading hall tickets…" />}
     {notice && <div className="tw-panel" role="status">{notice}</div>}
     <div className="tsc-actions">
-      <button type="button" className="btn btn-primary" onClick={() => { setEditingId(null); setShowBulkForm(open => !open); }} disabled={saving}>{showBulkForm ? 'Close class form' : 'Create class tickets'}</button>
-      {!!rows.length && <button type="button" className="btn" onClick={deleteAll} disabled={saving || loading}>Delete all existing tickets</button>}
+      <button type="button" className="btn btn-primary" onClick={() => { setEditingId(null); setShowBulkForm(open => !open); }} disabled={saving}><AdminActionIcon action={showBulkForm ? 'close' : 'add'} />{showBulkForm ? 'Close class form' : 'Create class tickets'}</button>
+      {!!rows.length && <button type="button" className="btn" onClick={deleteAll} disabled={saving || loading}><AdminActionIcon action="delete" />Delete all existing tickets</button>}
     </div>
     {showBulkForm && <form className="tw-panel tsc-form" onSubmit={createClassTickets}>
       <div className="tsc-full tsc-form-heading"><h3>Create tickets for a class</h3></div>
@@ -162,10 +163,10 @@ export default function HallTicketManagement({ schoolId }: { schoolId: number })
       <label>Venue<input maxLength={200} value={bulk.venue} onChange={e => setBulk({ ...bulk, venue: e.target.value })} /></label>
       <p className="tsc-full">The selected exam has {eligibleStudents.length} enrolled students. Tickets will fill {roomCount} rooms in section and roll-number order. Seat numbers restart in each room.</p>
       <label className="tsc-check"><input type="checkbox" checked={bulk.publish} onChange={e => setBulk({ ...bulk, publish: e.target.checked })} />Publish now</label>
-      <button className="btn btn-primary" disabled={saving || loading || !eligibleStudents.length}>{saving ? 'Creating...' : `Create ${eligibleStudents.length} tickets`}</button>
+      <button className="btn btn-primary" disabled={saving || loading || !eligibleStudents.length}><AdminActionIcon action="add" />{saving ? 'Creating...' : `Create ${eligibleStudents.length} tickets`}</button>
     </form>}
     {editingId !== null && <form ref={formRef} className="tw-panel tsc-form" onSubmit={save}>
-      <div className="tsc-full tsc-form-heading"><h3>Edit hall ticket</h3>{editingId !== null && <button type="button" className="btn" onClick={cancelEdit}>Cancel edit</button>}</div>
+      <div className="tsc-full tsc-form-heading"><h3>Edit hall ticket</h3>{editingId !== null && <button type="button" className="btn" onClick={cancelEdit}><AdminActionIcon action="close" />Cancel edit</button>}</div>
       <label>Class<select required value={form.classId} onChange={e => setForm({ ...form, classId: e.target.value, sectionId: '', studentId: '', examId: '' })}><option value="">Choose class</option>{classes.map(x => <option key={x.id} value={x.id}>{x.className}</option>)}</select></label>
       <label>Section<select required disabled={!form.classId} value={form.sectionId} onChange={e => setForm({ ...form, sectionId: e.target.value, studentId: '', examId: '' })}><option value="">Choose section</option>{classSections.map(x => <option key={x.id} value={x.id}>{x.sectionName}</option>)}</select></label>
       <label>Student<select required disabled={!form.sectionId} value={form.studentId} onChange={e => setForm({ ...form, studentId: e.target.value, examId: '' })}><option value="">Choose student</option>{sectionStudents.map(x => <option key={x.id} value={x.id}>{x.studentName}{x.rollNumber ? ` · Roll ${x.rollNumber}` : ''}</option>)}</select></label>
@@ -176,8 +177,8 @@ export default function HallTicketManagement({ schoolId }: { schoolId: number })
       <label className="tsc-full">Venue<input maxLength={200} placeholder="Exam centre or school address" value={form.venue} onChange={e => setForm({ ...form, venue: e.target.value })} /></label>
       <label className="tsc-full">Ticket link<input type="url" value={form.documentUrl} onChange={e => setForm({ ...form, documentUrl: e.target.value })} /></label>
       <label className="tsc-check"><input type="checkbox" checked={form.publish} onChange={e => setForm({ ...form, publish: e.target.checked })} />Publish now</label>
-      <button className="btn btn-primary" disabled={saving || loading}>{saving ? 'Saving…' : 'Save changes'}</button>
+      <button className="btn btn-primary" disabled={saving || loading}><AdminActionIcon action="save" />{saving ? 'Saving…' : 'Save changes'}</button>
     </form>}
-    <section className="tsc-list">{rows.map(x => <article className="tw-panel tsc-record" key={x.id}><h4>{x.studentName} · {x.examName}</h4><p>Seat {x.seatNumber} · Room {x.room} · Venue {x.venue || 'School address'} · {x.isPublished ? 'Published' : 'Draft'}</p><button type="button" className="btn" onClick={() => edit(x)}>Edit ticket</button></article>)}{!loading && !rows.length && <p className="tw-empty">No hall tickets yet.</p>}</section>
+    <section className="tsc-list">{rows.map(x => <article className="tw-panel tsc-record" key={x.id}><h4>{x.studentName} · {x.examName}</h4><p>Seat {x.seatNumber} · Room {x.room} · Venue {x.venue || 'School address'} · {x.isPublished ? 'Published' : 'Draft'}</p><button type="button" className="btn" onClick={() => edit(x)}><AdminActionIcon action="edit" />Edit ticket</button></article>)}{!loading && !rows.length && <p className="tw-empty">No hall tickets yet.</p>}</section>
   </div>;
 }

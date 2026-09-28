@@ -1,4 +1,5 @@
-﻿import React, { useState, useEffect } from 'react';
+import AdminActionIcon from './AdminActionIcon';
+import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import { useToast } from '../components/Toast/Toast';
 import { TOAST_MESSAGES } from '../constants/toastMessages';
@@ -269,7 +270,7 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
     <div className="staff-list-container">
       <div className="staff-list-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={() => setView('select')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px' }}>←</button>
+          <button onClick={() => setView('select')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px' }} aria-label="Back"><AdminActionIcon action="back" /></button>
           <h2>Mark Attendance</h2>
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -302,7 +303,7 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
               background: attendance === 'Present' ? '#c6f6d5' : 'white',
               color: attendance === 'Present' ? '#22543d' : '#718096',
               boxShadow: attendance === 'Present' ? '0 4px 12px rgba(34, 84, 61, 0.2)' : 'none',
-            }}>✓ Present</button>
+            }}><AdminActionIcon action="present" />Present</button>
             <button onClick={() => setAttendance('Absent')} style={{
               padding: '16px 32px', borderRadius: '12px', border: '3px solid', cursor: 'pointer',
               fontWeight: 700, fontSize: '16px', transition: 'all 0.2s',
@@ -310,7 +311,7 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
               background: attendance === 'Absent' ? '#fed7d7' : 'white',
               color: attendance === 'Absent' ? '#742a2a' : '#718096',
               boxShadow: attendance === 'Absent' ? '0 4px 12px rgba(116, 42, 42, 0.2)' : 'none',
-            }}>✗ Absent</button>
+            }}><AdminActionIcon action="absent" />Absent</button>
           </div>
         </div>
       </div>
@@ -322,7 +323,7 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
     <div className="staff-list-container">
       <div className="staff-list-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={() => setView('select')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px' }}>←</button>
+          <button onClick={() => setView('select')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px' }} aria-label="Back"><AdminActionIcon action="back" /></button>
           <h2>Attendance History</h2>
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>

@@ -1,3 +1,4 @@
+import AdminActionIcon from './AdminActionIcon';
 import React, { useEffect, useState } from 'react';
 import { API_BASE_URL } from '../config';
 import './StaffLeaveAllowanceEditor.css';
@@ -80,7 +81,7 @@ export default function StaffLeaveAllowanceEditor({ schoolId, staffId, canEdit }
             <td>{row?.used ?? 0}</td><td>{row?.pending ?? 0}</td><td><span className="sla-available">{canEdit ? available : row?.remaining ?? 0} days</span></td>
           </tr>; })}
         </tbody></table></div>
-        <div className="sla-footer"><p>Pending and approved requests reserve days. Rejected requests release them.</p>{canEdit && <button className="sla-save" type="submit" disabled={saving || !changed || invalid}>{saving ? 'Saving allowances...' : 'Save allowances'}</button>}</div>
+        <div className="sla-footer"><p>Pending and approved requests reserve days. Rejected requests release them.</p>{canEdit && <button className="sla-save" type="submit" disabled={saving || !changed || invalid}><AdminActionIcon action="save" />{saving ? 'Saving allowances...' : 'Save allowances'}</button>}</div>
       </form>}
   </div>;
 }
