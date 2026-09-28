@@ -140,3 +140,25 @@ test('principal login opens the dedicated school overview without requesting adm
   fireEvent.click(screen.getByRole('menuitem', { name: 'Logout' }));
   expect(mockNavigate).toHaveBeenCalledWith('/login');
 });
+
+test('librarian login opens the library desk without requesting admin schools', async () => {
+  const librarianToken = 'header.' + btoa(JSON.stringify({ RoleId: 5, SchoolId: 7 })) + '.signature';
+  global.fetch = jest.fn(async (url) => ({ ok: true, json: async () => {
+    if (String(url).includes('/auth/login')) return { token: librarianToken };
+    if (String(url).includes('/auth/profile')) return { name: 'School Librarian', roleName: ' Librarian ', schoolName: 'Library School' };
+    if (String(url).includes('/permissions/me')) return { roleName: 'Librarian', permissions: [] };
+    return { success: true, data: { reservations: [] } };
+  } } as Response));
+  const { container, rerender } = render(wrap(<Login />));
+  fireEvent.change(container.querySelector('input[type="email"]')!, { target: { value: 'librarian@school.test' } });
+  fireEvent.change(container.querySelector('input[type="password"]')!, { target: { value: 'test-password' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Login' }));
+  await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/dashboard'));
+  rerender(wrap(<Dashboard />));
+  expect(await screen.findByText('Library Desk')).toBeInTheDocument();
+  expect(await screen.findByText('No library reservations yet.')).toBeInTheDocument();
+  expect((global.fetch as jest.Mock).mock.calls.some(([url]) => String(url).includes('School-by-superadmin'))).toBe(false);
+  fireEvent.click(screen.getByRole('button', { name: 'Logout' }));
+  expect(localStorage.getItem('token')).toBeNull();
+  expect(mockNavigate).toHaveBeenCalledWith('/login');
+});

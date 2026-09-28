@@ -21,6 +21,7 @@ import TeacherWorkspace from './TeacherWorkspace';
 import PrincipalDashboard from './PrincipalDashboard';
 import ReceptionistDashboard from './ReceptionistDashboard';
 import CaDashboard from './CaDashboard';
+import LibrarianDashboard from './LibrarianDashboard';
 import TeacherAttendance from './TeacherAttendance';
 import TeacherCalendar from './TeacherCalendar';
 import TeacherStudentAttendance from './TeacherStudentAttendance';
@@ -170,7 +171,7 @@ const Dashboard: React.FC = () => {
       setProfileRoleName(profile?.roleName || '');
       const token = localStorage.getItem('token');
       const profileRoleId = token ? String(JSON.parse(atob(token.split('.')[1]))['RoleId'] || '') : '';
-      if (profileRoleId && !['1', '2'].includes(profileRoleId) && !['principal', 'ca', 'accountant', 'chartered accountant', 'receptionist', 'reception', 'front desk', 'front office'].includes((profile?.roleName || '').trim().toLowerCase())) fetchSchools();
+      if (profileRoleId && !['1', '2'].includes(profileRoleId) && !['principal', 'ca', 'accountant', 'chartered accountant', 'receptionist', 'reception', 'front desk', 'front office', 'librarian'].includes((profile?.roleName || '').trim().toLowerCase())) fetchSchools();
       setUserProfilePicture(profile?.profilePictureUrl || null);
       setTeacherSchool({
         schoolName: profile?.schoolName,
@@ -357,6 +358,10 @@ const Dashboard: React.FC = () => {
       setAttendanceType(null);
     }
   };
+
+  if ((profileRoleName || roleName).trim().toLowerCase() === 'librarian') {
+    return <LibrarianDashboard userName={userName} schoolName={teacherSchool.schoolName} onLogout={handleLogout} onProfile={() => navigate('/profile')} />;
+  }
 
   if (['ca', 'accountant', 'chartered accountant'].includes((profileRoleName || roleName).trim().toLowerCase())) {
     return <CaDashboard userName={userName} profilePicture={userProfilePicture} schoolName={teacherSchool.schoolName} schoolLogoUrl={teacherSchool.logoUrl} onLogout={handleLogout} onProfile={() => navigate('/profile')} />;
