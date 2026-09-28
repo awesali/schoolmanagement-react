@@ -1,4 +1,4 @@
-.student-exam-timetables{display:grid;gap:20px;margin-bottom:20px}
+﻿.student-exam-timetables{display:grid;gap:20px;margin-bottom:20px}
 .student-exam-section .timetable-container{margin-top:12px}
 .student-exam-grid{min-width:620px}
 .student-exam-grid th,.student-exam-grid td{padding:14px 12px;vertical-align:middle}
@@ -7,12 +7,12 @@
 .student-exam-subject{display:block;font-size:13px;color:var(--sp-text);padding:5px}
 .student-exam-subject+.student-exam-subject{border-top:1px solid var(--sp-border)}
 .student-exam-empty{color:var(--sp-muted)}
-@media(max-width:620px){.student-exam-grid{min-width:520px}}.student-exam-choices{display:grid;gap:12px;margin-bottom:20px}.student-exam-choice{display:flex;align-items:center;justify-content:space-between;gap:18px;width:100%;padding:20px 24px;border:1px solid var(--sp-border);border-radius:12px;background:var(--sp-surface);color:var(--sp-text);text-align:left;box-shadow:0 4px 14px #142d460f}.student-exam-choice:hover{border-color:var(--primary-color)}.student-exam-choice span:first-child{display:grid;gap:5px}.student-exam-choice small{color:var(--sp-muted);font-size:11px;letter-spacing:1px;font-weight:800}.student-exam-choice strong{font-size:17px}.student-exam-choice span:last-child,.student-exam-back{color:var(--primary-dark);font-weight:700}.student-exam-back{border:0;background:transparent;text-align:left;padding:4px 0}.student-exam-back:hover{text-decoration:underline}
+@media(max-width:620px){.student-exam-grid{min-width:520px}}.student-exam-choices{display:grid;gap:12px;margin-bottom:20px}.student-exam-choice{display:flex;align-items:center;justify-content:space-between;gap:18px;width:100%;padding:20px 24px;border:1px solid var(--sp-border);border-radius:12px;background:var(--sp-surface);color:var(--sp-text);text-align:left;box-shadow:0 4px 14px #1236490f}.student-exam-choice:hover{border-color:var(--primary-color)}.student-exam-choice span:first-child{display:grid;gap:5px}.student-exam-choice small{color:var(--sp-muted);font-size:11px;letter-spacing:1px;font-weight:800}.student-exam-choice strong{font-size:17px}.student-exam-choice span:last-child,.student-exam-back{color:var(--primary-dark);font-weight:700}.student-exam-back{border:0;background:transparent;text-align:left;padding:4px 0}.student-exam-back:hover{text-decoration:underline}
 /* Match the student portal palette without changing the timetable grid. */
 .student-exam-grid{border:1px solid var(--sp-border);border-radius:10px;overflow:hidden;color:var(--sp-text)}
 .student-exam-grid th,.student-exam-grid td{border-color:var(--sp-border)}
-.student-exam-grid thead th{background:#eaf2fb;color:#234d76}
-.student-exam-grid thead th.day-name{background:#dcebf9!important;color:#234d76!important}
-.student-exam-grid tbody th.day-name{background:#f1f6fc!important;color:#285584!important}
-.student-exam-grid tbody tr:nth-child(even) td{background:#f8fbff}
-.student-exam-grid .period-title{color:#234d76}
+.student-exam-grid thead th{background:#e8f5f3;color:#185966}
+.student-exam-grid thead th.day-name{background:#d5eeeb!important;color:#185966!important}
+.student-exam-grid tbody th.day-name{background:#f4faf8!important;color:#16676b!important}
+.student-exam-grid tbody tr:nth-child(even) td{background:#f7faf9}
+.student-exam-grid .period-title{color:#185966}

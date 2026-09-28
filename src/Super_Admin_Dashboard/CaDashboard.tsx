@@ -3,6 +3,7 @@ import { API_BASE_URL } from '../config';
 import FinanceManagement from './FinanceManagement';
 import AccountingWorkspace from './AccountingWorkspace';
 import SalaryManagement from './SalaryManagement';
+import SchoolFinanceDocument from './SchoolFinanceDocument';
 import { profilePictureUrl } from './ProfilePictureInput';
 import { LogoutIcon, ProfileIcon } from '../components/Icons/Icons';
 import './PrincipalDashboard.css';
@@ -33,6 +34,7 @@ export default function CaDashboard({ userName, profilePicture, schoolName, scho
   const [page, setPage] = useState<Page>('Overview');
   const [search, setSearch] = useState('');
   const [mode, setMode] = useState('');
+  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [menu, setMenu] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [failedLogo, setFailedLogo] = useState(false);
@@ -86,12 +88,27 @@ export default function CaDashboard({ userName, profilePicture, schoolName, scho
           <section className="principal-panel"><h2>Follow-up queue</h2>{fees && <button className="principal-alert" onClick={() => go('Outstanding fees')}><span className="principal-alert-dot" /><span><b>{fees.balances.filter(b => b.balance > 0).length} fee items with outstanding balances</b><small>Review student balances and collect payments.</small></span></button>}{data.payroll && <button className="principal-alert" onClick={() => go('Payroll')}><span className="principal-alert-dot" /><span><b>{data.payroll.pending} salary records not fully paid</b><small>Current status for the selected salary month.</small></span></button>}<h3>Collection by payment mode</h3>{fees?.modes.map(m => <div className="principal-list-row" key={m.name}><span>{m.name || 'Unspecified'}</span><b>{money(m.amount)}</b></div>)}{fees && !fees.modes.length && <p>No recorded payments.</p>}</section></div>
           {fees && <section className="principal-panel"><h2>Academic-year fee position</h2>{data.academicYear ? <><div className="principal-summary"><div><span>Assessed fees</span><strong>{money(fees.assessed)}</strong></div><div><span>Collected through selected date</span><strong>{money(fees.collected)}</strong></div><div><span>Outstanding</span><strong>{money(fees.outstanding)}</strong></div></div><p className="principal-footnote">Outstanding includes all unpaid assigned fees. Due dates are not recorded, so these amounts are not classified as overdue.</p></> : <p>No academic year covers the selected date.</p>}</section>}
         </>}
-        {page === 'Collection register' && fees && <section className="principal-panel"><div className="principal-section-title"><h2>Month-to-date collection register</h2><button className="principal-link" onClick={exportPayments}>Export CSV</button></div><div className="principal-filters"><input aria-label="Search collections" placeholder="Search student or receipt" value={search} onChange={e => setSearch(e.target.value)} /><label>Payment mode<select value={mode} onChange={e => setMode(e.target.value)}><option value="">All modes</option>{fees.modes.map(m => <option key={m.name} value={m.name}>{m.name}</option>)}</select></label></div><p>{payments.length} payment entries · {money(payments.reduce((sum, p) => sum + p.amount, 0))}</p><div className="principal-table-scroll"><table><thead><tr><th>Receipt</th><th>Student</th><th>Date</th><th>Mode</th><th>Amount</th></tr></thead><tbody>{payments.map(p => <tr key={p.id}><td>{p.receipt || '—'}</td><td>{p.studentName}</td><td>{p.date.slice(0, 10)}</td><td>{p.mode}</td><td>{money(p.amount)}</td></tr>)}{!payments.length && <tr><td colSpan={5}>No payments match this view.</td></tr>}</tbody></table></div></section>}
+        {page === 'Collection register' && fees && <section className="principal-panel"><div className="principal-section-title"><h2>Month-to-date collection register</h2><button className="principal-link" onClick={exportPayments}>Export CSV</button></div><div className="principal-filters"><input aria-label="Search collections" placeholder="Search student or receipt" value={search} onChange={e => setSearch(e.target.value)} /><label>Payment mode<select value={mode} onChange={e => setMode(e.target.value)}><option value="">All modes</option>{fees.modes.map(m => <option key={m.name} value={m.name}>{m.name}</option>)}</select></label></div><p>{payments.length} payment entries · {money(payments.reduce((sum, p) => sum + p.amount, 0))}</p><div className="principal-table-scroll"><table><thead><tr><th>Receipt</th><th>Student</th><th>Date</th><th>Mode</th><th>Amount</th></tr></thead><tbody>{payments.map(p => <tr key={p.id}><td><button className="principal-link" onClick={() => setSelectedPayment(p)} aria-label={'View receipt ' + (p.receipt || p.id)}>{p.receipt || 'View receipt'}</button></td><td>{p.studentName}</td><td>{p.date.slice(0, 10)}</td><td>{p.mode}</td><td>{money(p.amount)}</td></tr>)}{!payments.length && <tr><td colSpan={5}>No payments match this view.</td></tr>}</tbody></table></div></section>}
         {page === 'Outstanding fees' && fees && <section className="principal-panel"><div className="principal-section-title"><h2>Academic-year outstanding fees</h2><button className="principal-link" onClick={exportBalances}>Export CSV</button></div><p>Balances through {date}. Due dates are not available for overdue classification.</p><input aria-label="Search outstanding fees" placeholder="Search student or fee type" value={search} onChange={e => setSearch(e.target.value)} /><div className="principal-table-scroll"><table><thead><tr><th>Student</th><th>Fee type</th><th>Assessed</th><th>Paid</th><th>Outstanding</th></tr></thead><tbody>{balances.map(b => <tr key={b.id}><td>{b.studentName}</td><td>{b.feeType}</td><td>{money(b.amount)}</td><td>{money(b.paid)}</td><td><span className="principal-badge warning">{money(b.balance)}</span></td></tr>)}{!balances.length && <tr><td colSpan={5}>{data.academicYear ? 'No outstanding fees match this view.' : 'No academic year covers the selected date.'}</td></tr>}</tbody></table></div><button className="principal-link" onClick={() => go('Fee management')}>Open fee collection →</button></section>}
         {page === 'Accounting' && data.accounting && <AccountingWorkspace schoolName={label} />}
-        {page === 'Fee management' && fees && <FinanceManagement selectedSchoolId={data.schoolId} />}
-        {page === 'Payroll' && data.payroll && <SalaryManagement selectedSchoolId={data.schoolId} />}
+        {page === 'Fee management' && fees && <FinanceManagement selectedSchoolId={data.schoolId} schoolName={label} schoolLogoUrl={schoolLogoUrl} />}
+        {page === 'Payroll' && data.payroll && <SalaryManagement selectedSchoolId={data.schoolId} schoolName={label} schoolLogoUrl={schoolLogoUrl} />}
         {page === 'Reports' && <section className="principal-panel"><h2>Financial reports</h2><p>Collection reports cover the selected month through {date}. Outstanding balances cover the academic year shown above.</p>{fees && <><div className="principal-list-row"><span>Collection register</span><button className="principal-link" onClick={exportPayments}>Download CSV</button></div><div className="principal-list-row"><span>Outstanding fee balances</span><button className="principal-link" onClick={exportBalances}>Download CSV</button></div></>}{data.payroll && <div className="principal-list-row"><span>Salary history and pending salaries</span><button className="principal-link" onClick={() => go('Payroll')}>Open payroll</button></div>}<p className="principal-footnote">These reports cover recorded school fees and payroll. Transport fees, expenses, bank balances and statutory accounts are outside this report.</p></section>}
+        {selectedPayment && <SchoolFinanceDocument
+          title="Payment Receipt"
+          kind="receipt"
+          schoolName={label}
+          schoolLogoUrl={schoolLogoUrl}
+          reference={selectedPayment.receipt || String(selectedPayment.id)}
+          date={selectedPayment.date}
+          recipientLabel="Received from"
+          recipient={selectedPayment.studentName}
+          fields={[{ label: 'Payment mode', value: selectedPayment.mode }]}
+          totalLabel="Amount received"
+          total={selectedPayment.amount}
+          onClose={() => setSelectedPayment(null)}
+          printLabel="Print receipt"
+        />}
         <p className="principal-updated">Updated {new Date(data.generatedAt).toLocaleString('en-IN')}</p>
       </>}
       </div></div>

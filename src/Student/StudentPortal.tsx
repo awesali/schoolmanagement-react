@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+﻿import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../config';
 import { BellIcon, LogoutIcon, PreviewIcon, ProfileIcon, ResetIcon } from '../components/Icons/Icons';
@@ -10,6 +10,7 @@ import StudentReportCards from './StudentReportCards';
 import StudentTimetable from './StudentTimetable';
 import StudentConversations from './StudentConversations';
 import StudentChangePassword from './StudentChangePassword';
+import StudentPaymentReceipt from './StudentPaymentReceipt';
 import { downloadStudyMaterial, isUploadedStudyMaterial } from './studyMaterialFiles';
 import './StudentPortal.css';
 
@@ -238,13 +239,6 @@ export default function StudentPortal() {
   const transportPending = transportBills.reduce((sum, bill) => sum + Math.max(0, (Number(bill.amount) || 0) - (Number(bill.paidAmount) || 0)), 0);
   const transportPeriod = (month: number, year: number) => new Date(year, month - 1, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
   const selectedTransportBill = transportBills.find(bill => bill.id === transportReceipt?.transportFeeId);
-  const printTransportReceipt = () => {
-    if (!transportReceipt) return;
-    const previousTitle = document.title;
-    document.title = `${data.profile.studentName} - Transport Receipt ${transportReceipt.receiptNumber || transportReceipt.id}`;
-    window.addEventListener('afterprint', () => { document.title = previousTitle; }, { once: true });
-    window.print();
-  };
   const submissionFor = (assignment: Row) => (data.submissions || []).find(row => Number(row.assignmentId) === Number(assignment.id));
   const isSubmitted = (assignment: Row) => {
     const submission = submissionFor(assignment);
@@ -281,7 +275,7 @@ export default function StudentPortal() {
 
   return <div className={"sp-layout" + (sidebarCollapsed ? " sp-sidebar-collapsed" : "")}>
     <aside className={`sp-side${mobileMenu ? ' sp-side-open' : ''}`}><div className="sp-brand"><div className="sp-brand-mark">S</div><div><strong>{data.profile.schoolName || 'School'}</strong><small>Student portal</small></div></div>{nav}</aside>
-    <main className={"sp-main" + (transportReceipt ? " sp-print-transport" : "")}>
+    <main className="sp-main">
       <header className="sp-header">
         <div className="sp-header-left">
           <button type="button" className="sp-menu-button" aria-label="Toggle navigation" aria-expanded={mobileMenu || !sidebarCollapsed} onClick={() => {
@@ -444,25 +438,24 @@ export default function StudentPortal() {
     </>}
     {page === 'My Profile' && <>{sectionHeading('My profile', 'Information recorded by your school.')}{panel('Student details', <dl className="sp-details">{[['Name',data.profile.studentName],['Email',data.profile.email],['School',data.profile.schoolName],['Class',`${data.profile.className} ${data.profile.sectionName}`],['Roll number',data.profile.rollNumber]].map(([label,value]) => <React.Fragment key={label}><dt>{label}</dt><dd>{value || '·'}</dd></React.Fragment>)}</dl>)}{panel('Parent or guardian', data.parent ? <dl className="sp-details">{[['Name',data.parent.name],['Relationship',data.parent.relationship],['Email',data.parent.email],['Phone',data.parent.phoneNumber]].map(([label,value]) => <React.Fragment key={label}><dt>{label}</dt><dd>{value || '·'}</dd></React.Fragment>)}</dl> : empty('No parent details available.'))}<StudentChangePassword /></>}
     {selectedHomework && <StudentAssignment assignment={selectedHomework} submission={(data.submissions || []).find(x => x.assignmentId === selectedHomework.id)} onComplete={load} onClose={() => setSelectedHomework(null)} />}
-    {transportReceipt && <div className="sp-modal-backdrop" onMouseDown={() => setTransportReceipt(null)}>
-      <section className="sp-modal sp-receipt sp-transport-receipt" role="dialog" aria-modal="true" aria-label="Transport receipt" onMouseDown={e => e.stopPropagation()}>
-        <button type="button" className="sp-modal-close" aria-label="Close transport receipt" onClick={() => setTransportReceipt(null)}>×</button>
-        <div className="sp-transport-receipt-header"><small>TRANSPORT PAYMENT RECEIPT</small><h2>{data.profile.schoolName || 'School'}</h2><p>Receipt {transportReceipt.receiptNumber || '—'}</p></div>
-        <dl className="sp-details">
-          <dt>Student</dt><dd>{data.profile.studentName}</dd>
-          <dt>Class / roll</dt><dd>{data.profile.className} {data.profile.sectionName} · {data.profile.rollNumber || '—'}</dd>
-          <dt>Route / vehicle</dt><dd>{data.transport?.routeName || '—'} · {data.transport?.vehicleNumber || '—'}</dd>
-          <dt>Billing period</dt><dd>{selectedTransportBill ? transportPeriod(Number(selectedTransportBill.feeMonth), Number(selectedTransportBill.feeYear)) : 'Transport fee'}</dd>
-          <dt>Payment date</dt><dd>{shortDate(transportReceipt.paymentDate)}</dd>
-          <dt>Payment mode</dt><dd>{transportReceipt.paymentMode || '—'}</dd>
-          {transportReceipt.referenceNumber && <><dt>Reference</dt><dd>{transportReceipt.referenceNumber}</dd></>}
-          <dt>Amount paid</dt><dd>{money(Number(transportReceipt.amount) || 0)}</dd>
-        </dl>
-        <button type="button" className="btn btn-primary sp-print-button" onClick={printTransportReceipt}>Print / Save PDF</button>
-      </section>
-    </div>}
-    {receipt && <div className="sp-modal-backdrop" onMouseDown={() => setReceipt(null)}><section className="sp-modal sp-receipt" role="dialog" aria-modal="true" onMouseDown={e => e.stopPropagation()}><button className="sp-modal-close" onClick={() => setReceipt(null)}>·</button><h2>Fee receipt</h2><p>{data.profile.schoolName}</p><dl className="sp-details"><dt>Student</dt><dd>{data.profile.studentName}</dd><dt>Receipt number</dt><dd>{receipt.receipt_Number}</dd><dt>Fee type</dt><dd>{data.fees.find(x => x.id === receipt.studentFeeId)?.feeType || 'School fee'}</dd><dt>Date</dt><dd>{shortDate(receipt.payment_Date)}</dd><dt>Payment mode</dt><dd>{receipt.payment_Mode}</dd><dt>Amount paid</dt><dd>₹{receipt.amountPaid}</dd></dl><button className="btn btn-primary sp-print-button" onClick={() => window.print()}>Print receipt</button></section></div>}
-    </main>
+    {transportReceipt && <StudentPaymentReceipt
+      kind="transport"
+      payment={transportReceipt}
+      profile={data.profile}
+      description={selectedTransportBill ? `Transport fee · ${transportPeriod(Number(selectedTransportBill.feeMonth), Number(selectedTransportBill.feeYear))}` : 'Transport fee'}
+      details={[
+        { label: 'Route', value: data.transport?.routeName },
+        { label: 'Vehicle', value: data.transport?.vehicleNumber },
+      ]}
+      onClose={() => setTransportReceipt(null)}
+    />}
+    {receipt && <StudentPaymentReceipt
+      kind="fee"
+      payment={receipt}
+      profile={data.profile}
+      description={data.fees.find(x => Number(x.id) === Number(receipt.studentFeeId))?.feeType || 'School fee'}
+      onClose={() => setReceipt(null)}
+    />}    </main>
     <nav className="sp-bottom" aria-label="Quick navigation">{(['Today','Timetable','Homework','Documents'] as Page[]).map(item => <button className={page === item ? 'active' : ''} key={item} onClick={() => switchPage(item)}>{item}</button>)}</nav>
   </div>;
 }

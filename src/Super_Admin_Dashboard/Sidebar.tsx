@@ -69,8 +69,6 @@ const menuGroups = [
 
 const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, userRole, schoolName, schoolLogoUrl, attendanceType }) => {
   const { can } = usePermissions();
-  const [openGroups, setOpenGroups] = useState<string[]>([]);
-  const [openItems, setOpenItems] = useState<string[]>([]);
   const [failedLogo, setFailedLogo] = useState<string | null>(null);
   const resolvedLogo = profilePictureUrl(schoolLogoUrl);
   const schoolInitials =
@@ -85,14 +83,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, 
 
   const currentMenuGroups = userRole === '2' ? teacherMenuGroups : menuGroups;
 
-  const toggleGroup = (group: string) => {
-    setOpenGroups((prev) => (prev.includes(group) ? prev.filter((g) => g !== group) : [...prev, group]));
-  };
-
-  const toggleItem = (item: string) => {
-    setOpenItems((prev) => (prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item]));
-  };
-
+  const isActiveChild = (child: string, parentLabel: string) =>
+    activePage === child && (child !== 'Attendance' || attendanceType === (parentLabel === 'Students' ? 'student' : 'staff'));
   const getFilteredMenuGroups = () => {
     return currentMenuGroups
       .map((group) => ({
@@ -239,41 +231,24 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate, isCollapsed, 
         <span className="logo-text">SchoolAdmin</span>
       </div>
 
-      <nav className="sidebar-nav">
+      <nav className="sidebar-nav admin-sidebar-nav" aria-label="Admin navigation">
         {can('dashboard.dashboard', 'read') && (
-          <button className={`nav-item ${activePage === 'Dashboard' ? 'active' : ''}`} onClick={() => onNavigate('Dashboard')}>
-            <span className="nav-icon">📊</span>
-            <span>Dashboard</span>
+          <button className={`nav-item ${activePage === 'Dashboard' ? 'active' : ''}`} aria-current={activePage === 'Dashboard' ? 'page' : undefined} onClick={() => onNavigate('Dashboard')}>
+            Dashboard
           </button>
         )}
-
         {filteredMenuGroups.map(({ group, items }) => (
           <div key={group} className="nav-group">
-            <button className="nav-group-header" onClick={() => toggleGroup(group)}>
-              <span>{group}</span>
-              <span className={`chevron ${openGroups.includes(group) ? 'open' : ''}`}>›</span>
-            </button>
-            {openGroups.includes(group) && (
-              <div className="nav-group-items">
-                {items.map(({ label, children }) => (
-                  <div key={label}>
-                    <button className="nav-sub-item nav-sub-parent" onClick={() => toggleItem(label)}>
-                      <span>{label}</span>
-                      <span className={`chevron ${openItems.includes(label) ? 'open' : ''}`}>›</span>
-                    </button>
-                    {openItems.includes(label) && (
-                      <div className="nav-leaf-items">
-                        {children.map((child) => (
-                          <button key={child} className={`nav-leaf-item ${activePage === child ? 'active' : ''}`} onClick={() => handleAttendanceClick(child, label)}>
-                            {child}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+            <p className="nav-group-header">{group}</p>
+            {items.flatMap(({ label, children }) => children.map((child) => {
+              const active = isActiveChild(child, label);
+              const name = child === 'Attendance' ? `${label === 'Students' ? 'Student' : 'Staff'} Attendance` : child;
+              return (
+                <button key={`${label}-${child}`} className={`nav-item ${active ? 'active' : ''}`} aria-current={active ? 'page' : undefined} onClick={() => handleAttendanceClick(child, label)}>
+                  {name}
+                </button>
+              );
+            }))}
           </div>
         ))}
       </nav>

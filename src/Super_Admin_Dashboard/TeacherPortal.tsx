@@ -1,10 +1,11 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { profilePictureUrl } from "./ProfilePictureInput";
 import { API_BASE_URL } from "../config";
 import { localDate, SchoolIcon, teacherRequest } from "./TeacherWorkspace";
 import "./TeacherWorkspace.css";
 import { downloadStudyMaterial, isUploadedStudyMaterial } from "../Student/studyMaterialFiles";
 import SyllabusProgress from "./SyllabusProgress";
+import SchoolFinanceDocument from "./SchoolFinanceDocument";
 
 export type TeacherPortalPage =
   "Homework & Assignments" | "Syllabus Progress" | "Calendar" | "Study Material" | "My Profile";
@@ -561,12 +562,13 @@ function Calendar() {
   );
 }
 
-function Profile({ onNavigate }: { onNavigate: Navigate }) {
+function Profile({ onNavigate, schoolName, schoolLogoUrl }: { onNavigate: Navigate; schoolName?: string; schoolLogoUrl?: string | null }) {
   const [tab, setTab] = useState("Personal Details"),
     [data, setData] = useState<any>(null),
     [rows, setRows] = useState<any[]>([]),
     [error, setError] = useState(""),
-    [open, setOpen] = useState(false);
+    [open, setOpen] = useState(false),
+    [selectedPayslip, setSelectedPayslip] = useState<any>(null);
   const [leave, setLeave] = useState({
     leaveType: "Casual Leave",
     fromDate: "",
@@ -834,7 +836,7 @@ function Profile({ onNavigate }: { onNavigate: Navigate }) {
                       {Number(row.deduction).toLocaleString("en-IN")}
                     </span>
                   </div>
-                  <button onClick={() => window.print()}>Print payslip</button>
+                  <button onClick={() => setSelectedPayslip(row)}>View payslip</button>
                 </article>
               ))}
             </div>
@@ -872,6 +874,30 @@ function Profile({ onNavigate }: { onNavigate: Navigate }) {
           )}
         </>
       )}
+      {selectedPayslip && <SchoolFinanceDocument
+        title="Salary Payslip"
+        kind="payslip"
+        schoolName={schoolName || data?.schoolName}
+        schoolLogoUrl={schoolLogoUrl}
+        reference={`${selectedPayslip.salaryMonth}/${selectedPayslip.salaryYear}`}
+        date={selectedPayslip.paymentDate}
+        recipientLabel="Employee"
+        recipient={data?.name || 'Staff member'}
+        fields={[
+          { label: 'Designation', value: data?.designation },
+          { label: 'Payment method', value: selectedPayslip.paymentMethod },
+          { label: 'Remarks', value: selectedPayslip.remarks },
+        ]}
+        lines={[
+          { label: 'Basic salary', amount: Number(selectedPayslip.basicSalary) || 0 },
+          { label: 'Bonus', amount: Number(selectedPayslip.bonus) || 0 },
+          { label: 'Deduction', amount: -(Number(selectedPayslip.deduction) || 0) },
+        ]}
+        totalLabel="Net salary paid"
+        total={Number(selectedPayslip.netSalary) || 0}
+        onClose={() => setSelectedPayslip(null)}
+        printLabel="Print payslip"
+      />}
     </div>
   );
 }
@@ -887,6 +913,6 @@ export default function TeacherPortal({
   if (page === "Homework & Assignments") return <Homework />;
   if (page === "Calendar") return <Calendar />;
   if (page === "Study Material") return <StudyMaterial />;
-  return <Profile onNavigate={onNavigate} />;
+  return <Profile onNavigate={onNavigate} schoolName={schoolName} schoolLogoUrl={schoolLogoUrl} />;
 }
 

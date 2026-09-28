@@ -1,6 +1,6 @@
-.student-exam-tabs{display:flex;gap:9px;flex-wrap:wrap;margin:0 0 20px}
+﻿.student-exam-tabs{display:flex;gap:9px;flex-wrap:wrap;margin:0 0 20px}
 .student-exam-tabs button{border:1px solid var(--sp-border);border-radius:9px;background:var(--sp-surface);color:var(--sp-text);padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer}
-.student-exam-tabs button:hover{border-color:var(--primary-color);background:#f5faff}
-.student-exam-tabs button.active{border-color:var(--primary-color);background:var(--primary-color);color:#fff;box-shadow:0 3px 9px #2855842e}
+.student-exam-tabs button:hover{border-color:var(--primary-color);background:#f4faf8}
+.student-exam-tabs button.active{border-color:var(--primary-color);background:var(--primary-color);color:#fff;box-shadow:0 3px 9px #16676b2e}
 .student-exam-tabs button.active:hover{background:var(--primary-dark)}
 @media(max-width:520px){.student-exam-tabs button{flex:1 1 auto}}

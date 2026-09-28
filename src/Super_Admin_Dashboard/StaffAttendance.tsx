@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import { useToast } from '../components/Toast/Toast';
 import { TOAST_MESSAGES } from '../constants/toastMessages';
 import { LoadingButton, PageLoader } from '../components/Loader/Loader';
 import './StaffList.css';
+import './StaffAttendance.css';
 import { SearchIcon, ResetIcon } from '../components/Icons/Icons';
 import '../components/Icons/CreateIconButton.css';
 
@@ -170,19 +171,18 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
           <PageLoader label="Loading staff attendance..." />
         ) : (
           <>
-            <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
-              {[{ label: 'Present', count: presentCount, bg: '#c6f6d5', color: '#22543d' },
-                { label: 'Absent', count: absentCount, bg: '#fed7d7', color: '#742a2a' },
-                { label: 'Late', count: lateCount, bg: '#e9d8fd', color: '#553c9a' },
-                { label: 'On Leave', count: leaveCount, bg: '#fef3c7', color: '#78350f' }]
-                .map(({ label, count, bg, color }) => (
-                  <div key={label} style={{ flex: 1, background: bg, borderRadius: '12px', padding: '16px 20px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '28px', fontWeight: 700, color }}>{count}</div>
-                    <div style={{ fontSize: '13px', fontWeight: 600, color }}>{label}</div>
+            <div className="staff-attendance-metrics">
+              {[{ label: 'Present', count: presentCount },
+                { label: 'Absent', count: absentCount },
+                { label: 'Late', count: lateCount },
+                { label: 'On Leave', count: leaveCount }]
+                .map(({ label, count }) => (
+                  <div className="staff-attendance-metric" key={label}>
+                    <span>{label}</span>
+                    <strong>{count}</strong>
                   </div>
                 ))}
             </div>
-
             <div className="staff-table-wrapper">
               {adminAttendance.length === 0 ? (
                 <p style={{ padding: '20px', textAlign: 'center', color: '#718096' }}>No attendance records found.</p>
@@ -229,11 +229,11 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
         </p>
         <div style={{ display: 'flex', gap: '24px' }}>
           <div onClick={() => setView('mark')}
-            style={{ cursor: 'pointer', width: '260px', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 16px rgba(74,144,226,0.15)', border: '1px solid var(--border)', background: 'var(--surface)', transition: 'transform 0.2s, box-shadow 0.2s' }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(74,144,226,0.25)'; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(74,144,226,0.15)'; }}
+            style={{ cursor: 'pointer', width: '260px', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 16px rgba(18,54,73,0.15)', border: '1px solid var(--border)', background: 'var(--surface)', transition: 'transform 0.2s, box-shadow 0.2s' }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(18,54,73,0.25)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(18,54,73,0.15)'; }}
           >
-            <div style={{ background: 'linear-gradient(135deg, var(--primary-color) 0%, #357abd 100%)', padding: '32px 24px', textAlign: 'center' }}>
+            <div style={{ background: 'linear-gradient(135deg, var(--primary-color) 0%, #16676b 100%)', padding: '32px 24px', textAlign: 'center' }}>
               <div style={{ fontSize: '52px', marginBottom: '8px' }}>📋</div>
               <div style={{ color: 'white', fontWeight: 700, fontSize: '18px' }}>Mark Attendance</div>
             </div>
@@ -246,11 +246,11 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
           </div>
 
           <div onClick={() => setView('history')}
-            style={{ cursor: 'pointer', width: '260px', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 16px rgba(80,200,120,0.15)', border: '1px solid var(--border)', background: 'var(--surface)', transition: 'transform 0.2s, box-shadow 0.2s' }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(80,200,120,0.25)'; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(80,200,120,0.15)'; }}
+            style={{ cursor: 'pointer', width: '260px', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 16px rgba(8,127,131,0.15)', border: '1px solid var(--border)', background: 'var(--surface)', transition: 'transform 0.2s, box-shadow 0.2s' }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(8,127,131,0.25)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(8,127,131,0.15)'; }}
           >
-            <div style={{ background: 'linear-gradient(135deg, var(--secondary-color) 0%, #3aaa6a 100%)', padding: '32px 24px', textAlign: 'center' }}>
+            <div style={{ background: 'linear-gradient(135deg, var(--secondary-color) 0%, #16676b 100%)', padding: '32px 24px', textAlign: 'center' }}>
               <div style={{ fontSize: '52px', marginBottom: '8px' }}>📅</div>
               <div style={{ color: 'white', fontWeight: 700, fontSize: '18px' }}>Previous Attendance</div>
             </div>

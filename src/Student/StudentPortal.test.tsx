@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 const mockNavigate = jest.fn();
 jest.mock('react-router-dom', () => ({ useNavigate: () => mockNavigate }), { virtual: true });
@@ -226,4 +226,25 @@ test('header bell opens a notice, tracks unread count, and keeps deleted items h
   await screen.findByRole('button', { name: 'Notifications, 0 unread' });
   fireEvent.click(screen.getByRole('button', { name: 'Notifications, 0 unread' }));
   expect(screen.queryByText('Library hours')).not.toBeInTheDocument();
+});
+test('fee receipt shows school branding, payment details and print action', async () => {
+  const data = {
+    ...overview,
+    profile: { ...overview.profile, schoolAddress: 'Main Road, Delhi', schoolLogoUrl: '/logos/test-school.png' },
+    fees: [{ id: 1, feeType: 'Tuition', amount: 1000 }],
+    payments: [{ id: 10, studentFeeId: 1, amountPaid: 200, payment_Date: '2026-09-27T09:00:00', receipt_Number: 'R1', payment_Mode: 'Cash' }],
+  };
+  global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, text: async () => JSON.stringify({ success: true, data }) }) as jest.Mock;
+  render(<StudentPortal />);
+  await screen.findByText(/Good .*Test/);
+  fireEvent.click(screen.getByRole('button', { name: 'Fees' }));
+  fireEvent.click(screen.getByRole('button', { name: 'View receipt: R1' }));
+  const receipt = screen.getByRole('dialog', { name: 'Fee receipt' });
+  expect(receipt).toHaveTextContent('Test School');
+  expect(receipt).toHaveTextContent('Main Road, Delhi');
+  expect(receipt).toHaveTextContent('Tuition');
+  expect(receipt).toHaveTextContent('R1');
+  expect(receipt).toHaveTextContent('₹200.00');
+  expect(screen.getByRole('img', { name: 'Test School logo' })).toHaveAttribute('src', new URL('/logos/test-school.png', API_BASE_URL).toString());
+  expect(screen.getByRole('button', { name: 'Print / Save PDF' })).toBeInTheDocument();
 });

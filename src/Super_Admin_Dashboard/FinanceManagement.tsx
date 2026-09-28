@@ -3,11 +3,11 @@ import { API_BASE_URL } from '../config';
 import { PageLoader } from '../components/Loader/Loader';
 import './StaffList.css';
 import './ManagementTabs.css';
-import './FeeReceipt.css';
+import SchoolFinanceDocument from './SchoolFinanceDocument';
 import Modal from './Modal';
 import { useToast } from '../components/Toast/Toast';
 import { usePermissions } from '../security/Permissions';
-import { FeeTypeIcon, RemoveIcon, LoadIcon, AssignmentIcon, PreviewIcon, ReceiptIcon, PrintIcon, CloseIcon } from '../components/Icons/Icons';
+import { FeeTypeIcon, RemoveIcon, LoadIcon, AssignmentIcon, PreviewIcon, ReceiptIcon } from '../components/Icons/Icons';
 import '../components/Icons/CreateIconButton.css';
 
 type FinanceView = 'feeTypes' | 'assign' | 'pending' | 'history';
@@ -76,7 +76,7 @@ const selectStyle: React.CSSProperties = {
   fontSize: '14px', minWidth: '160px', background: 'white',
 };
 
-const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selectedSchoolId }) => {
+const FinanceManagement: React.FC<{ selectedSchoolId: number | null; schoolName?: string; schoolLogoUrl?: string | null }> = ({ selectedSchoolId, schoolName, schoolLogoUrl }) => {
   const toast = useToast();
   const { can } = usePermissions();
   const [editFee, setEditFee] = useState<FeeRecord | null>(null);
@@ -767,25 +767,25 @@ const FinanceManagement: React.FC<{ selectedSchoolId: number | null }> = ({ sele
       </Modal>
 
       {/* ── RECEIPT MODAL ── */}
-      {receipt && (
-        <div className="school-fee-receipt-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="school-fee-receipt" style={{ background: 'white', borderRadius: '16px', padding: '32px', width: '100%', maxWidth: '480px', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
-            <h3 style={{ marginBottom: '20px', color: '#1e2a3a' }}>🧾 Payment Receipt</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '14px', color: '#4a5568', marginBottom: '24px' }}>
-              {Object.entries(receipt).map(([k, v]) => (
-                <div key={k}>
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#718096', textTransform: 'uppercase', marginBottom: '2px' }}>{k}</div>
-                  <div style={{ fontWeight: 600 }}>{String(v)}</div>
-                </div>
-              ))}
-            </div>
-            <div className="school-fee-receipt-actions" style={{ display: 'flex', gap: 12 }}>
-              <button type="button" className="create-icon-button" title="Print Receipt" aria-label="Print Receipt" onClick={() => window.print()}><PrintIcon size={26} /></button>
-              <button type="button" className="create-icon-button" title="Close Receipt" aria-label="Close Receipt" onClick={() => setReceipt(null)}><CloseIcon size={26} /></button>
-            </div>
-          </div>
-        </div>
-      )}
+      {receipt && <SchoolFinanceDocument
+        title="Payment Receipt"
+        kind="receipt"
+        schoolName={schoolName}
+        schoolLogoUrl={schoolLogoUrl}
+        reference={receipt.receiptNumber}
+        date={receipt.paymentDate}
+        recipientLabel="Student"
+        recipient={receipt.studentName || '—'}
+        fields={[
+          { label: 'Class / section', value: [receipt.className, receipt.sectionName].filter(Boolean).join(' / ') },
+          { label: 'Fee type', value: receipt.feeType },
+          { label: 'Payment mode', value: receipt.paymentMode },
+          { label: 'Acknowledgement', value: receipt.acknowledgementId },
+        ]}
+        totalLabel="Amount received"
+        total={Number(receipt.amountPaid) || 0}
+        onClose={() => setReceipt(null)}
+      />}
     </div>
   );
 };

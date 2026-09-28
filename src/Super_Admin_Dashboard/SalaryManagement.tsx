@@ -4,6 +4,7 @@ import { PageLoader } from '../components/Loader/Loader';
 import { useToastResultState } from '../components/Toast/Toast';
 import './StaffList.css';
 import './ManagementTabs.css';
+import SchoolFinanceDocument from './SchoolFinanceDocument';
 
 type SalaryTab = 'dashboard' | 'assign' | 'pay' | 'history' | 'pending';
 
@@ -68,6 +69,8 @@ interface DashboardData {
 
 interface SalaryManagementProps {
   selectedSchoolId: number | null;
+  schoolName?: string;
+  schoolLogoUrl?: string | null;
 }
 
 const TAB_LABELS: Record<SalaryTab, string> = {
@@ -134,7 +137,7 @@ const money = (amount: number) => `Rs. ${Number(amount || 0).toLocaleString()}`;
 const monthName = (month: number) =>
   new Date(0, month - 1).toLocaleString('default', { month: 'long' });
 
-const SalaryManagement: React.FC<SalaryManagementProps> = ({ selectedSchoolId }) => {
+const SalaryManagement: React.FC<SalaryManagementProps> = ({ selectedSchoolId, schoolName, schoolLogoUrl }) => {
   const [pendingLoads, setPendingLoads] = useState(0);
   const [activeTab, setActiveTab] = useState<SalaryTab>('dashboard');
   const [staffList, setStaffList] = useState<Staff[]>([]);
@@ -342,6 +345,8 @@ const SalaryManagement: React.FC<SalaryManagementProps> = ({ selectedSchoolId })
         <SalaryHistoryView
           salaryHistory={salaryHistory}
           onLoad={fetchSalaryHistory}
+          schoolName={schoolName}
+          schoolLogoUrl={schoolLogoUrl}
         />
       )}
 
@@ -765,10 +770,13 @@ const PaySalaryForm: React.FC<{
 const SalaryHistoryView: React.FC<{
   salaryHistory: SalaryHistory[];
   onLoad: (month: number, year: number) => Promise<void>;
-}> = ({ salaryHistory, onLoad }) => {
+  schoolName?: string;
+  schoolLogoUrl?: string | null;
+}> = ({ salaryHistory, onLoad, schoolName, schoolLogoUrl }) => {
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [year, setYear] = useState(new Date().getFullYear());
   const [search, setSearch] = useState('');
+  const [selectedPayslip, setSelectedPayslip] = useState<SalaryHistory | null>(null);
   const [loading, setLoading] = useState(false);
 
   const loadHistory = async () => {
@@ -820,6 +828,7 @@ const SalaryHistoryView: React.FC<{
                 <th>Net Salary</th>
                 <th>Method</th>
                 <th>Payment Date</th>
+                <th>Payslip</th>
               </tr>
             </thead>
             <tbody>
@@ -834,6 +843,7 @@ const SalaryHistoryView: React.FC<{
                   <td>{money(record.netSalary)}</td>
                   <td>{record.paymentMethod?.replace('_', ' ') || '-'}</td>
                   <td>{record.paymentDate ? new Date(record.paymentDate).toLocaleDateString() : '-'}</td>
+                  <td><button type="button" className="btn" onClick={() => setSelectedPayslip(record)}>View Payslip</button></td>
                 </tr>
               ))}
             </tbody>
@@ -844,6 +854,30 @@ const SalaryHistoryView: React.FC<{
           {loading ? 'Loading salary history...' : salaryHistory.length ? 'No employees match your search.' : `No paid salaries found for ${monthName(month)} ${year}.`}
         </p>
       )}
+      {selectedPayslip && <SchoolFinanceDocument
+        title="Salary Payslip"
+        kind="payslip"
+        schoolName={schoolName}
+        schoolLogoUrl={schoolLogoUrl}
+        reference={`${selectedPayslip.salaryMonth}/${selectedPayslip.salaryYear}`}
+        date={selectedPayslip.paymentDate}
+        recipientLabel="Employee"
+        recipient={selectedPayslip.staffName}
+        fields={[
+          { label: 'Employee number', value: selectedPayslip.employeeNumber },
+          { label: 'Department', value: selectedPayslip.department },
+          { label: 'Payment method', value: selectedPayslip.paymentMethod },
+          { label: 'Remarks', value: selectedPayslip.remarks },
+        ]}
+        lines={[
+          { label: 'Basic salary', amount: Number(selectedPayslip.basicSalary) || 0 },
+          { label: 'Bonus', amount: Number(selectedPayslip.bonus) || 0 },
+          { label: 'Deduction', amount: -(Number(selectedPayslip.deduction) || 0) },
+        ]}
+        totalLabel="Net salary paid"
+        total={Number(selectedPayslip.netSalary) || 0}
+        onClose={() => setSelectedPayslip(null)}
+      />}
     </>
   );
 };

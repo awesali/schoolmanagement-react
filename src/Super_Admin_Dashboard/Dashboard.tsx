@@ -90,7 +90,7 @@ const Dashboard: React.FC = () => {
     const id = Number(new URLSearchParams(window.location.search).get('parentId'));
     return id > 0 && Number.isInteger(id) ? id : null;
   });
-  const [isCollapsed, setIsCollapsed] = useState(true);
+  const [isCollapsed, setIsCollapsed] = useState(() => window.innerWidth <= 768);
   const [schools, setSchools] = useState<School[]>([]);
   const [selectedSchoolId, setSelectedSchoolId] = useState<number | null>(null);
   const [userName, setUserName] = useState('User');
@@ -520,9 +520,9 @@ const Dashboard: React.FC = () => {
                   ) : activePage === 'Unit Test' ? (
                     <TeacherUnitTest />
                   ) : activePage === 'Fees' || activePage === 'Fee Management' ? (
-                    <FinanceManagement selectedSchoolId={selectedSchoolId} />
+                    <FinanceManagement selectedSchoolId={selectedSchoolId} schoolName={schools.find(school => school.id === selectedSchoolId)?.schoolName} schoolLogoUrl={schools.find(school => school.id === selectedSchoolId)?.logoUrl} />
                   ) : activePage === 'Salary Management' ? (
-                    <SalaryManagement selectedSchoolId={selectedSchoolId} />
+                    <SalaryManagement selectedSchoolId={selectedSchoolId} schoolName={schools.find(school => school.id === selectedSchoolId)?.schoolName} schoolLogoUrl={schools.find(school => school.id === selectedSchoolId)?.logoUrl} />
                   ) : activePage === 'Transport Management' ? (
                     <TransportManagement selectedSchoolId={selectedSchoolId} />
                   ) : activePage === 'Role & Permissions' ? (
@@ -566,7 +566,7 @@ const Dashboard: React.FC = () => {
                   ) : userRole === '2' && ['Class Diary', 'Submissions', 'Announcements'].includes(activePage) ? (
                     <TeacherStudentContent page={activePage as TeacherContentPage} />
                   ) : userRole === '2' && ['Homework & Assignments', 'Syllabus Progress', 'Study Material', 'My Profile'].includes(activePage) ? (
-                    <TeacherPortal page={activePage as TeacherPortalPage} onNavigate={handleNavigate} />
+                    <TeacherPortal page={activePage as TeacherPortalPage} onNavigate={handleNavigate} schoolName={teacherSchool.schoolName} schoolLogoUrl={teacherSchool.logoUrl} />
                   ) : activePage === 'Calendar' && userRole === '2' ? (
                     <TeacherCalendar onNavigate={handleNavigate} />
                   ) : userRole === '2' ? (

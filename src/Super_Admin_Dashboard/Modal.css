@@ -55,7 +55,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 24px 28px;
-  background: linear-gradient(135deg, var(--primary-color) 0%, #3b82f6 100%);
+  background: linear-gradient(135deg, var(--primary-color) 0%, #087f83 100%);
   color: white;
   position: relative;
   overflow: hidden;
@@ -142,7 +142,7 @@
 
 .btn-primary:hover,
 .btn-secondary:hover {
-  background: #3b82f6 !important;
+  background: #087f83 !important;
   color: white !important;
   transform: translateY(-2px) !important;
   box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4) !important;
@@ -165,7 +165,7 @@
 }
 
 .header-actions .btn-secondary:hover {
-  background: #3b82f6 !important;
+  background: #087f83 !important;
   color: white !important;
   transform: translateY(-2px) !important;
   box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4) !important;

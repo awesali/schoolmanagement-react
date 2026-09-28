@@ -4,13 +4,14 @@ import { API_BASE_URL } from '../config';
 import { usePermissions } from '../security/Permissions';
 import { useToast } from '../components/Toast/Toast';
 import { PageLoader } from '../components/Loader/Loader';
-import { BackIcon, ProfileIcon, EmailIcon, PhoneIcon, IdCardIcon, EditIcon, AssignmentIcon, PaymentIcon, VehicleIcon, SubjectsIcon, TemplateIcon, PreviewIcon, PrintIcon, ReceiptIcon } from '../components/Icons/Icons';
+import { BackIcon, ProfileIcon, EmailIcon, PhoneIcon, IdCardIcon, EditIcon, AssignmentIcon, PaymentIcon, VehicleIcon, SubjectsIcon, TemplateIcon, PreviewIcon, ReceiptIcon } from '../components/Icons/Icons';
 import EditStudent from './EditStudent';
 import ProfileListAvatar from './ProfileListAvatar';
 import ProfileIdCard from './ProfileIdCard';
 import { profilePictureUrl } from './ProfilePictureInput';
 import { genderLabel } from '../utils/gender';
 import Modal from './Modal';
+import SchoolFinanceDocument from './SchoolFinanceDocument';
 import './StaffProfile.css';
 import './StudentProfile.css';
 import './TimeTable.css';
@@ -172,7 +173,25 @@ export default function StudentProfile() {
         { label: 'Roll Number', value: student.rollNumber }, { label: 'Gender', value: genderLabel(student.genderCode) }, { label: 'Date of Birth', value: displayDate(student.dob) }, { label: 'Academic Session', value: student.academicSession?.slice(0, 4) }, { label: 'Email', value: student.email }, { label: 'Phone', value: student.phoneNumber }, { label: 'Parent', value: parentLink }, { label: 'Relationship', value: student.parentRelationship }
       ]} /></Modal>
       <Modal isOpen={photo} onClose={() => setPhoto(false)} title="Profile Photo" showCancel={false} showSubmit={false}><img className="staff-profile-photo" src={profilePictureUrl(student.profilePictureUrl)} alt={student.studentName} /></Modal>
-      <Modal isOpen={!!receipt} onClose={() => setReceipt(null)} title="Payment Receipt" showCancel={false} showSubmit={false}>{receipt && <><div className="student-profile-receipt"><h2>Payment Receipt</h2><dl className="student-profile-details">{[['Receipt Number', receipt.receiptNumber], ['Student', receipt.studentName], ['Class / Section', `${receipt.className || '-'} / ${receipt.sectionName || '-'}`], ['Date', displayDate(receipt.paymentDate)], ['Fee Type', receipt.feeType], ['Amount Paid', money(receipt.amountPaid)], ['Payment Mode', receipt.paymentMode], ['Acknowledgement', receipt.acknowledgementId]].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value || '-'}</dd></div>)}</dl></div><IconButton label="Print Receipt" onClick={() => window.print()}><PrintIcon size={26} /></IconButton></>}</Modal>
+      {receipt && <SchoolFinanceDocument
+        title="Payment Receipt"
+        kind="receipt"
+        schoolName={student.schoolName}
+        schoolLogoUrl={student.schoolLogoUrl}
+        reference={receipt.receiptNumber}
+        date={receipt.paymentDate}
+        recipientLabel="Student"
+        recipient={receipt.studentName || student.studentName}
+        fields={[
+          { label: 'Class / section', value: [receipt.className, receipt.sectionName].filter(Boolean).join(' / ') },
+          { label: 'Fee type', value: receipt.feeType },
+          { label: 'Payment mode', value: receipt.paymentMode },
+          { label: 'Acknowledgement', value: receipt.acknowledgementId },
+        ]}
+        totalLabel="Amount received"
+        total={Number(receipt.amountPaid) || 0}
+        onClose={() => setReceipt(null)}
+      />}
     </>}
     {!student && (busy ? <PageLoader /> : <p>{failed ? 'Unable to load profile.' : 'Student not found in this school.'} <button onClick={() => setRefresh(r => r + 1)}>Retry</button></p>)}
   </main>;
