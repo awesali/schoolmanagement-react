@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import StudentProfile from './StudentProfile';
 const mockError = jest.fn();
@@ -65,4 +65,19 @@ test('class teacher links to staff profile and timetable comes from the current 
  expect(await screen.findByText('Class Teacher')).toHaveAttribute('href', '/dashboard/schools/2/staff/15');
  expect(screen.getByText('Mathematics')).toBeInTheDocument(); expect(screen.getByText('Science')).toBeInTheDocument(); expect(screen.getByText('Monday')).toBeInTheDocument();
  expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('get-timetable?sectionId=4'), expect.anything());
+});
+
+test('teacher opens the shared profile read-only with scoped attendance', async () => {
+ localStorage.setItem('token', 'header.' + btoa(JSON.stringify({ RoleId: '2' })) + '.signature');
+ mockCan = page => page === 'attendance.students';
+ (global.fetch as jest.Mock).mockImplementation((url: string) => response(url.includes('?from=')
+  ? { success: true, data: student, attendance: [{ studentId: 7, attendanceDate: '2026-09-01', status: 'Present' }] }
+  : { success: true, data: student }));
+ mount(); await screen.findByRole('heading', { name: 'Test Student' });
+ expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('Teacher/students/7/profile'), expect.anything());
+ expect(screen.queryByRole('button', { name: 'Edit Profile' })).not.toBeInTheDocument();
+ expect(screen.getByText('Back to Attendance')).toHaveAttribute('href', '/dashboard?page=Attendance&attendanceType=student');
+ fireEvent.click(screen.getByRole('button', { name: 'Attendance' }));
+ expect(await screen.findByText('1 Present / 0 Absent / 1 recorded days')).toBeInTheDocument();
+ expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('Teacher/students/7/profile?from='), expect.anything());
 });

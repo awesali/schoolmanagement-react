@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { usePermissions } from "../security/Permissions";
 import {
   SchoolIcon,
@@ -26,6 +27,7 @@ type RecordRow = {
   status: string;
 };
 type SectionOption = {
+  schoolId: number;
   sectionId: number;
   sectionName: string;
   className: string;
@@ -298,7 +300,7 @@ export default function StudentAttendance({
                   {s.studentName.split(" ").map((n) => n[0]).slice(0, 2).join("")}
                 </span>
                 <div>
-                  <strong>{s.studentName}</strong>
+                  <Link className="tw-student-name-link" to={"/dashboard/schools/" + sectionOptions.find(option => option.sectionId === Number(section))?.schoolId + "/students/" + s.id} onClick={event => { if (dirty && !window.confirm("Discard the attendance changes you have not submitted?")) event.preventDefault(); }}>{s.studentName}</Link>
                   <small>
                     {s.rollNumber ? "Roll " + s.rollNumber + " · " : ""}
                     {s.className} · {s.sectionName}

@@ -49,7 +49,8 @@ export default function StudentProfile() {
   const [photo, setPhoto] = useState(false);
   const [receipt, setReceipt] = useState<Row | null>(null);
   const [receiptBusy, setReceiptBusy] = useState(false);
-  const allowed = can('management.students');
+  const teacherView = (() => { try { return String(JSON.parse(atob(localStorage.getItem('token')?.split('.')[1] || ''))?.RoleId) === '2'; } catch { return false; } })();
+  const allowed = teacherView ? can('attendance.students') : can('management.students');
   const classesAllowed = can('academics.classes');
   const timetableAllowed = classesAllowed && can('academics.class-schedule');
   const feesAllowed = can('finance.fees');
@@ -83,7 +84,7 @@ export default function StudentProfile() {
     const load = async () => {
       setBusy(true); setFailed(false); setData({});
       try {
-        const result = await request(`Student/student-by-id?studentId=${studentId}`);
+        const result = await request(teacherView ? `Teacher/students/${studentId}/profile` : `Student/student-by-id?studentId=${studentId}`);
         const record = result.data;
         if (!record || Number(record.id) !== Number(studentId) || Number(record.schoolId) !== Number(schoolId)) { setStudent(null); return; }
         if (controller.signal.aborted) return;
@@ -91,7 +92,8 @@ export default function StudentProfile() {
         let next: Row = {};
         if (tab === 'Attendance') {
           const [y, m] = month.split('-').map(Number);
-          next.attendance = rowsOf(await request(`Student/student-profile-attendance?schoolId=${schoolId}&studentId=${studentId}&from=${month}-01&to=${month}-${new Date(y, m, 0).getDate()}`)).filter(r => Number(r.studentId) === Number(studentId));
+          const attendanceResult = await request(teacherView ? `Teacher/students/${studentId}/profile?from=${month}-01&to=${month}-${new Date(y, m, 0).getDate()}` : `Student/student-profile-attendance?schoolId=${schoolId}&studentId=${studentId}&from=${month}-01&to=${month}-${new Date(y, m, 0).getDate()}`);
+          next.attendance = (teacherView ? rowsOf(attendanceResult.attendance) : rowsOf(attendanceResult)).filter(r => Number(r.studentId) === Number(studentId));
         } else if (tab === 'Fees & Payments') {
           const [fees, payments] = await Promise.all([request(`Student/GetStudentFees?studentId=${studentId}`), request(`Student/GetPaymentHistory?studentId=${studentId}`)]);
           next = { fees: rowsOf(fees), payments: rowsOf(payments) };
@@ -126,7 +128,7 @@ export default function StudentProfile() {
     };
     load(); return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [schoolId, studentId, tab, month, refresh, permissionsLoading, allowed, feesAllowed, transportAllowed, classesAllowed, timetableAllowed]);
+  }, [schoolId, studentId, tab, month, refresh, permissionsLoading, allowed, teacherView, feesAllowed, transportAllowed, classesAllowed, timetableAllowed]);
 
   const openReceipt = async (id: number) => {
     if (receiptBusy) return;
@@ -143,12 +145,12 @@ export default function StudentProfile() {
   if (permissionsLoading) return <PageLoader />;
   if (!allowed) return <main className="staff-profile"><Link to="/dashboard">Back to Dashboard</Link><p>You do not have permission to view student profiles.</p></main>;
   return <main className="staff-profile student-profile">
-    <Link className="staff-profile-back" to={`/dashboard?schoolId=${schoolId}&page=Student%20List`}><BackIcon />Back to Student List</Link>
+    <Link className="staff-profile-back" to={teacherView ? "/dashboard?page=Attendance&attendanceType=student" : `/dashboard?schoolId=${schoolId}&page=Student%20List`}><BackIcon />{teacherView ? "Back to Attendance" : "Back to Student List"}</Link>
     {student && <>
       <header className="staff-profile-header">
         <ProfileListAvatar name={student.studentName} pictureUrl={student.profilePictureUrl} onView={() => setPhoto(true)} />
         <div><h1>{student.studentName}</h1><div className="staff-profile-meta"><span><SubjectsIcon size={18} />{student.className || 'Class not assigned'} / {student.sectionName || '-'}</span><span>Roll No: {student.rollNumber || '-'}</span></div><div className="staff-profile-meta"><span><EmailIcon size={18} />{student.email || '-'}</span><span><PhoneIcon size={18} />{student.phoneNumber || '-'}</span></div><span>{student.isActive ? 'Active' : 'Inactive'}</span></div>
-        <div className="staff-profile-actions"><IconButton label="ID Card" onClick={() => setIdCard(true)}><IdCardIcon size={26} /></IconButton>{can('management.students', 'update') && <IconButton label="Edit Profile" onClick={() => setEdit(true)}><EditIcon size={26} /></IconButton>}</div>
+        <div className="staff-profile-actions"><IconButton label="ID Card" onClick={() => setIdCard(true)}><IdCardIcon size={26} /></IconButton>{!teacherView && can('management.students', 'update') && <IconButton label="Edit Profile" onClick={() => setEdit(true)}><EditIcon size={26} /></IconButton>}</div>
       </header>
       <nav className="staff-profile-tabs" aria-label="Student profile sections">{tabs.map(t => <button key={t.name} className={tab === t.name ? 'selected' : ''} aria-current={tab === t.name ? 'page' : undefined} onClick={() => setTab(t.name)}>{t.icon}{t.name}</button>)}</nav>
       <section className="staff-profile-content"><h2>{tab}</h2>
@@ -169,7 +171,7 @@ export default function StudentProfile() {
           {tab === 'Documents' && <Table headers={['Document', 'View / Download']} rows={(student.documents || []).map((d: Row) => [d.documentName, <a className="create-icon-button" title="View Document" aria-label={`View ${d.documentName}`} href={profilePictureUrl(d.documentURL)} target="_blank" rel="noopener noreferrer"><PreviewIcon size={26} /></a>])} empty="No documents uploaded." />}
         </>}
       </section>
-      <EditStudent isOpen={edit} onClose={() => setEdit(false)} student={student as any} schoolId={Number(schoolId)} onSuccess={() => { setEdit(false); setRefresh(r => r + 1); toast.success('Student updated successfully.'); }} />
+      {!teacherView && <EditStudent isOpen={edit} onClose={() => setEdit(false)} student={student as any} schoolId={Number(schoolId)} onSuccess={() => { setEdit(false); setRefresh(r => r + 1); toast.success('Student updated successfully.'); }} />}
       <Modal isOpen={idCard} onClose={() => setIdCard(false)} title="Student ID Card" showCancel={false} showSubmit={false}><ProfileIdCard name={student.studentName} pictureUrl={student.profilePictureUrl} type="Student" identifier={`Student ID: ${student.id}`} subtitle={`${student.className || 'Class not assigned'} / Section ${student.sectionName || '-'}`} status={student.isActive} fields={[
         { label: 'Roll Number', value: student.rollNumber }, { label: 'Gender', value: genderLabel(student.genderCode) }, { label: 'Date of Birth', value: displayDate(student.dob) }, { label: 'Academic Session', value: student.academicSession?.slice(0, 4) }, { label: 'Email', value: student.email }, { label: 'Phone', value: student.phoneNumber }, { label: 'Parent', value: parentLink }, { label: 'Relationship', value: student.parentRelationship }
       ]} /></Modal>

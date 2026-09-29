@@ -38,3 +38,30 @@ test('a server rejection is visible and never reported as saved', async () => {
   await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Review could not be saved'));
   expect(screen.queryByText('Review saved successfully.')).not.toBeInTheDocument();
 });
+
+test('class diary opens from a compact Add button and keeps saved entries below', async () => {
+ request.mockImplementation(async (path: string) => ({ success: true, data:
+  path === '/api/Teacher/teaching-options' ? [{ sectionId: 4, subjectId: 5, className: '10th', sectionName: 'A', subjectName: 'English' }] :
+  path === '/api/Teacher/diary' ? [{ id: 9, subjectName: 'English', entryDate: '2026-09-24', topic: 'Poetry', isPublished: true }] : [] }));
+ render(<TeacherStudentContent page="Class Diary" />);
+ expect(screen.queryByLabelText('Topic taught')).not.toBeInTheDocument();
+ expect(await screen.findByText('Poetry')).toBeInTheDocument();
+ fireEvent.click(screen.getByRole('button', { name: 'Add entry' }));
+ expect(screen.getByLabelText('Topic taught')).toBeInTheDocument();
+ expect(screen.getByText('Poetry')).toBeInTheDocument();
+ fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+ expect(screen.queryByLabelText('Topic taught')).not.toBeInTheDocument();
+});
+test('announcements open from Add and saved records stay visible below', async () => {
+ request.mockImplementation(async (path: string) => ({ success: true, data:
+  path === '/api/Teacher/teaching-options' ? [{ sectionId: 4, subjectId: 5, className: '10th', sectionName: 'A', subjectName: 'English' }] :
+  path === '/api/Teacher/announcements' ? [{ id: 3, title: 'School trip', body: 'Friday', isPublished: true }] : [] }));
+ render(<TeacherStudentContent page="Announcements" />);
+ expect(screen.queryByLabelText('Title')).not.toBeInTheDocument();
+ expect(await screen.findByText('School trip')).toBeInTheDocument();
+ fireEvent.click(screen.getByRole('button', { name: 'Add announcement' }));
+ expect(screen.getByLabelText('Title')).toBeInTheDocument();
+ expect(screen.getByText('School trip')).toBeInTheDocument();
+ fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+ expect(screen.queryByLabelText('Title')).not.toBeInTheDocument();
+});

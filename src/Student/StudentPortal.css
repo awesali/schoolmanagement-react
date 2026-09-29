@@ -160,3 +160,9 @@
 @media print { .sp-action-icon { display: none !important; } }
 
 .sp-view-eye .sp-action-icon { margin-right: 0; }
+
+.sp-notification-popup{position:fixed;top:92px;right:24px;z-index:80;display:flex;align-items:flex-start;gap:14px;width:min(380px,calc(100vw - 30px));padding:15px 14px 15px 18px;border:1px solid var(--sp-border);border-left:4px solid var(--primary-color);border-radius:11px;background:var(--sp-surface);color:var(--sp-text);box-shadow:0 12px 32px #172c4630}
+.sp-notification-popup>div{flex:1;min-width:0}.sp-notification-popup strong{font-size:13px}.sp-notification-popup p{margin:5px 0 0;font-size:12px;line-height:1.45;overflow-wrap:anywhere}
+.sp-notification-popup-open{flex:none;border:0;border-radius:6px;background:var(--primary-color);color:#fff;padding:7px 10px;font-size:12px;font-weight:700;cursor:pointer}
+.sp-notification-popup-close{flex:none;border:0;background:transparent;color:var(--sp-muted);font-size:20px;line-height:1;cursor:pointer}
+@media(max-width:620px){.sp-notification-popup{top:75px;right:15px}}

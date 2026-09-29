@@ -7,7 +7,8 @@ test('events show a list, open Add on demand, and edit an existing record', asyn
   const events = [{ id: 8, title: 'Sports day', description: 'On campus', eventDate: '2026-10-05T00:00:00', sectionId: null }];
   global.fetch = jest.fn(async (input: RequestInfo, options?: RequestInit) => {
     const url = String(input);
-    if (url.includes('students-by-school')) return { json: async () => ({ data: [] }) } as Response;
+    if (url.includes('enrollment-info')) return { ok: true, json: async () => ({ success: true, data: { classes: [], sections: [] } }) } as Response;
+    if (url.includes('students-by-school')) return { ok: true, json: async () => ({ success: true, data: [], totalPages: 1 }) } as Response;
     if (url.includes('/events?')) return { ok: true, text: async () => JSON.stringify({ data: events }) } as Response;
     if (url.endsWith('/events')) {
       events.push({ id: 9, ...JSON.parse(String(options?.body)) });
@@ -44,7 +45,8 @@ test('announcement and achievement tabs load records and open populated edit for
   localStorage.setItem('token', 'test-token');
   global.fetch = jest.fn(async (input: RequestInfo) => {
     const url = String(input);
-    if (url.includes('students-by-school')) return { json: async () => ({ data: [{ id: 4, studentName: 'Asha' }] }) } as Response;
+    if (url.includes('enrollment-info')) return { ok: true, json: async () => ({ success: true, data: { classes: [{ id: 10, name: '10th' }], sections: [{ id: 20, name: 'A', classId: 10 }] } }) } as Response;
+    if (url.includes('students-by-school')) return { ok: true, json: async () => ({ success: true, data: [{ id: 4, studentName: 'Asha', classId: 10, sectionName: 'A' }], totalPages: 1 }) } as Response;
     if (url.includes('/announcements?')) return { ok: true, text: async () => JSON.stringify({ data: [{ id: 2, title: 'Holiday', body: 'Closed Monday', isPinned: true, isPublished: true }] }) } as Response;
     if (url.includes('/achievements?')) return { ok: true, text: async () => JSON.stringify({ data: [{ id: 3, studentId: 4, studentName: 'Asha', title: 'Gold medal', description: 'Sports', awardedAt: '2026-10-01T00:00:00' }] }) } as Response;
     return { ok: true, text: async () => JSON.stringify({ data: [] }) } as Response;
@@ -57,6 +59,8 @@ test('announcement and achievement tabs load records and open populated edit for
   fireEvent.click(screen.getByRole('button', { name: 'Achievements' }));
   expect(await screen.findByText('Gold medal')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+  expect(screen.getByRole('combobox', { name: 'Class' })).toHaveValue('10');
+  expect(screen.getByRole('combobox', { name: 'Section' })).toHaveValue('20');
   expect(screen.getByRole('combobox', { name: 'Student' })).toHaveValue('4');
   expect(screen.getByLabelText('Award date')).toHaveValue('2026-10-01');
 });

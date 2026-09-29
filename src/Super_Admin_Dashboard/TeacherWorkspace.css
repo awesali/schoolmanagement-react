@@ -595,3 +595,6 @@
 @media (max-width: 420px) { .tp-card-grid .tp-study-card { padding: 17px; } .tp-study-card-action { width: 100%; } }
 
 .tp-study-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 20px; }
+
+.tw-student-name-link{color:#173a60;font-weight:700;text-decoration:none}
+.tw-student-name-link:hover,.tw-student-name-link:focus-visible{color:#2074b5;text-decoration:underline}

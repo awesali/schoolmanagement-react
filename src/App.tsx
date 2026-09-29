@@ -1,4 +1,4 @@
-﻿import StudentProfile from './Super_Admin_Dashboard/StudentProfile';
+import StudentProfile from './Super_Admin_Dashboard/StudentProfile';
 import StaffProfile from './Super_Admin_Dashboard/StaffProfile';
 import DashboardDetailLayout from './Super_Admin_Dashboard/DashboardDetailLayout';
 import React from 'react';

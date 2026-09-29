@@ -2,26 +2,18 @@ import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import StudentExamPanel from './StudentExamPanel';
 
-test('shows one exam tab at a time and highlights the selected tab', () => {
+test('unit tests have their own tab and stay out of the exam timetable', () => {
   render(<StudentExamPanel data={{
-    exams: [{ id: 1, examName: 'Annual', subjectName: 'Maths', examDate: '2026-09-28', startTime: '09:00', endTime: '12:00' }],
-    examResources: [{ id: 2, examName: 'Annual', subjectName: 'Maths', syllabus: 'Algebra' }],
-    hallTickets: [{ id: 3, examName: 'Annual', seatNumber: 'A-1' }],
-    profile: { studentName: 'Test Student', schoolName: 'Test School' },
+    exams: [
+      { id: 1, examId: 10, examName: 'Annual', examTypeName: 'Yearly', subjectName: 'Maths', examDate: '2026-10-05', startTime: '09:00' },
+      { id: -2, examId: 11, examName: 'English quiz', examTypeName: 'Unit Test', subjectName: 'English', examDate: '2026-10-07', startTime: null },
+    ],
   }} />);
-  const timetable = screen.getByRole('tab', { name: 'Exam timetable' });
-  const syllabus = screen.getByRole('tab', { name: 'Syllabus and preparation' });
-  const tickets = screen.getByRole('tab', { name: 'Hall tickets' });
-  expect(timetable).toHaveAttribute('aria-selected', 'true');
+  expect(screen.getByRole('tab', { name: 'Exam timetable' })).toHaveAttribute('aria-selected', 'true');
   expect(screen.getByRole('button', { name: /Annual.*View timetable/ })).toBeInTheDocument();
-  expect(screen.queryByText('Algebra')).not.toBeInTheDocument();
-  fireEvent.click(syllabus);
-  expect(syllabus).toHaveAttribute('aria-selected', 'true');
-  expect(timetable).toHaveAttribute('aria-selected', 'false');
-  expect(screen.getByText('Algebra')).toBeInTheDocument();
-  expect(screen.queryByRole('button', { name: /View timetable/ })).not.toBeInTheDocument();
-  fireEvent.click(tickets);
-  expect(tickets).toHaveClass('active');
-  expect(screen.getByRole('button', { name: /Annual.*View hall ticket/ })).toBeInTheDocument();
-  expect(screen.queryByText('Algebra')).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /English quiz.*View timetable/ })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('tab', { name: 'Unit tests' }));
+  expect(screen.getByRole('tab', { name: 'Unit tests' })).toHaveAttribute('aria-selected', 'true');
+  expect(screen.getByText('English quiz')).toBeInTheDocument();
+  expect(screen.getByText('Time not set')).toBeInTheDocument();
 });

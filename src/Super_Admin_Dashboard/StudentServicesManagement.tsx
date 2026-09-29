@@ -6,13 +6,15 @@ import './TeacherStudentContent.css';
 
 type Row = Record<string, any>;
 type Tab = 'Requests' | 'Announcements' | 'Events' | 'Achievements';
+type ClassOption = { id: number; name: string };
+type SectionOption = { id: number; name: string; classId: number };
 type FormState = {
-  studentId: string; title: string; body: string; description: string;
+  classId: string; studentId: string; title: string; body: string; description: string;
   eventDate: string; awardedAt: string; sectionId: string; expiresAt: string;
   isPinned: boolean; publish: boolean;
 };
 const emptyForm = (): FormState => ({
-  studentId: '', title: '', body: '', description: '', eventDate: '', awardedAt: '',
+  classId: '', studentId: '', title: '', body: '', description: '', eventDate: '', awardedAt: '',
   sectionId: '', expiresAt: '', isPinned: false, publish: true,
 });
 const dateValue = (value: unknown) => value ? String(value).slice(0, 10) : '';
@@ -32,6 +34,8 @@ export default function StudentServicesManagement({ schoolId }: { schoolId: numb
   const [tab, setTab] = useState<Tab>('Requests');
   const [rows, setRows] = useState<Row[]>([]);
   const [students, setStudents] = useState<Row[]>([]);
+  const [classes, setClasses] = useState<ClassOption[]>([]);
+  const [sections, setSections] = useState<SectionOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -42,11 +46,38 @@ export default function StudentServicesManagement({ schoolId }: { schoolId: numb
   const [formOpen, setFormOpen] = useState(false);
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/Student/students-by-school?schoolId=${schoolId}&page=1&pageSize=500`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-    }).then(r => r.json()).then(x => setStudents(x.data || [])).catch(() => setStudents([]));
+    let cancelled = false;
+    const headers = { Authorization: 'Bearer ' + localStorage.getItem('token') };
+    const loadOptions = async () => {
+      try {
+        const infoResponse = await fetch(API_BASE_URL + '/api/Student/enrollment-info?schoolId=' + schoolId, { headers });
+        const info = await infoResponse.json();
+        if (!infoResponse.ok || !info.success) throw new Error('Could not load classes and sections.');
+        const allStudents: Row[] = [];
+        let page = 1;
+        let totalPages = 1;
+        do {
+          const response = await fetch(API_BASE_URL + '/api/Student/students-by-school?schoolId=' + schoolId + '&page=' + page + '&pageSize=500', { headers });
+          const result = await response.json();
+          if (!response.ok || !result.success) throw new Error('Could not load students.');
+          allStudents.push(...(result.data || []));
+          totalPages = Math.max(1, Number(result.totalPages) || 1);
+          page++;
+        } while (page <= totalPages);
+        if (cancelled) return;
+        setClasses(info.data?.classes || []);
+        setSections(info.data?.sections || []);
+        setStudents(allStudents.filter(student => student.isActive !== false));
+      } catch (failure) {
+        if (!cancelled) {
+          setClasses([]); setSections([]); setStudents([]);
+          setError(failure instanceof Error ? failure.message : 'Could not load achievement options.');
+        }
+      }
+    };
+    void loadOptions();
+    return () => { cancelled = true; };
   }, [schoolId]);
-
   useEffect(() => {
     let cancelled = false;
     setRows([]); setError(''); setNotice(''); setLoading(true);
@@ -67,12 +98,22 @@ export default function StudentServicesManagement({ schoolId }: { schoolId: numb
   const add = () => {
     setEditingId(null); setForm(emptyForm()); setFormOpen(true); setError(''); setNotice('');
   };
+  const studentSectionId = (student: Row) => {
+    if (student.sectionId) return String(student.sectionId);
+    return String(sections.find(section => Number(section.classId) === Number(student.classId) &&
+      section.name.toLowerCase() === String(student.sectionName || '').toLowerCase())?.id || '');
+  };
+  const matchingStudents = students.filter(student => String(student.classId) === form.classId &&
+    studentSectionId(student) === form.sectionId)
+    .filter((student, index, list) => list.findIndex(item => Number(item.id || item.studentId) === Number(student.id || student.studentId)) === index);
   const edit = (row: Row) => {
+    const selectedStudent = students.find(student => Number(student.id || student.studentId) === Number(row.studentId));
     setEditingId(Number(row.id));
     setForm({
+      classId: selectedStudent?.classId ? String(selectedStudent.classId) : '',
       studentId: String(row.studentId ?? ''), title: row.title ?? '', body: row.body ?? '',
       description: row.description ?? '', eventDate: dateValue(row.eventDate),
-      awardedAt: dateValue(row.awardedAt), sectionId: String(row.sectionId ?? ''),
+      awardedAt: dateValue(row.awardedAt), sectionId: tab === 'Achievements' && selectedStudent ? studentSectionId(selectedStudent) : String(row.sectionId ?? ''),
       expiresAt: dateValue(row.expiresAt), isPinned: Boolean(row.isPinned),
       publish: row.isPublished !== false,
     });
@@ -90,7 +131,11 @@ export default function StudentServicesManagement({ schoolId }: { schoolId: numb
     finally { setSaving(false); }
   };
   const save = async (event: React.FormEvent) => {
-    event.preventDefault(); setSaving(true); setError('');
+    event.preventDefault();
+    if (tab === 'Achievements' && !matchingStudents.some(student => Number(student.id || student.studentId) === Number(form.studentId))) {
+      setError('Choose a student from the selected class and section.'); return;
+    }
+    setSaving(true); setError('');
     try {
       let body: Record<string, unknown>;
       if (tab === 'Announcements') body = {
@@ -135,14 +180,18 @@ export default function StudentServicesManagement({ schoolId }: { schoolId: numb
         <div className="tsc-review">
           <label>Status<select value={responses[x.id]?.status || x.status} onChange={e => setResponses({ ...responses, [x.id]: { status: e.target.value, response: responses[x.id]?.response || x.response || '' } })}>{['Pending','Approved','Rejected','Resolved'].map(status => <option key={status}>{status}</option>)}</select></label>
           <label className="tsc-full">Response<textarea rows={2} value={responses[x.id]?.response ?? x.response ?? ''} onChange={e => setResponses({ ...responses, [x.id]: { status: responses[x.id]?.status || x.status, response: e.target.value } })}/></label>
-          <button type="button" className="btn btn-primary" disabled={saving || !responses[x.id]} onClick={() => void respond(x.id)}><AdminActionIcon action="save" />Save response</button>
+          <button type="button" className="tsc-icon-button tsc-text-button" aria-label="Save response" title="Save response" disabled={saving || !responses[x.id]} onClick={() => void respond(x.id)}><AdminActionIcon action="save" />Save response</button>
         </div>
       </article>) : !loading && <p className="tw-empty">No student requests.</p>}</section>}
     {tab !== 'Requests' && <>
-      <div className="tsc-actions"><h3>{tab}</h3><button type="button" className="btn btn-primary" onClick={add}><AdminActionIcon action="add" />Add {tab === 'Achievements' ? 'achievement' : tab === 'Events' ? 'event' : 'announcement'}</button></div>
+      <div className="tsc-actions"><h3>{tab}</h3><button type="button" className="tsc-icon-button tsc-text-button" aria-label={"Add " + (tab === 'Achievements' ? 'achievement' : tab === 'Events' ? 'event' : 'announcement')} title={"Add " + (tab === 'Achievements' ? 'achievement' : tab === 'Events' ? 'event' : 'announcement')} onClick={add}><AdminActionIcon action="add" />Add {tab === 'Achievements' ? 'achievement' : tab === 'Events' ? 'event' : 'announcement'}</button></div>
       {formOpen && <form className="tw-panel tsc-form" onSubmit={save}>
-        <div className="tsc-form-head"><h3>{editingId === null ? 'Add' : 'Edit'} {tab.toLowerCase()}</h3><button type="button" className="btn" onClick={() => setFormOpen(false)}><AdminActionIcon action="close" />Cancel</button></div>
-        {tab === 'Achievements' && <label>Student<select required value={form.studentId} onChange={e => setForm({ ...form, studentId: e.target.value })}><option value="">Choose student</option>{students.map(x => <option value={x.id || x.studentId} key={x.id || x.studentId}>{x.studentName || x.name}</option>)}</select></label>}
+        <div className="tsc-form-head"><h3>{editingId === null ? 'Add' : 'Edit'} {tab.toLowerCase()}</h3><button type="button" className="tsc-icon-button" aria-label="Cancel" title="Cancel" onClick={() => setFormOpen(false)}><AdminActionIcon action="close" /></button></div>
+        {tab === 'Achievements' && <div className="tsc-achievement-pickers">
+          <label>Class<select required value={form.classId} onChange={e => setForm({ ...form, classId: e.target.value, sectionId: '', studentId: '' })}><option value="">Choose class</option>{classes.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+          <label>Section<select required disabled={!form.classId} value={form.sectionId} onChange={e => setForm({ ...form, sectionId: e.target.value, studentId: '' })}><option value="">Choose section</option>{sections.filter(item => String(item.classId) === form.classId).map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+          <label>Student<select required disabled={!form.sectionId} value={form.studentId} onChange={e => setForm({ ...form, studentId: e.target.value })}><option value="">Choose student</option>{matchingStudents.map(student => <option value={student.id || student.studentId} key={student.id || student.studentId}>{student.studentName || student.name}{student.rollNumber ? ' (Roll ' + student.rollNumber + ')' : ''}</option>)}</select></label>
+        </div>}
         <label className="tsc-full">Title<input required maxLength={200} value={form.title} onChange={e => setForm({ ...form, title: e.target.value })}/></label>
         {tab === 'Announcements' ? <>
           <label className="tsc-full">Message<textarea required rows={4} maxLength={4000} value={form.body} onChange={e => setForm({ ...form, body: e.target.value })}/></label>
@@ -153,11 +202,11 @@ export default function StudentServicesManagement({ schoolId }: { schoolId: numb
           <label className="tsc-full">Description<textarea rows={3} maxLength={1000} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}/></label>
           <label>{tab === 'Events' ? 'Event date' : 'Award date'}<input required type="date" value={tab === 'Events' ? form.eventDate : form.awardedAt} onChange={e => setForm({ ...form, [tab === 'Events' ? 'eventDate' : 'awardedAt']: e.target.value })}/></label>
         </>}
-        <button className="btn btn-primary" disabled={saving}><AdminActionIcon action="save" />{saving ? 'Saving...' : editingId === null ? 'Save' : 'Save changes'}</button>
+        <button type="submit" className="tsc-icon-button tsc-text-button tsc-submit-icon" aria-label={saving ? "Saving..." : editingId === null ? "Save" : "Save changes"} title={editingId === null ? "Save" : "Save changes"} disabled={saving}><AdminActionIcon action="save" />{saving ? 'Saving...' : editingId === null ? 'Save' : 'Save changes'}</button>
       </form>}
       <section className="tsc-list" aria-label={`${tab} list`}>{rows.length ? rows.map(row =>
         <article className="tw-panel tsc-record" key={row.id}>
-          <div className="tsc-record-head"><h4>{row.title}</h4><button type="button" className="btn" onClick={() => edit(row)}><AdminActionIcon action="edit" />Edit</button></div>
+          <div className="tsc-record-head"><h4>{row.title}</h4><button type="button" className="tsc-icon-button" aria-label="Edit" title="Edit" onClick={() => edit(row)}><AdminActionIcon action="edit" /></button></div>
           <small>{listMeta(row)}</small>
           {listDetail(row) && <p>{listDetail(row)}</p>}
         </article>) : !loading && <p className="tw-empty">No {tab.toLowerCase()} added yet.</p>}</section>

@@ -1,5 +1,5 @@
-.tut-page { padding-bottom: 24px; }
-.tut-panel { max-width: 900px; margin: 22px auto 0; padding: 30px; }
+.tut-page { width: 100%; max-width: none; box-sizing: border-box; padding-bottom: 24px; }
+.tut-panel { width: 100%; max-width: none; box-sizing: border-box; margin: 22px 0 0; padding: 30px; }
 .tut-panel-heading { padding-bottom: 22px; margin-bottom: 23px; border-bottom: 1px solid #e8edf4; }
 .tut-panel-heading h3 { margin: 5px 0 6px; color: #1d344e; font-size: 22px; }
 .tut-panel-heading p { margin: 0; }
@@ -19,3 +19,14 @@
 .tut-error { color: #991b1b; background: #fff3f2; border: 1px solid #f2c9c5; }
 .tut-empty { padding: 28px; border: 1px dashed #ccd9e6; border-radius: 10px; text-align: center; background: #f8fbff; }
 @media (max-width: 650px) { .tut-panel { padding: 20px; } .tut-form { grid-template-columns: 1fr; } .tut-wide, .tut-actions { grid-column: 1; } .tut-actions button { width: 100%; } }
+
+.tut-list-heading, .tut-test-card, .tut-panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.tut-list-heading { margin-bottom: 20px; }
+.tut-list-heading h3 { margin: 5px 0 0; font-size: 22px; color: #1d344e; }
+.tut-list { display: grid; gap: 12px; }
+.tut-test-card { padding: 18px 20px; border: 1px solid #dce5ee; border-radius: 12px; background: #fff; }
+.tut-test-card h4 { margin: 0 0 6px; font-size: 16px; }
+.tut-test-card p { margin: 0 0 6px; color: #52677e; }
+.tut-test-card small { color: #6b7d90; }
+.tut-test-card button { flex: none; }
+@media (max-width: 650px) { .tut-test-card, .tut-list-heading { align-items: flex-start; flex-direction: column; } }

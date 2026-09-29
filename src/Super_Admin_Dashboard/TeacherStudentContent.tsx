@@ -15,6 +15,8 @@ export default function TeacherStudentContent({ page }: { page: TeacherContentPa
   const [reviewSuccess, setReviewSuccess] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [diaryFormOpen, setDiaryFormOpen] = useState(false);
+  const [announcementFormOpen, setAnnouncementFormOpen] = useState(false);
   const [form, setForm] = useState({ option: '', entryDate: localDate(), topic: '', pages: '', homework: '', title: '', body: '', expiresAt: '', isPinned: false, publish: true });
   const [reviews, setReviews] = useState<Record<number, { status: string; marks: string; feedback: string }>>({});
   const load = async () => {
@@ -49,7 +51,7 @@ export default function TeacherStudentContent({ page }: { page: TeacherContentPa
     try {
       if (page === 'Class Diary') {
         const option = options[Number(form.option)];
-        if (!option) return;
+        if (form.option === '' || !option) { setError('Choose a class and subject.'); return; }
         await teacherRequest('/api/Teacher/diary', { method: 'POST', body: JSON.stringify({
           sectionId: option.sectionId, subjectId: option.subjectId,
           entryDate: form.entryDate, topic: form.topic, pages: form.pages,
@@ -57,7 +59,7 @@ export default function TeacherStudentContent({ page }: { page: TeacherContentPa
         }) });
       } else {
         const option = options[Number(form.option)];
-        if (!option) return;
+        if (form.option === '' || !option) { setError('Choose a class and subject.'); return; }
         await teacherRequest('/api/Teacher/announcements', { method: 'POST', body: JSON.stringify({
           sectionId: option.sectionId, title: form.title, body: form.body,
           expiresAt: form.expiresAt || null, isPinned: form.isPinned, publish: form.publish,
@@ -65,6 +67,8 @@ export default function TeacherStudentContent({ page }: { page: TeacherContentPa
       }
       setForm({ option: '', entryDate: localDate(), topic: '', pages: '', homework: '', title: '', body: '', expiresAt: '', isPinned: false, publish: true });
       await load();
+      if (page === 'Class Diary') setDiaryFormOpen(false);
+      if (page === 'Announcements') setAnnouncementFormOpen(false);
     } catch (failure: any) { setError(failure.message || 'Could not save.'); }
     finally { setSaving(false); }
   };
@@ -111,7 +115,11 @@ export default function TeacherStudentContent({ page }: { page: TeacherContentPa
     {error && <div className="tw-error" role="alert">{error}</div>}
     {reviewSuccess && <div className="tw-panel" role="status">{reviewSuccess}</div>}
     {loading && <PageLoader label="Loading classroom data…" />}
-    {(page === 'Class Diary' || page === 'Announcements') && <form className="tw-panel tsc-form" onSubmit={save}>
+    {page === 'Class Diary' && <div className="tsc-actions"><h3>Class diary entries</h3><button type="button" className="btn btn-primary tsc-compact-button" onClick={() => { setError(''); setDiaryFormOpen(true); }}>Add entry</button></div>}
+    {page === 'Announcements' && <div className="tsc-actions"><h3>Announcements</h3><button type="button" className="btn btn-primary tsc-compact-button" onClick={() => { setError(''); setAnnouncementFormOpen(true); }}>Add announcement</button></div>}
+    {((page === 'Class Diary' && diaryFormOpen) || (page === 'Announcements' && announcementFormOpen)) && <form className="tw-panel tsc-form" onSubmit={save}>
+      {page === 'Class Diary' && <div className="tsc-form-head"><h3>Add class diary entry</h3><button type="button" className="btn tsc-compact-button" onClick={() => setDiaryFormOpen(false)}>Cancel</button></div>}
+      {page === 'Announcements' && <div className="tsc-form-head"><h3>Add announcement</h3><button type="button" className="btn tsc-compact-button" onClick={() => setAnnouncementFormOpen(false)}>Cancel</button></div>}
       <label>Class and subject<select required value={form.option} onChange={e => setForm({ ...form, option: e.target.value })}><option value="">Select class and subject</option>{options.map((x,i) => <option value={i} key={i}>{x.className} - {x.sectionName} - {x.subjectName}</option>)}</select></label>
       {page === 'Class Diary' ? <>
         <label>Class date<input type="date" required max={localDate()} value={form.entryDate} onChange={e => setForm({ ...form, entryDate: e.target.value })}/></label>
@@ -125,10 +133,10 @@ export default function TeacherStudentContent({ page }: { page: TeacherContentPa
         <label className="tsc-check"><input type="checkbox" checked={form.isPinned} onChange={e => setForm({ ...form, isPinned: e.target.checked })}/> Pin to top</label>
       </>}
       <label className="tsc-check"><input type="checkbox" checked={form.publish} onChange={e => setForm({ ...form, publish: e.target.checked })}/> Publish now</label>
-      <LoadingButton className="btn btn-primary" loading={saving} loadingText="Saving…">{form.publish ? 'Publish' : 'Save draft'}</LoadingButton>
+      <LoadingButton className="btn btn-primary tsc-compact-button" loading={saving} loadingText="Saving…">{form.publish ? 'Publish' : 'Save draft'}</LoadingButton>
     </form>}
     {page === 'Submissions' && <section className="tw-panel tsc-select"><label>Assignment<select value={assignmentId} onChange={e => { setAssignmentId(e.target.value); setReviewSuccess(''); setError(''); }}><option value="">Choose an assignment</option>{assignments.map(x => <option key={x.id} value={x.id}>{x.title} - {x.className} {x.sectionName}</option>)}</select></label></section>}
-    <section className="tsc-list"><h3>{page === 'Submissions' ? 'Student work' : 'Published records'}</h3>{!rows.length && !loading && <p className="tw-empty">{page === 'Submissions' && !assignmentId ? 'Choose an assignment to see submissions.' : 'No records yet.'}</p>}
+    <section className="tsc-list"><h3>{page === 'Submissions' ? 'Student work' : page === 'Class Diary' ? 'Added diary entries' : 'Added announcements'}</h3>{!rows.length && !loading && <p className="tw-empty">{page === 'Submissions' && !assignmentId ? 'Choose an assignment to see submissions.' : 'No records yet.'}</p>}
       {rows.map(x => <article className="tw-panel tsc-record" key={x.id}>
         {page === 'Class Diary' && <><span className="tw-pill">{x.isPublished ? 'Published' : 'Draft'}</span><h4>{x.subjectName} · {new Date(x.entryDate).toLocaleDateString()}</h4><p>{x.topic}</p>{x.pages && <p>Pages: {x.pages}</p>}{x.homework && <p>Homework: {x.homework}</p>}</>}
         {page === 'Announcements' && <><span className="tw-pill">{x.isPinned ? 'Pinned' : x.isPublished ? 'Published' : 'Draft'}</span><h4>{x.title}</h4><p>{x.body}</p></>}

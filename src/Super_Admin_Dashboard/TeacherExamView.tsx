@@ -7,7 +7,7 @@ import './StaffList.css';
 
 type TeacherExamView = 'timetable' | 'marks';
 
-interface Exam { id: number; name: string; startDate: string; endDate: string; isPublished: boolean; }
+interface Exam { id: number; name: string; examTypeId: number; startDate: string; endDate: string; isPublished: boolean; }
 interface SectionItem { id: number; name: string; classId: number; }
 interface SubjectItem { subjectId: number; subjectName: string; }
 interface MarksEntry { studentId: number; enrollmentId: number; studentName: string; rollNumber?: string; obtainedMarks: number | ''; remarks: string; }
@@ -71,12 +71,18 @@ const TeacherExamView: React.FC<{ selectedSchoolId: number | null }> = ({ select
 
   const fetchExams = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/Exam/GetExams?schoolId=${schoolId}`, { headers: headers() });
-      if (res.ok) {
-        const data = await res.json();
-        const all: Exam[] = data?.data ?? (Array.isArray(data) ? data : []);
-        setExams(all.filter(e => e.isPublished));
-      }
+      const [examResponse, typeResponse] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/Exam/GetExams?schoolId=${schoolId}`, { headers: headers() }),
+        fetch(`${API_BASE_URL}/api/Exam/GetExamTypes?schoolId=${schoolId}`, { headers: headers() }),
+      ]);
+      if (!examResponse.ok || !typeResponse.ok) return;
+      const [examData, typeData] = await Promise.all([examResponse.json(), typeResponse.json()]);
+      if (examData?.success === false || typeData?.success === false) return;
+      const all: Exam[] = examData?.data ?? (Array.isArray(examData) ? examData : []);
+      const unitTestTypeIds = new Set<number>((typeData?.data || [])
+        .filter((type: { name: string }) => type.name?.trim().toLowerCase() === 'unit test')
+        .map((type: { id: number }) => type.id));
+      setExams(all.filter(exam => exam.isPublished && !unitTestTypeIds.has(exam.examTypeId)));
     } catch { }
   };
 

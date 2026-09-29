@@ -24,6 +24,7 @@ type Overview = {
 type NotificationItem = { key: string; title: string; detail: string; at: string; page: Page; target?: string; kind: string };
 const notificationFallbackTime = new Date().toISOString();
 const notificationStateKey = (email: string) => 'student-notifications:' + email.toLowerCase();
+const notificationSeenKey = (email: string) => 'student-notification-seen:' + email.toLowerCase();
 const buildNotifications = (data: Overview): NotificationItem[] => {
   const items: NotificationItem[] = [];
   const add = (kind: string, id: unknown, title: string, detail: string, at: unknown, page: Page, target?: string) => {
@@ -35,7 +36,7 @@ const buildNotifications = (data: Overview): NotificationItem[] => {
     const key = String(paper.examId ?? paper.examName);
     if (!uniqueExams.has(key)) uniqueExams.set(key, paper);
   }
-  for (const exam of uniqueExams.values()) add('exam', exam.examId ?? exam.examName, (String(exam.examTypeName || '').toLowerCase() === 'unit test' ? 'Unit test: ' : 'Exam published: ') + exam.examName, 'Open exam timetable', exam.createdDate || exam.examDate, 'Exams', String(exam.examName));
+  for (const exam of uniqueExams.values()) { const unitTest = String(exam.examTypeName || '').toLowerCase() === 'unit test'; add('exam', exam.examId ?? exam.examName, (unitTest ? 'Unit test: ' : 'Exam published: ') + exam.examName, unitTest ? 'Open unit test' : 'Open exam timetable', exam.createdDate || exam.examDate, 'Exams', String(exam.examName)); }
   for (const notice of data.announcements || []) add('notice', notice.id, notice.title, 'New school announcement', notice.createdAt, 'Announcements');
   for (const assignment of data.homework || []) add('homework', assignment.id, 'New homework: ' + assignment.title, assignment.subjectName || 'Open assignment', assignment.assignedDate || assignment.dueDate, 'Homework', String(assignment.id));
   for (const request of data.requests || []) if (request.status && request.status !== 'Pending') add('request', request.id + ':' + request.status, request.type + ' request ' + String(request.status).toLowerCase(), request.response || request.subject || 'Open requests', request.respondedAt || request.createdAt, 'Requests');
@@ -85,8 +86,9 @@ export default function StudentPortal() {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notificationState, setNotificationState] = useState<Record<string, 'read' | 'deleted'>>({});
+  const [notificationPopup, setNotificationPopup] = useState<{ item: NotificationItem; count: number } | null>(null);
   const [selectedConversation, setSelectedConversation] = useState<number | null>(null);
-  const [selectedExamTab, setSelectedExamTab] = useState<'timetable' | 'tickets'>('timetable');
+  const [selectedExamTab, setSelectedExamTab] = useState<'timetable' | 'unit-tests' | 'tickets'>('timetable');
   const [selectedExamTarget, setSelectedExamTarget] = useState<string | null>(null);
   const [avatarFailed, setAvatarFailed] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -116,13 +118,14 @@ export default function StudentPortal() {
       try { body = JSON.parse(raw); }
       catch { throw new Error('Student API is unavailable. Restart the latest backend and try again.'); }
       if (!response.ok || !body.success) throw new Error(body.message || 'Could not load your school data.');
+      setNotificationState(readJson<Record<string, 'read' | 'deleted'>>(notificationStateKey(body.data.profile.email), {}));
       setData(body.data); setOffline(false);
       localStorage.setItem('studentPortalEmail', body.data.profile.email);
       localStorage.setItem('student-offline:' + body.data.profile.email, JSON.stringify({ profile: body.data.profile, timetable: body.data.timetable, homework: body.data.homework, materials: body.data.materials, diary: body.data.diary, attendance: [], exams: [], results: [], teachers: [], documents: [], fees: [], payments: [], transportFees: [], transportPayments: [], submissions: [], announcements: [], requests: [], messages: [], achievements: [], schoolEvents: [], gradeHistory: [] }));
     } catch (failure) {
       const email = localStorage.getItem('studentPortalEmail');
       const snapshot = email ? readJson<Overview | null>('student-offline:' + email, null) : null;
-      if (!navigator.onLine && snapshot) { setData(snapshot); setOffline(true); setError('Offline: showing saved timetable, diary, homework and materials.'); }
+      if (!navigator.onLine && snapshot) { setNotificationState(readJson<Record<string, 'read' | 'deleted'>>(notificationStateKey(snapshot.profile.email), {})); setData(snapshot); setOffline(true); setError('Offline: showing saved timetable, diary, homework and materials.'); }
       else setError(failure instanceof Error ? failure.message : 'Could not load your school data.');
     } finally { setLoading(false); }
   }, [navigate]);
@@ -133,7 +136,7 @@ export default function StudentPortal() {
       try {
         const response = await fetch(API_BASE_URL + '/api/StudentPortal/overview', { headers: { Authorization: 'Bearer ' + localStorage.getItem('token') } });
         const body = await response.json();
-        if (response.ok && body.success) setData(body.data);
+        if (response.ok && body.success) { setNotificationState(readJson<Record<string, 'read' | 'deleted'>>(notificationStateKey(body.data.profile.email), {})); setData(body.data); }
       } catch { /* keep the last available data */ }
     }, 60000);
     return () => window.clearInterval(timer);
@@ -160,7 +163,6 @@ export default function StudentPortal() {
   useEffect(() => {
     if (!data) return;
     const key = data.profile.email;
-    setNotificationState(readJson<Record<string, 'read' | 'deleted'>>(notificationStateKey(key), {}));
     setBookmarks(readJson<number[]>(`student-bookmarks:${key}`, []));
   }, [data]);
   useEffect(() => {
@@ -178,6 +180,22 @@ export default function StudentPortal() {
       document.removeEventListener('keydown', closeOnEscape);
     };
   }, [profileMenuOpen]);
+  useEffect(() => {
+    if (!data || offline) return;
+    const email = String(data.profile.email || '');
+    const seen = readJson<string[]>(notificationSeenKey(email), []);
+    const seenSet = new Set(seen);
+    const savedState = readJson<Record<string, 'read' | 'deleted'>>(notificationStateKey(email), {});
+    const items = buildNotifications(data);
+    const fresh = items.filter(item => !seenSet.has(item.key) && !savedState[item.key]);
+    if (fresh.length) setNotificationPopup({ item: fresh[0], count: fresh.length });
+    localStorage.setItem(notificationSeenKey(email), JSON.stringify([...new Set([...seen, ...items.map(item => item.key)])].slice(-500)));
+  }, [data, offline]);
+  useEffect(() => {
+    if (!notificationPopup) return;
+    const timer = window.setTimeout(() => setNotificationPopup(null), 5000);
+    return () => window.clearTimeout(timer);
+  }, [notificationPopup]);
   const saveBookmarks = (next: number[]) => { if (!data) return; setBookmarks(next); localStorage.setItem(`student-bookmarks:${data.profile.email}`, JSON.stringify(next)); };
   const postAction = async (path: string, payload: object) => {
     setSavingAction(true); setError('');
@@ -259,6 +277,7 @@ export default function StudentPortal() {
   const notifications = allNotifications.filter(item => notificationState[item.key] !== 'deleted');
   const unreadCount = notifications.filter(item => notificationState[item.key] !== 'read').length;
   const updateNotification = (key: string, state: 'read' | 'deleted') => {
+    if (notificationPopup?.item.key === key) setNotificationPopup(null);
     const next = { ...notificationState, [key]: state };
     setNotificationState(next);
     localStorage.setItem(notificationStateKey(String(data.profile.email)), JSON.stringify(next));
@@ -269,7 +288,7 @@ export default function StudentPortal() {
     if (item.kind === 'message' && item.target) setSelectedConversation(Number(item.target));
     if (item.kind === 'result' && item.target) setSelectedRecentResult(item.target);
     if (item.kind === 'ticket') { setSelectedExamTab('tickets'); setSelectedExamTarget(item.target || null); }
-    if (item.kind === 'exam') { setSelectedExamTab('timetable'); setSelectedExamTarget(item.target || null); }
+    if (item.kind === 'exam') { setSelectedExamTab(item.title.startsWith('Unit test: ') ? 'unit-tests' : 'timetable'); setSelectedExamTarget(item.target || null); }
     if (item.kind === 'homework' && item.target) setSelectedHomework(data.homework.find(row => String(row.id) === item.target) || null);
   };
   const nav = <nav aria-label="Student navigation">{groups.map(group => <div className="sp-nav-group" key={group.title}><small>{group.title}</small>{group.items.map(item => <button type="button" className={page === item ? 'active' : ''} onClick={() => switchPage(item)} key={item}><StudentIcon name={pageIcons[item]} />{item}</button>)}</div>)}</nav>;
@@ -312,7 +331,11 @@ export default function StudentPortal() {
         </div>
       </header>
 
-    {error && <div className="sp-error" role="alert">{error}<button onClick={() => void load()}><StudentIcon name="retry" />Retry</button></div>}
+    {notificationPopup && <div className="sp-notification-popup" role="status" aria-live="polite">
+      <div><strong>{notificationPopup.count > 1 ? notificationPopup.count + ' new notifications' : 'New notification'}</strong><p>{notificationPopup.item.title}</p></div>
+      <button type="button" className="sp-notification-popup-open" onClick={() => { openNotification(notificationPopup.item); setNotificationPopup(null); }}>Open</button>
+      <button type="button" className="sp-notification-popup-close" aria-label="Dismiss notification popup" onClick={() => setNotificationPopup(null)}>×</button>
+    </div>}    {error && <div className="sp-error" role="alert">{error}<button onClick={() => void load()}><StudentIcon name="retry" />Retry</button></div>}
     {page === 'Today' && <>
       {(currentClass || nextClass) && <div className="sp-now"><div><small>{currentClass ? 'NOW' : 'NEXT'}</small><strong>{(currentClass || nextClass)?.subjectName}</strong><span>{shortTime((currentClass || nextClass)?.startTime)}·{shortTime((currentClass || nextClass)?.endTime)}</span></div>{currentClass && nextClass && <div><small>NEXT</small><strong>{nextClass.subjectName}</strong><span>{shortTime(nextClass.startTime)}</span></div>}</div>}
       <div className="sp-stats sp-stats-today">{[['Classes today', todayClasses.filter(x => !x.isBreak).length], ['Homework upcoming', due.length], ['Attendance', attendancePercent == null ? '·' : `${attendancePercent}%`], ['Upcoming exams', upcomingExamCount], ['New announcements', (data.announcements || []).filter(x => dateOnly(x.createdAt) === currentDate).length], ['Pending assignments', due.length + late.length]].map(([label, value]) => <div key={String(label)}><small>{label}</small><strong>{value}</strong></div>)}</div>

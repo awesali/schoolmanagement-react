@@ -1,5 +1,5 @@
-﻿import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import React from 'react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 const mockNavigate = jest.fn();
 jest.mock('react-router-dom', () => ({ useNavigate: () => mockNavigate }), { virtual: true });
 import StudentPortal from './StudentPortal';
@@ -247,4 +247,40 @@ test('fee receipt shows school branding, payment details and print action', asyn
   expect(receipt).toHaveTextContent('₹200.00');
   expect(screen.getByRole('img', { name: 'Test School logo' })).toHaveAttribute('src', new URL('/logos/test-school.png', API_BASE_URL).toString());
   expect(screen.getByRole('button', { name: 'Print / Save PDF' })).toBeInTheDocument();
+});
+test('read notifications stay unhighlighted on login and only unseen items pop up for five seconds', async () => {
+  localStorage.setItem('student-notifications:test@example.com', JSON.stringify({ 'notice:21': 'read' }));
+  localStorage.setItem('student-notification-seen:test@example.com', JSON.stringify(['notice:21']));
+  const data = { ...overview, announcements: [
+    { id: 21, title: 'Already read', body: 'Old notice', createdAt: '2026-09-27T09:00:00' },
+    { id: 22, title: 'New sports day', body: 'New notice', createdAt: '2026-09-29T10:00:00' },
+  ] };
+  const timer = jest.spyOn(window, 'setTimeout');
+  global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, text: async () => JSON.stringify({ success: true, data }) }) as jest.Mock;
+  render(<StudentPortal />);
+  expect(await screen.findByText('New sports day')).toBeInTheDocument();
+  expect(screen.getByRole('status')).toHaveTextContent('New notification');
+  expect(screen.getByRole('button', { name: 'Notifications, 1 unread' })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Notifications, 1 unread' }));
+  const oldItem = screen.getByRole('button', { name: /Already read New school announcement/ }).closest('.sp-notification-item');
+  expect(oldItem).not.toHaveClass('unread');
+  const newItem = screen.getByRole('button', { name: /New sports day New school announcement/ }).closest('.sp-notification-item');
+  expect(newItem).toHaveClass('unread');
+  const hide = timer.mock.calls.find(([, delay]) => delay === 5000)?.[0] as (() => void) | undefined;
+  expect(hide).toBeDefined();
+  act(() => hide?.());
+  expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  timer.mockRestore();
+});
+test('unit test notification opens the Unit tests tab', async () => {
+  const data = { ...overview, exams: [
+    { id: -7, examId: 42, examName: 'English quiz', examTypeName: 'Unit Test', subjectName: 'English', examDate: '2026-10-07', createdDate: '2026-09-29T10:00:00' },
+  ] };
+  global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, text: async () => JSON.stringify({ success: true, data }) }) as jest.Mock;
+  render(<StudentPortal />);
+  const bell = await screen.findByRole('button', { name: 'Notifications, 1 unread' });
+  fireEvent.click(bell);
+  fireEvent.click(screen.getByRole('button', { name: /Unit test: English quiz Open unit test/ }));
+  expect(screen.getByRole('tab', { name: 'Unit tests' })).toHaveAttribute('aria-selected', 'true');
+  expect(screen.getByText('English quiz')).toBeInTheDocument();
 });

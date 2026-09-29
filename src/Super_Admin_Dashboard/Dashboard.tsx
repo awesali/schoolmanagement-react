@@ -137,7 +137,7 @@ const Dashboard: React.FC = () => {
           setUserRole(String(roleId));
           // Only check attendance for staff (roleId === '2')
           if (roleId === '2') {
-            setActivePage('Dashboard');
+            if (!new URLSearchParams(window.location.search).get('page')) setActivePage('Dashboard');
             void refresh();
             checkAttendance(token);
           } else {
