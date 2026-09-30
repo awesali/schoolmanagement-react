@@ -1,3 +1,4 @@
+/* Layout and component styles for Create Icon Button. */
 .create-icon-button,
 .create-icon-button:hover,
 .create-icon-button:active {
@@ -15,5 +16,10 @@
   outline: 2px solid currentColor;
   outline-offset: 2px;
 }
-.create-icon-button:disabled { opacity: .45; cursor: not-allowed; }
-.document-view-icon:disabled svg { filter: blur(1px); }
+.create-icon-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.document-view-icon:disabled svg {
+  filter: blur(1px);
+}

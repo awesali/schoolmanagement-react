@@ -1,3 +1,4 @@
+/* Layout and component styles for Staff List. */
 .staff-list-container {
   padding: 20px;
 }
@@ -287,6 +288,7 @@
 }
 
 /* ── Mobile ── */
+/* Responsive layouts and screen-size adjustments. */
 @media (max-width: 768px) {
   .staff-list-container {
     padding: 12px 10px;

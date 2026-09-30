@@ -1,13 +1,11 @@
+// Teacher Student Attendance: imports and dependencies
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { usePermissions } from "../security/Permissions";
-import {
-  SchoolIcon,
-  localDate,
-  teacherRequest,
-} from "./TeacherWorkspace";
+import { SchoolIcon, localDate, teacherRequest } from "./TeacherWorkspace";
 import "./TeacherWorkspace.css";
 
+// Data types and contracts
 type Student = {
   id: number;
   enrollmentId: number;
@@ -32,8 +30,11 @@ type SectionOption = {
   sectionName: string;
   className: string;
 };
+
+// Constants and helper functions
 const statuses = ["Present", "Absent", "Late", "Half Day", "Leave", "Excused"];
 
+// Main component and state
 export default function StudentAttendance({
   initialSection,
   onDirtyChange,
@@ -62,6 +63,7 @@ export default function StudentAttendance({
 
   // Step 1: load assigned sections once on mount
   useEffect(() => {
+    // Constants and helper functions
     let alive = true;
     setSectionsLoading(true);
     setError("");
@@ -72,14 +74,23 @@ export default function StudentAttendance({
         setSectionOptions(sections);
         setSection((prev) => {
           if (prev) return prev;
-          if (initialSection && sections.some((s) => s.sectionId === initialSection))
+          if (
+            initialSection &&
+            sections.some((s) => s.sectionId === initialSection)
+          )
             return String(initialSection);
           return sections.length > 0 ? String(sections[0].sectionId) : "";
         });
       })
-      .catch((e) => { if (alive) setError(e.message); })
-      .finally(() => { if (alive) setSectionsLoading(false); });
-    return () => { alive = false; };
+      .catch((e) => {
+        if (alive) setError(e.message);
+      })
+      .finally(() => {
+        if (alive) setSectionsLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
   }, []);
 
   // Step 2: whenever section or date changes, fetch students + history for that section
@@ -92,16 +103,24 @@ export default function StudentAttendance({
     setRecords([]);
     Promise.all([
       teacherRequest(`/api/Teacher/section-students?sectionId=${section}`),
-      teacherRequest(`/api/Teacher/student-attendance-history?sectionId=${section}&date=${date}`),
+      teacherRequest(
+        `/api/Teacher/student-attendance-history?sectionId=${section}&date=${date}`,
+      ),
     ])
       .then(([rosterResult, historyResult]) => {
         if (!alive) return;
         setStudents(rosterResult.data || []);
         setRecords(historyResult.data || []);
       })
-      .catch((e) => { if (alive) setError(e.message); })
-      .finally(() => { if (alive) setStudentsLoading(false); });
-    return () => { alive = false; };
+      .catch((e) => {
+        if (alive) setError(e.message);
+      })
+      .finally(() => {
+        if (alive) setStudentsLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
   }, [section, date, revision]);
 
   const saved = records.filter((r) => r.sectionId === Number(section));
@@ -127,14 +146,20 @@ export default function StudentAttendance({
 
   useEffect(() => {
     const warn = (e: BeforeUnloadEvent) => {
-      if (dirty) { e.preventDefault(); e.returnValue = ""; }
+      if (dirty) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
     };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
 
   const changeContext = (change: () => void) => {
-    if (dirty && !window.confirm("Discard the attendance changes you have not submitted?"))
+    if (
+      dirty &&
+      !window.confirm("Discard the attendance changes you have not submitted?")
+    )
       return;
     setMarks({});
     setReceipt("");
@@ -143,7 +168,9 @@ export default function StudentAttendance({
   };
 
   const displayStatus = (s: Student) =>
-    saved.find((r) => r.studentId === s.id)?.status || marks[s.id] || "Unmarked";
+    saved.find((r) => r.studentId === s.id)?.status ||
+    marks[s.id] ||
+    "Unmarked";
 
   const visible = roster.filter(
     (s) =>
@@ -153,7 +180,14 @@ export default function StudentAttendance({
   const unmarked = roster.filter((s) => !marks[s.id]).length;
 
   const submit = async () => {
-    if (loading || saving || locked || !roster.length || unmarked || !can("attendance.students", "update"))
+    if (
+      loading ||
+      saving ||
+      locked ||
+      !roster.length ||
+      unmarked ||
+      !can("attendance.students", "update")
+    )
       return;
     setSaving(true);
     setError("");
@@ -172,7 +206,10 @@ export default function StudentAttendance({
       });
       setReceipt(
         "Attendance submitted at " +
-          new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
       );
       setRecords((prev) => [
         ...prev,
@@ -200,18 +237,34 @@ export default function StudentAttendance({
         <div>
           <span className="tw-eyebrow">CLASSROOM REGISTER</span>
           <h2>Student attendance</h2>
-          <p>Start with everyone present. Record exceptions, then submit the complete class.</p>
+          <p>
+            Start with everyone present. Record exceptions, then submit the
+            complete class.
+          </p>
         </div>
-        <div className="tw-emblem"><SchoolIcon name="people" /></div>
+        <div className="tw-emblem">
+          <SchoolIcon name="people" />
+        </div>
       </section>
 
       <div className="tw-tabs">
-        <button aria-pressed={!history} disabled={saving}
-          onClick={() => changeContext(() => { setHistory(false); setDate(localDate()); })}>
+        <button
+          aria-pressed={!history}
+          disabled={saving}
+          onClick={() =>
+            changeContext(() => {
+              setHistory(false);
+              setDate(localDate());
+            })
+          }
+        >
           Today's register
         </button>
-        <button aria-pressed={history} disabled={saving}
-          onClick={() => changeContext(() => setHistory(true))}>
+        <button
+          aria-pressed={history}
+          disabled={saving}
+          onClick={() => changeContext(() => setHistory(true))}
+        >
           Attendance history
         </button>
       </div>
@@ -219,8 +272,11 @@ export default function StudentAttendance({
       <div className="tw-toolbar">
         <label>
           Class / section
-          <select disabled={sectionsLoading || saving} value={section}
-            onChange={(e) => changeContext(() => setSection(e.target.value))}>
+          <select
+            disabled={sectionsLoading || saving}
+            value={section}
+            onChange={(e) => changeContext(() => setSection(e.target.value))}
+          >
             <option value="">Select your class</option>
             {sectionOptions.map((s) => (
               <option key={s.sectionId} value={s.sectionId}>
@@ -232,18 +288,32 @@ export default function StudentAttendance({
         {history && (
           <label>
             Attendance date
-            <input type="date" value={date} max={localDate()} disabled={saving}
-              onChange={(e) => { if (e.target.value) changeContext(() => setDate(e.target.value)); }} />
+            <input
+              type="date"
+              value={date}
+              max={localDate()}
+              disabled={saving}
+              onChange={(e) => {
+                if (e.target.value)
+                  changeContext(() => setDate(e.target.value));
+              }}
+            />
           </label>
         )}
         <label className="tw-search">
           Find a student
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by student name" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by student name"
+          />
         </label>
         <label>
           Status
           <select value={filter} onChange={(e) => setFilter(e.target.value)}>
-            {["All", ...statuses, "Unmarked"].map((s) => <option key={s}>{s}</option>)}
+            {["All", ...statuses, "Unmarked"].map((s) => (
+              <option key={s}>{s}</option>
+            ))}
           </select>
         </label>
       </div>
@@ -251,13 +321,20 @@ export default function StudentAttendance({
       {error && (
         <div className="tw-error" role="alert">
           {error}{" "}
-          <button onClick={() => setRevision((v) => v + 1)}>Reload records</button>
+          <button onClick={() => setRevision((v) => v + 1)}>
+            Reload records
+          </button>
         </div>
       )}
       {locked && (
         <div className="tw-success" role="status">
-          <strong>{receipt || "Attendance already submitted for this class."}</strong>
-          <div>Saved records are read-only. Contact your school administrator for corrections.</div>
+          <strong>
+            {receipt || "Attendance already submitted for this class."}
+          </strong>
+          <div>
+            Saved records are read-only. Contact your school administrator for
+            corrections.
+          </div>
         </div>
       )}
 
@@ -270,24 +347,41 @@ export default function StudentAttendance({
       </div>
 
       {sectionsLoading ? (
-        <p className="tw-empty" role="status">Loading your classes…</p>
+        <p className="tw-empty" role="status">
+          Loading your classes…
+        </p>
       ) : !section ? (
-        <p className="tw-empty">No classes assigned. Your administrator must assign you as class teacher.</p>
+        <p className="tw-empty">
+          No classes assigned. Your administrator must assign you as class
+          teacher.
+        </p>
       ) : studentsLoading ? (
-        <p className="tw-empty" role="status">Loading students…</p>
+        <p className="tw-empty" role="status">
+          Loading students…
+        </p>
       ) : error ? (
-        <p className="tw-empty">Resolve the error above before marking attendance.</p>
+        <p className="tw-empty">
+          Resolve the error above before marking attendance.
+        </p>
       ) : !roster.length ? (
         <p className="tw-empty">
-          {history ? "No attendance records for this class and date." : "No students enrolled in this class yet."}
+          {history
+            ? "No attendance records for this class and date."
+            : "No students enrolled in this class yet."}
         </p>
       ) : (
         <>
           {!history && !locked && can("attendance.students", "update") && (
             <div className="tw-actions">
-              <button disabled={saving}
+              <button
+                disabled={saving}
                 title="Marks every student in the selected class present"
-                onClick={() => setMarks(Object.fromEntries(roster.map((s) => [s.id, "Present"])))}>
+                onClick={() =>
+                  setMarks(
+                    Object.fromEntries(roster.map((s) => [s.id, "Present"])),
+                  )
+                }
+              >
                 <SchoolIcon name="check" />
                 Mark all present ({roster.length})
               </button>
@@ -297,10 +391,35 @@ export default function StudentAttendance({
             {visible.map((s) => (
               <article className="tw-student" key={s.id}>
                 <span className="tw-avatar">
-                  {s.studentName.split(" ").map((n) => n[0]).slice(0, 2).join("")}
+                  {s.studentName
+                    .split(" ")
+                    .map((n) => n[0])
+                    .slice(0, 2)
+                    .join("")}
                 </span>
                 <div>
-                  <Link className="tw-student-name-link" to={"/dashboard/schools/" + sectionOptions.find(option => option.sectionId === Number(section))?.schoolId + "/students/" + s.id} onClick={event => { if (dirty && !window.confirm("Discard the attendance changes you have not submitted?")) event.preventDefault(); }}>{s.studentName}</Link>
+                  <Link
+                    className="tw-student-name-link"
+                    to={
+                      "/dashboard/schools/" +
+                      sectionOptions.find(
+                        (option) => option.sectionId === Number(section),
+                      )?.schoolId +
+                      "/students/" +
+                      s.id
+                    }
+                    onClick={(event) => {
+                      if (
+                        dirty &&
+                        !window.confirm(
+                          "Discard the attendance changes you have not submitted?",
+                        )
+                      )
+                        event.preventDefault();
+                    }}
+                  >
+                    {s.studentName}
+                  </Link>
                   <small>
                     {s.rollNumber ? "Roll " + s.rollNumber + " · " : ""}
                     {s.className} · {s.sectionName}
@@ -309,26 +428,39 @@ export default function StudentAttendance({
                 {history || locked || !can("attendance.students", "update") ? (
                   <span className="tw-pill">{displayStatus(s)}</span>
                 ) : (
-                  <select aria-label={"Attendance for " + s.studentName} disabled={saving}
+                  <select
+                    aria-label={"Attendance for " + s.studentName}
+                    disabled={saving}
                     value={marks[s.id] || ""}
-                    onChange={(e) => setMarks((prev) => ({ ...prev, [s.id]: e.target.value }))}>
+                    onChange={(e) =>
+                      setMarks((prev) => ({ ...prev, [s.id]: e.target.value }))
+                    }
+                  >
                     <option value="">Unmarked</option>
-                    {statuses.map((status) => <option key={status}>{status}</option>)}
+                    {statuses.map((status) => (
+                      <option key={status}>{status}</option>
+                    ))}
                   </select>
                 )}
               </article>
             ))}
           </div>
-          {!visible.length && <p className="tw-empty">No students match these filters.</p>}
+          {!visible.length && (
+            <p className="tw-empty">No students match these filters.</p>
+          )}
           {!history && !locked && can("attendance.students", "update") && (
             <div className="tw-submit">
               <span>
-                <strong>{roster.length - unmarked} of {roster.length}</strong>{" "}
+                <strong>
+                  {roster.length - unmarked} of {roster.length}
+                </strong>{" "}
                 students marked · {localDate()}
               </span>
-              <button className="btn btn-primary"
+              <button
+                className="btn btn-primary"
                 disabled={saving || unmarked > 0 || !roster.length}
-                onClick={submit}>
+                onClick={submit}
+              >
                 {saving ? "Submitting…" : "Submit class attendance"}
               </button>
             </div>

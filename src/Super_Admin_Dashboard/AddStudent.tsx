@@ -1,16 +1,23 @@
-import AdminActionIcon from './AdminActionIcon';
-import React, { useState, useEffect, useCallback } from 'react';
-import { API_BASE_URL } from '../config';
-import { importDateError, formatImportDate } from '../utils/importDate';
-import { useToast } from '../components/Toast/Toast';
-import { TOAST_MESSAGES } from '../constants/toastMessages';
-import Modal from './Modal';
-import RelationshipSelect from './RelationshipSelect';
-import './AddStaff.css';
-import { GENDER_OPTIONS } from '../utils/gender';
-import StudentDetailSections, { appendStudentDetails, studentDetailValues } from './StudentDetailSections';
-import ParentAddressFields, { parentAddressValues } from './ParentAddressFields';
+// Add Student: imports and dependencies
+import AdminActionIcon from "./AdminActionIcon";
+import React, { useState, useEffect, useCallback } from "react";
+import { API_BASE_URL } from "../config";
+import { importDateError, formatImportDate } from "../utils/importDate";
+import { useToast } from "../components/Toast/Toast";
+import { TOAST_MESSAGES } from "../constants/toastMessages";
+import Modal from "./Modal";
+import RelationshipSelect from "./RelationshipSelect";
+import "./AddStaff.css";
+import { GENDER_OPTIONS } from "../utils/gender";
+import StudentDetailSections, {
+  appendStudentDetails,
+  studentDetailValues,
+} from "./StudentDetailSections";
+import ParentAddressFields, {
+  parentAddressValues,
+} from "./ParentAddressFields";
 
+// Data types and contracts
 interface AddStudentProps {
   isOpen: boolean;
   onClose: () => void;
@@ -18,9 +25,21 @@ interface AddStudentProps {
   onSuccess: () => void;
 }
 
-interface ClassItem { id: number; name: string; }
-interface SectionItem { id: number; name: string; classId: number; }
-interface SessionItem { id: number; yearStart: string; yearEnd: string; isActive: boolean; }
+interface ClassItem {
+  id: number;
+  name: string;
+}
+interface SectionItem {
+  id: number;
+  name: string;
+  classId: number;
+}
+interface SessionItem {
+  id: number;
+  yearStart: string;
+  yearEnd: string;
+  isActive: boolean;
+}
 
 interface EnrollmentData {
   classes: ClassItem[];
@@ -28,31 +47,44 @@ interface EnrollmentData {
   sessions: SessionItem[];
 }
 
+// Constants and helper functions
 const initialForm = {
-  studentName: '',
-  rollNumber: '',
-  dob: '',
-  genderCode: '',
-  email: '',
-  phoneNumber: '',
-  classId: '',
-  sectionId: '',
-  sessionId: '',
-  parentName: '',
-  parentPhone: '',
-  parentEmail: '',
-  parentAddress: '',
-  parentRelationship: '',
+  studentName: "",
+  rollNumber: "",
+  dob: "",
+  genderCode: "",
+  email: "",
+  phoneNumber: "",
+  classId: "",
+  sectionId: "",
+  sessionId: "",
+  parentName: "",
+  parentPhone: "",
+  parentEmail: "",
+  parentAddress: "",
+  parentRelationship: "",
   ...studentDetailValues(),
 };
 
-const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSuccess }) => {
+// Main component and state
+const AddStudent: React.FC<AddStudentProps> = ({
+  isOpen,
+  onClose,
+  schoolId,
+  onSuccess,
+}) => {
   const toast = useToast();
   const [formData, setFormData] = useState(initialForm);
-  const [enrollment, setEnrollment] = useState<EnrollmentData>({ classes: [], sections: [], sessions: [] });
-  const [documents, setDocuments] = useState<Array<{ name: string; file: File }>>([]);
+  const [enrollment, setEnrollment] = useState<EnrollmentData>({
+    classes: [],
+    sections: [],
+    sessions: [],
+  });
+  const [documents, setDocuments] = useState<
+    Array<{ name: string; file: File }>
+  >([]);
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
-  const [profilePreview, setProfilePreview] = useState('');
+  const [profilePreview, setProfilePreview] = useState("");
   const [enrollmentLoading, setEnrollmentLoading] = useState(false);
   const [checkingClasses, setCheckingClasses] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -62,32 +94,44 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
     try {
       setCheckingClasses(true);
       setEnrollment({ classes: [], sections: [], sessions: [] });
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/Student/enrollment-info?schoolId=${schoolId}`, {
-        headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
-      });
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `${API_BASE_URL}/api/Student/enrollment-info?schoolId=${schoolId}`,
+        {
+          headers: { accept: "*/*", Authorization: `Bearer ${token}` },
+        },
+      );
       const result = await response.json();
       if (response.ok && result.success && result.data) {
         setEnrollment(result.data);
         if (!result.data.classes?.length) {
           toast.warning(TOAST_MESSAGES.dependency.classRequired);
         }
-        const activeSessions = (result.data.sessions || []).filter((session: SessionItem) => session.isActive);
+        const activeSessions = (result.data.sessions || []).filter(
+          (session: SessionItem) => session.isActive,
+        );
         if (activeSessions.length === 1) {
-          setFormData(prev => ({ ...prev, sessionId: activeSessions[0].id.toString() }));
+          setFormData((prev) => ({
+            ...prev,
+            sessionId: activeSessions[0].id.toString(),
+          }));
         } else if (activeSessions.length === 0) {
-          toast.error('No active academic session is configured for this school.');
+          toast.error(
+            "No active academic session is configured for this school.",
+          );
         } else {
-          toast.error('Multiple active academic sessions were found. Please correct the academic-session setup.');
+          toast.error(
+            "Multiple active academic sessions were found. Please correct the academic-session setup.",
+          );
         }
       } else {
         setEnrollment({ classes: [], sections: [], sessions: [] });
-        toast.error(result.message || 'Unable to load enrollment information.');
+        toast.error(result.message || "Unable to load enrollment information.");
       }
     } catch (err) {
       setEnrollment({ classes: [], sections: [], sessions: [] });
-      toast.error('Unable to load enrollment information.');
-      console.error('Failed to fetch enrollment info', err);
+      toast.error("Unable to load enrollment information.");
+      console.error("Failed to fetch enrollment info", err);
     } finally {
       setEnrollmentLoading(false);
       setCheckingClasses(false);
@@ -96,95 +140,115 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
 
   useEffect(() => {
     if (isOpen && schoolId) {
-      setFormData(prev => ({ ...prev, sessionId: '' }));      fetchEnrollmentInfo();
+      setFormData((prev) => ({ ...prev, sessionId: "" }));
+      fetchEnrollmentInfo();
     }
   }, [isOpen, schoolId, fetchEnrollmentInfo]);
 
-  const filteredSections = enrollment.sections.filter(s => s.classId === Number(formData.classId));
+  const filteredSections = enrollment.sections.filter(
+    (s) => s.classId === Number(formData.classId),
+  );
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleClassChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const classId = e.target.value;
-    setFormData({ ...formData, classId, sectionId: '' });
+    setFormData({ ...formData, classId, sectionId: "" });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (submitting) return;
-    const dateError = importDateError('Date of Birth', formatImportDate(formData.dob));
-    if (dateError) { toast.error(dateError); return; }
-    if (!formData.sessionId) {
-      toast.error('An active academic session is required before a student can be added.');
+    const dateError = importDateError(
+      "Date of Birth",
+      formatImportDate(formData.dob),
+    );
+    if (dateError) {
+      toast.error(dateError);
       return;
-    }    if (enrollment.classes.length === 0) {
+    }
+    if (!formData.sessionId) {
+      toast.error(
+        "An active academic session is required before a student can be added.",
+      );
+      return;
+    }
+    if (enrollment.classes.length === 0) {
       toast.warning(TOAST_MESSAGES.dependency.classRequired);
       return;
     }
     setSubmitting(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const formDataToSend = new FormData();
 
-      formDataToSend.append('StudentName', formData.studentName);
-      formDataToSend.append('RollNumber', formData.rollNumber);
-      formDataToSend.append('DOB', formData.dob);
-      formDataToSend.append('GenderCode', formData.genderCode);
-      formDataToSend.append('Email', formData.email);
-      formDataToSend.append('PhoneNumber', formData.phoneNumber);
-      formDataToSend.append('SchoolId', schoolId?.toString() || '0');
-      formDataToSend.append('ClassId', formData.classId);
-      formDataToSend.append('SectionId', formData.sectionId);
-      formDataToSend.append('SessionId', formData.sessionId);
+      formDataToSend.append("StudentName", formData.studentName);
+      formDataToSend.append("RollNumber", formData.rollNumber);
+      formDataToSend.append("DOB", formData.dob);
+      formDataToSend.append("GenderCode", formData.genderCode);
+      formDataToSend.append("Email", formData.email);
+      formDataToSend.append("PhoneNumber", formData.phoneNumber);
+      formDataToSend.append("SchoolId", schoolId?.toString() || "0");
+      formDataToSend.append("ClassId", formData.classId);
+      formDataToSend.append("SectionId", formData.sectionId);
+      formDataToSend.append("SessionId", formData.sessionId);
       appendStudentDetails(formDataToSend, formData);
-      formDataToSend.append('Parent.Name', formData.parentName);
-      formDataToSend.append('Parent.PhoneNumber', formData.parentPhone);
-      formDataToSend.append('Parent.Address', formData.parentAddress);
-      formDataToSend.append('Parent.AddressLine2', formData.parentAddressLine2);
-      formDataToSend.append('Parent.Landmark', formData.parentLandmark);
-      formDataToSend.append('Parent.City', formData.parentCity);
-      formDataToSend.append('Parent.District', formData.parentDistrict);
-      formDataToSend.append('Parent.State', formData.parentState);
-      formDataToSend.append('Parent.Country', formData.parentCountry);
-      formDataToSend.append('Parent.PinCode', formData.parentPinCode);
-      formDataToSend.append('Parent.Email', formData.parentEmail);
-      formDataToSend.append('Parent.Relationship', formData.parentRelationship);
+      formDataToSend.append("Parent.Name", formData.parentName);
+      formDataToSend.append("Parent.PhoneNumber", formData.parentPhone);
+      formDataToSend.append("Parent.Address", formData.parentAddress);
+      formDataToSend.append("Parent.AddressLine2", formData.parentAddressLine2);
+      formDataToSend.append("Parent.Landmark", formData.parentLandmark);
+      formDataToSend.append("Parent.City", formData.parentCity);
+      formDataToSend.append("Parent.District", formData.parentDistrict);
+      formDataToSend.append("Parent.State", formData.parentState);
+      formDataToSend.append("Parent.Country", formData.parentCountry);
+      formDataToSend.append("Parent.PinCode", formData.parentPinCode);
+      formDataToSend.append("Parent.Email", formData.parentEmail);
+      formDataToSend.append("Parent.Relationship", formData.parentRelationship);
 
       if (profilePicture) {
-        formDataToSend.append('DocumentNames', 'Profile Picture');
-        formDataToSend.append('Files', profilePicture);
+        formDataToSend.append("DocumentNames", "Profile Picture");
+        formDataToSend.append("Files", profilePicture);
       }
 
-      const validDocuments = documents.filter(doc => doc.file && doc.name.trim());
-      validDocuments.forEach(doc => {
-        formDataToSend.append('DocumentNames', doc.name);
-        formDataToSend.append('Files', doc.file);
+      const validDocuments = documents.filter(
+        (doc) => doc.file && doc.name.trim(),
+      );
+      validDocuments.forEach((doc) => {
+        formDataToSend.append("DocumentNames", doc.name);
+        formDataToSend.append("Files", doc.file);
       });
 
       const response = await fetch(`${API_BASE_URL}/api/Student/add-student`, {
-        method: 'POST',
-        headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
+        method: "POST",
+        headers: { accept: "*/*", Authorization: `Bearer ${token}` },
         body: formDataToSend,
       });
       const result = await response.json();
       if (response.ok) {
         setFormData(initialForm);
         setProfilePicture(null);
-        setProfilePreview('');
+        setProfilePreview("");
         setDocuments([]);
         onSuccess();
         onClose();
       } else {
         const validationMessage = result.errors
-          ? Object.values(result.errors).flat().join(' ')
-          : '';
-        toast.error(result.message || validationMessage || 'Failed to add student.');
+          ? Object.values(result.errors).flat().join(" ")
+          : "";
+        toast.error(
+          result.message || validationMessage || "Failed to add student.",
+        );
       }
     } catch (err) {
-      toast.error('Unable to add the student. Please try again.');
-      console.error('Failed to add student', err);
+      toast.error("Unable to add the student. Please try again.");
+      console.error("Failed to add student", err);
     } finally {
       setSubmitting(false);
     }
@@ -193,12 +257,15 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
   const handleClear = () => {
     setFormData(initialForm);
     setProfilePicture(null);
-    setProfilePreview('');
+    setProfilePreview("");
     setDocuments([]);
-    setEnrollment({ classes: [], sections: [], sessions: [] });  };
+    setEnrollment({ classes: [], sections: [], sessions: [] });
+  };
 
-  const handleAddDocument = () => setDocuments([...documents, { name: '', file: null as any }]);
-  const handleRemoveDocument = (index: number) => setDocuments(documents.filter((_, i) => i !== index));
+  const handleAddDocument = () =>
+    setDocuments([...documents, { name: "", file: null as any }]);
+  const handleRemoveDocument = (index: number) =>
+    setDocuments(documents.filter((_, i) => i !== index));
   const handleDocumentNameChange = (index: number, name: string) => {
     const updated = [...documents];
     updated[index].name = name;
@@ -215,27 +282,46 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
   return (
     <Modal
       isOpen={isOpen}
-      onClose={() => { if (!submitting) onClose(); }}
+      onClose={() => {
+        if (!submitting) onClose();
+      }}
       title="Add New Student"
       submitLabel="Add Student"
-      onCancel={() => { if (!submitting) handleClear(); }}
+      onCancel={() => {
+        if (!submitting) handleClear();
+      }}
       formId="add-student-form"
-      submitDisabled={submitting || checkingClasses || enrollment.classes.length === 0}
+      submitDisabled={
+        submitting || checkingClasses || enrollment.classes.length === 0
+      }
       submitLoading={submitting}
       loadingText="Adding student..."
     >
       <form id="add-student-form" onSubmit={handleSubmit}>
         <div className="profile-upload-area">
-          <input id="student-profile-picture" type="file" accept="image/jpeg,image/png,image/webp"
+          <input
+            id="student-profile-picture"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
             onChange={(e) => {
               const file = e.target.files?.[0] || null;
               setProfilePicture(file);
-              setProfilePreview(file ? URL.createObjectURL(file) : '');
-            }} />
-          <label htmlFor="student-profile-picture" className={`profile-upload-circle ${profilePreview ? 'has-image' : ''}`}>
-            {profilePreview ? <img src={profilePreview} alt="Student preview" /> : <span>+</span>}
+              setProfilePreview(file ? URL.createObjectURL(file) : "");
+            }}
+          />
+          <label
+            htmlFor="student-profile-picture"
+            className={`profile-upload-circle ${profilePreview ? "has-image" : ""}`}
+          >
+            {profilePreview ? (
+              <img src={profilePreview} alt="Student preview" />
+            ) : (
+              <span>+</span>
+            )}
           </label>
-          <div className="profile-upload-title">Add Profile Picture (Optional)</div>
+          <div className="profile-upload-title">
+            Add Profile Picture (Optional)
+          </div>
           <small>JPG, PNG or WebP · Max 5 MB</small>
         </div>
         <div className="form-grid">
@@ -245,15 +331,33 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
 
           <div className="form-group">
             <label>Student Name *</label>
-            <input type="text" name="studentName" required value={formData.studentName} onChange={handleChange} />
+            <input
+              type="text"
+              name="studentName"
+              required
+              value={formData.studentName}
+              onChange={handleChange}
+            />
           </div>
           <div className="form-group">
             <label>Roll Number *</label>
-            <input type="number" name="rollNumber" required value={formData.rollNumber} onChange={handleChange} />
+            <input
+              type="number"
+              name="rollNumber"
+              required
+              value={formData.rollNumber}
+              onChange={handleChange}
+            />
           </div>
           <div className="form-group">
             <label>Email *</label>
-            <input type="email" name="email" required value={formData.email} onChange={handleChange} />
+            <input
+              type="email"
+              name="email"
+              required
+              value={formData.email}
+              onChange={handleChange}
+            />
           </div>
           <div className="form-group">
             <label>Phone *</label>
@@ -265,60 +369,117 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
               pattern="[0-9]{10}"
               value={formData.phoneNumber}
               onChange={(e) => {
-                const value = e.target.value.replace(/[^0-9]/g, '');
-                if (value.length <= 10) setFormData({ ...formData, phoneNumber: value });
+                const value = e.target.value.replace(/[^0-9]/g, "");
+                if (value.length <= 10)
+                  setFormData({ ...formData, phoneNumber: value });
               }}
             />
           </div>
           <div className="form-group">
             <label>Date of Birth *</label>
-            <input type="date"
-              onInvalid={event => event.currentTarget.setCustomValidity('Choose a valid date using the calendar or the format shown in this field. CSV dates accept MM-DD-YYYY or MM/DD/YYYY, e.g. 01-31-2010 or 1/31/2010.')}
-              onInput={event => event.currentTarget.setCustomValidity('')} name="dob" required value={formData.dob} onChange={handleChange} />
-            <small>Use the calendar or the date format shown above. CSV: MM-DD-YYYY or MM/DD/YYYY (e.g. 01-31-2010 or 1/31/2010).</small>
+            <input
+              type="date"
+              onInvalid={(event) =>
+                event.currentTarget.setCustomValidity(
+                  "Choose a valid date using the calendar or the format shown in this field. CSV dates accept MM-DD-YYYY or MM/DD/YYYY, e.g. 01-31-2010 or 1/31/2010.",
+                )
+              }
+              onInput={(event) => event.currentTarget.setCustomValidity("")}
+              name="dob"
+              required
+              value={formData.dob}
+              onChange={handleChange}
+            />
+            <small>
+              Use the calendar or the date format shown above. CSV: MM-DD-YYYY
+              or MM/DD/YYYY (e.g. 01-31-2010 or 1/31/2010).
+            </small>
           </div>
           <div className="form-group">
             <label>Gender *</label>
-            <select name="genderCode" required value={formData.genderCode} onChange={handleChange}>
+            <select
+              name="genderCode"
+              required
+              value={formData.genderCode}
+              onChange={handleChange}
+            >
               <option value="">Select Gender</option>
-              {GENDER_OPTIONS.map(option => (
-                <option key={option.code} value={option.code}>{option.label}</option>
+              {GENDER_OPTIONS.map((option) => (
+                <option key={option.code} value={option.code}>
+                  {option.label}
+                </option>
               ))}
             </select>
           </div>
           <div className="form-group">
             <label>Class *</label>
-            <select name="classId" required value={formData.classId} onChange={handleClassChange} disabled={checkingClasses || enrollment.classes.length === 0}>
-              <option value="">{checkingClasses ? 'Checking classes...' : enrollment.classes.length === 0 ? 'No class available' : 'Select Class'}</option>
-              {enrollment.classes.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
+            <select
+              name="classId"
+              required
+              value={formData.classId}
+              onChange={handleClassChange}
+              disabled={checkingClasses || enrollment.classes.length === 0}
+            >
+              <option value="">
+                {checkingClasses
+                  ? "Checking classes..."
+                  : enrollment.classes.length === 0
+                    ? "No class available"
+                    : "Select Class"}
+              </option>
+              {enrollment.classes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
               ))}
             </select>
           </div>
           <div className="form-group">
             <label>Section *</label>
-            <select name="sectionId" required value={formData.sectionId} onChange={handleChange} disabled={!formData.classId}>
+            <select
+              name="sectionId"
+              required
+              value={formData.sectionId}
+              onChange={handleChange}
+              disabled={!formData.classId}
+            >
               <option value="">Select Section</option>
-              {filteredSections.map(s => (
-                <option key={s.id} value={s.id}>{s.name}</option>
+              {filteredSections.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
               ))}
             </select>
           </div>
           <div className="form-group">
             <label>Session *</label>
-            <select name="sessionId" required value={formData.sessionId} onChange={handleChange} disabled>
-              <option value="">{enrollmentLoading ? 'Loading session...' : 'No active session'}</option>
-              {enrollment.sessions.map(s => (
+            <select
+              name="sessionId"
+              required
+              value={formData.sessionId}
+              onChange={handleChange}
+              disabled
+            >
+              <option value="">
+                {enrollmentLoading ? "Loading session..." : "No active session"}
+              </option>
+              {enrollment.sessions.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.yearStart.split('-')[0]}-{s.yearEnd.split('-')[0]}{s.isActive ? ' (Active)' : ''}
+                  {s.yearStart.split("-")[0]}-{s.yearEnd.split("-")[0]}
+                  {s.isActive ? " (Active)" : ""}
                 </option>
               ))}
             </select>
           </div>
 
           <div className="form-group full-width">
-            <StudentDetailSections values={formData} disabled={submitting}
-              onChange={(name, value) => setFormData(current => ({ ...current, [name]: value }))} />
+            <StudentDetailSections
+              values={formData}
+              disabled={submitting}
+              onChange={(name, value) =>
+                setFormData((current) => ({ ...current, [name]: value }))
+              }
+            />
           </div>
           <div className="form-group full-width">
             <label>— Parent Details —</label>
@@ -326,11 +487,23 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
 
           <div className="form-group">
             <label>Parent Name *</label>
-            <input type="text" name="parentName" required value={formData.parentName} onChange={handleChange} />
+            <input
+              type="text"
+              name="parentName"
+              required
+              value={formData.parentName}
+              onChange={handleChange}
+            />
           </div>
           <div className="form-group">
             <label>Parent Email *</label>
-            <input type="email" name="parentEmail" required value={formData.parentEmail} onChange={handleChange} />
+            <input
+              type="email"
+              name="parentEmail"
+              required
+              value={formData.parentEmail}
+              onChange={handleChange}
+            />
           </div>
           <div className="form-group">
             <label>Parent Phone *</label>
@@ -342,25 +515,40 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
               pattern="[0-9]{10}"
               value={formData.parentPhone}
               onChange={(e) => {
-                const value = e.target.value.replace(/[^0-9]/g, '');
-                if (value.length <= 10) setFormData({ ...formData, parentPhone: value });
+                const value = e.target.value.replace(/[^0-9]/g, "");
+                if (value.length <= 10)
+                  setFormData({ ...formData, parentPhone: value });
               }}
             />
           </div>
           <div className="form-group">
             <label>Relationship *</label>
-            <RelationshipSelect value={formData.parentRelationship} onChange={handleChange} />
+            <RelationshipSelect
+              value={formData.parentRelationship}
+              onChange={handleChange}
+            />
           </div>
           <div className="form-group full-width">
-            <ParentAddressFields values={formData} disabled={submitting}
-              onChange={(name, value) => setFormData(current => ({ ...current, [name]: value }))} />
+            <ParentAddressFields
+              values={formData}
+              disabled={submitting}
+              onChange={(name, value) =>
+                setFormData((current) => ({ ...current, [name]: value }))
+              }
+            />
           </div>
         </div>
 
         <div className="documents-section">
           <div className="documents-header">
             <label>Documents</label>
-            <button type="button" className="btn-add-doc" onClick={handleAddDocument}><AdminActionIcon action="add" />Add Document
+            <button
+              type="button"
+              className="btn-add-doc"
+              onClick={handleAddDocument}
+            >
+              <AdminActionIcon action="add" />
+              Add Document
             </button>
           </div>
           {documents.map((doc, index) => (
@@ -369,25 +557,43 @@ const AddStudent: React.FC<AddStudentProps> = ({ isOpen, onClose, schoolId, onSu
                 type="text"
                 placeholder="Document Name"
                 value={doc.name}
-                onChange={(e) => handleDocumentNameChange(index, e.target.value)}
+                onChange={(e) =>
+                  handleDocumentNameChange(index, e.target.value)
+                }
               />
               <div className="file-input-wrapper">
                 <input
                   type="file"
                   id={`file-${index}`}
-                  onChange={(e) => handleDocumentFileChange(index, e.target.files?.[0] || null)}
-                  style={{ display: 'none' }}
+                  onChange={(e) =>
+                    handleDocumentFileChange(index, e.target.files?.[0] || null)
+                  }
+                  style={{ display: "none" }}
                 />
                 <label htmlFor={`file-${index}`} className="file-input-label">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="7,10 12,15 17,10"/>
-                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7,10 12,15 17,10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
                   </svg>
-                  {doc.file ? doc.file.name : 'Upload'}
+                  {doc.file ? doc.file.name : "Upload"}
                 </label>
               </div>
-              <button type="button" className="btn-remove" onClick={() => handleRemoveDocument(index)} aria-label="Remove document"><AdminActionIcon action="delete" /></button>
+              <button
+                type="button"
+                className="btn-remove"
+                onClick={() => handleRemoveDocument(index)}
+                aria-label="Remove document"
+              >
+                <AdminActionIcon action="delete" />
+              </button>
             </div>
           ))}
         </div>

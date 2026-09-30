@@ -1,3 +1,4 @@
+/* Layout and component styles for Class List. */
 .class-list-container {
   padding: 20px;
   background: white;
@@ -235,6 +236,7 @@
   font-size: 14px;
 }
 
+/* Responsive layouts and screen-size adjustments. */
 @media (max-width: 768px) {
   .advanced-pagination {
     flex-direction: column;
@@ -352,11 +354,21 @@
   background: #fff;
   transition: transform 150ms;
 }
-.academic-session-status-toggle[aria-checked="true"] .academic-session-toggle-thumb {
+.academic-session-status-toggle[aria-checked="true"]
+  .academic-session-toggle-thumb {
   transform: translateX(20px);
 }
-.academic-session-status-toggle:disabled { opacity: .6; cursor: wait; }
-.academic-session-status-toggle:focus-visible { outline: 2px solid #087f83; outline-offset: 3px; }
+.academic-session-status-toggle:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.academic-session-status-toggle:focus-visible {
+  outline: 2px solid #087f83;
+  outline-offset: 3px;
+}
 @media (prefers-reduced-motion: reduce) {
-  .academic-session-status-toggle, .academic-session-toggle-thumb { transition: none; }
+  .academic-session-status-toggle,
+  .academic-session-toggle-thumb {
+    transition: none;
+  }
 }

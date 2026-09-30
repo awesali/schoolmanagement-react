@@ -1,11 +1,338 @@
-.accounting-workspace{--ac-ink:#173449;--ac-teal:#087f83;color:var(--ac-ink);font-size:14px;line-height:1.55}
-.accounting-workspace *{box-sizing:border-box}.ac-banner{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:26px;background:linear-gradient(125deg,#123649,#16676b);color:white;border-radius:16px;margin-bottom:20px}.ac-banner h2{font-size:26px;margin:6px 0}.ac-banner p{margin:0;max-width:700px;color:#d7eded}.ac-eyebrow{font-size:11px;letter-spacing:2px;font-weight:700}
-.accounting-workspace button{border:1px solid #cadbdf;background:#fff;color:#185966;border-radius:8px;padding:9px 14px;cursor:pointer;font-weight:600;line-height:1.4}.accounting-workspace button:hover:not(:disabled){background:#e8f5f3;border-color:#218b89}.accounting-workspace button:disabled{opacity:.5;cursor:not-allowed}.accounting-workspace :focus-visible{outline:3px solid #22a7b8;outline-offset:2px}
-.ac-tabs{display:flex;gap:5px;overflow-x:auto;border-bottom:1px solid #d9e6e9;padding-bottom:10px;margin-bottom:18px}.ac-tabs button{white-space:nowrap;border-color:transparent}.ac-tabs button[aria-selected=true]{background:var(--ac-teal);color:white}
-.ac-toolbar,.ac-actions,.ac-section-title{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:16px 0}.ac-section-title{justify-content:space-between}.ac-toolbar label{max-width:250px}
-.accounting-workspace label{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:12px}.accounting-workspace input:not([type=checkbox]),.accounting-workspace select,.accounting-workspace textarea{width:100%;min-height:40px;border:1px solid #cbdadf;border-radius:7px;background:white;color:#173449;padding:9px 10px;font:inherit}.accounting-workspace textarea{resize:vertical;min-height:75px}.ac-check{flex-direction:row!important;align-items:center}.ac-check input{width:18px;height:18px}
-.ac-card{background:#fff;border:1px solid #dce7eb;border-radius:12px;padding:22px;margin-bottom:18px;min-width:0}.ac-card h3{margin:0 0 14px;font-size:17px}.ac-card p{color:#516975}.ac-form{display:flex;flex-direction:column;gap:15px}.ac-form>button{align-self:flex-start}.ac-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.ac-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.ac-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.ac-metrics .ac-card{border-top:3px solid #278e8b}.ac-metrics span{display:block;color:#647a86;font-size:12px}.ac-metrics strong{display:block;font-size:23px;margin-top:10px;overflow-wrap:anywhere}.ac-muted{color:#647a86;font-size:12px}.ac-message{background:#e5f6ed;border:1px solid #a9d9bf;padding:13px 17px;border-radius:8px;margin:14px 0}.ac-error{background:#fff0ec;border-color:#e8beb0;color:#942e24}
-.ac-table{overflow-x:auto}.ac-table table{width:100%;border-collapse:collapse;font-size:12px}.ac-table th{text-align:left;background:#f0f5f7;color:#4b6471;white-space:nowrap}.ac-table th,.ac-table td{padding:12px 10px;border-bottom:1px solid #e3ebee;vertical-align:top}.ac-table td small{display:block;color:#6e818b;max-width:350px;overflow-wrap:anywhere}.ac-table td select{min-width:190px}.ac-table td input[type=number]{min-width:115px}.ac-table tfoot th{background:#e9f3f2}.ac-status{padding:4px 8px;border-radius:5px;background:#eef1f4;font-size:11px}.ac-status.posted{color:#11624e;background:#dbf2e7}.ac-status.draft{color:#82570f;background:#fff0cd}.ac-status.void{color:#823b3b;background:#f5e2e2}
-.ac-summary{display:flex;gap:30px;flex-wrap:wrap;margin:15px 0}.ac-summary strong{display:block;font-size:19px}.ac-report-row{display:flex;justify-content:space-between;gap:16px;padding:9px 0}.ac-report-row strong{white-space:nowrap}.ac-confirm{border-left:3px solid #c59436;padding:18px;background:#fffaf0;margin-top:18px}.ac-confirm h4{margin:0}
-@media(max-width:1100px){.ac-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.ac-columns{grid-template-columns:1fr}}@media(max-width:600px){.ac-banner{flex-direction:column;align-items:flex-start;padding:18px}.ac-fields{grid-template-columns:1fr}.ac-card{padding:15px}.ac-metrics{grid-template-columns:1fr}.ac-toolbar{align-items:stretch}.ac-toolbar label{flex:1;min-width:130px}}
-@media print{body:has(.accounting-workspace) *{visibility:hidden}.accounting-workspace,.accounting-workspace *{visibility:visible}.accounting-workspace{position:absolute;left:0;top:0;width:100%;font-size:10px}.accounting-workspace button,.ac-tabs,.ac-toolbar,.ac-message{display:none!important}.ac-card{break-inside:avoid;border:1px solid #ddd}.ac-table{overflow:visible}.ac-columns{display:block}.principal-scroll-area,.principal-content{overflow:visible!important;height:auto!important}}
+/* Layout and component styles for Accounting Workspace. */
+.accounting-workspace {
+  --ac-ink: #173449;
+  --ac-teal: #087f83;
+  color: var(--ac-ink);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.accounting-workspace * {
+  box-sizing: border-box;
+}
+.ac-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 26px;
+  background: linear-gradient(125deg, #123649, #16676b);
+  color: white;
+  border-radius: 16px;
+  margin-bottom: 20px;
+}
+.ac-banner h2 {
+  font-size: 26px;
+  margin: 6px 0;
+}
+.ac-banner p {
+  margin: 0;
+  max-width: 700px;
+  color: #d7eded;
+}
+.ac-eyebrow {
+  font-size: 11px;
+  letter-spacing: 2px;
+  font-weight: 700;
+}
+.accounting-workspace button {
+  border: 1px solid #cadbdf;
+  background: #fff;
+  color: #185966;
+  border-radius: 8px;
+  padding: 9px 14px;
+  cursor: pointer;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.accounting-workspace button:hover:not(:disabled) {
+  background: #e8f5f3;
+  border-color: #218b89;
+}
+.accounting-workspace button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.accounting-workspace :focus-visible {
+  outline: 3px solid #22a7b8;
+  outline-offset: 2px;
+}
+.ac-tabs {
+  display: flex;
+  gap: 5px;
+  overflow-x: auto;
+  border-bottom: 1px solid #d9e6e9;
+  padding-bottom: 10px;
+  margin-bottom: 18px;
+}
+.ac-tabs button {
+  white-space: nowrap;
+  border-color: transparent;
+}
+.ac-tabs button[aria-selected="true"] {
+  background: var(--ac-teal);
+  color: white;
+}
+.ac-toolbar,
+.ac-actions,
+.ac-section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+.ac-section-title {
+  justify-content: space-between;
+}
+.ac-toolbar label {
+  max-width: 250px;
+}
+.accounting-workspace label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 12px;
+}
+.accounting-workspace input:not([type="checkbox"]),
+.accounting-workspace select,
+.accounting-workspace textarea {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid #cbdadf;
+  border-radius: 7px;
+  background: white;
+  color: #173449;
+  padding: 9px 10px;
+  font: inherit;
+}
+.accounting-workspace textarea {
+  resize: vertical;
+  min-height: 75px;
+}
+.ac-check {
+  flex-direction: row !important;
+  align-items: center;
+}
+.ac-check input {
+  width: 18px;
+  height: 18px;
+}
+.ac-card {
+  background: #fff;
+  border: 1px solid #dce7eb;
+  border-radius: 12px;
+  padding: 22px;
+  margin-bottom: 18px;
+  min-width: 0;
+}
+.ac-card h3 {
+  margin: 0 0 14px;
+  font-size: 17px;
+}
+.ac-card p {
+  color: #516975;
+}
+.ac-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.ac-form > button {
+  align-self: flex-start;
+}
+.ac-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.ac-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.ac-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+.ac-metrics .ac-card {
+  border-top: 3px solid #278e8b;
+}
+.ac-metrics span {
+  display: block;
+  color: #647a86;
+  font-size: 12px;
+}
+.ac-metrics strong {
+  display: block;
+  font-size: 23px;
+  margin-top: 10px;
+  overflow-wrap: anywhere;
+}
+.ac-muted {
+  color: #647a86;
+  font-size: 12px;
+}
+.ac-message {
+  background: #e5f6ed;
+  border: 1px solid #a9d9bf;
+  padding: 13px 17px;
+  border-radius: 8px;
+  margin: 14px 0;
+}
+.ac-error {
+  background: #fff0ec;
+  border-color: #e8beb0;
+  color: #942e24;
+}
+.ac-table {
+  overflow-x: auto;
+}
+.ac-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.ac-table th {
+  text-align: left;
+  background: #f0f5f7;
+  color: #4b6471;
+  white-space: nowrap;
+}
+.ac-table th,
+.ac-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #e3ebee;
+  vertical-align: top;
+}
+.ac-table td small {
+  display: block;
+  color: #6e818b;
+  max-width: 350px;
+  overflow-wrap: anywhere;
+}
+.ac-table td select {
+  min-width: 190px;
+}
+.ac-table td input[type="number"] {
+  min-width: 115px;
+}
+.ac-table tfoot th {
+  background: #e9f3f2;
+}
+.ac-status {
+  padding: 4px 8px;
+  border-radius: 5px;
+  background: #eef1f4;
+  font-size: 11px;
+}
+.ac-status.posted {
+  color: #11624e;
+  background: #dbf2e7;
+}
+.ac-status.draft {
+  color: #82570f;
+  background: #fff0cd;
+}
+.ac-status.void {
+  color: #823b3b;
+  background: #f5e2e2;
+}
+.ac-summary {
+  display: flex;
+  gap: 30px;
+  flex-wrap: wrap;
+  margin: 15px 0;
+}
+.ac-summary strong {
+  display: block;
+  font-size: 19px;
+}
+.ac-report-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 9px 0;
+}
+.ac-report-row strong {
+  white-space: nowrap;
+}
+.ac-confirm {
+  border-left: 3px solid #c59436;
+  padding: 18px;
+  background: #fffaf0;
+  margin-top: 18px;
+}
+.ac-confirm h4 {
+  margin: 0;
+}
+/* Responsive layouts and screen-size adjustments. */
+@media (max-width: 1100px) {
+  .ac-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ac-columns {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 600px) {
+  .ac-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 18px;
+  }
+  .ac-fields {
+    grid-template-columns: 1fr;
+  }
+  .ac-card {
+    padding: 15px;
+  }
+  .ac-metrics {
+    grid-template-columns: 1fr;
+  }
+  .ac-toolbar {
+    align-items: stretch;
+  }
+  .ac-toolbar label {
+    flex: 1;
+    min-width: 130px;
+  }
+}
+@media print {
+  body:has(.accounting-workspace) * {
+    visibility: hidden;
+  }
+  .accounting-workspace,
+  .accounting-workspace * {
+    visibility: visible;
+  }
+  .accounting-workspace {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    font-size: 10px;
+  }
+  .accounting-workspace button,
+  .ac-tabs,
+  .ac-toolbar,
+  .ac-message {
+    display: none !important;
+  }
+  .ac-card {
+    break-inside: avoid;
+    border: 1px solid #ddd;
+  }
+  .ac-table {
+    overflow: visible;
+  }
+  .ac-columns {
+    display: block;
+  }
+  .principal-scroll-area,
+  .principal-content {
+    overflow: visible !important;
+    height: auto !important;
+  }
+}

@@ -1,13 +1,19 @@
-import AdminActionIcon from './AdminActionIcon';
-import React, { useState, useEffect } from 'react';
-import { API_BASE_URL } from '../config';
-import { useToast, useToastMessageState } from '../components/Toast/Toast';
-import { TOAST_MESSAGES } from '../constants/toastMessages';
-import Modal from './Modal';
-import './AddStaff.css';
-import './CsvImportHint.css';
-import { CLASS_NAME_GUIDANCE, isValidClassName, classNameKey } from '../utils/className';
+// Add Class: imports and dependencies
+import AdminActionIcon from "./AdminActionIcon";
+import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../config";
+import { useToast, useToastMessageState } from "../components/Toast/Toast";
+import { TOAST_MESSAGES } from "../constants/toastMessages";
+import Modal from "./Modal";
+import "./AddStaff.css";
+import "./CsvImportHint.css";
+import {
+  CLASS_NAME_GUIDANCE,
+  isValidClassName,
+  classNameKey,
+} from "../utils/className";
 
+// Data types and contracts
 interface AddClassProps {
   isOpen: boolean;
   onClose: () => void;
@@ -25,15 +31,23 @@ interface Section {
   staffId: number;
 }
 
-const AddClass: React.FC<AddClassProps> = ({ isOpen, onClose, schoolId, onSuccess }) => {
+// Main component and state
+const AddClass: React.FC<AddClassProps> = ({
+  isOpen,
+  onClose,
+  schoolId,
+  onSuccess,
+}) => {
   const toast = useToast();
   const [showClassHint, setShowClassHint] = useState(false);
   const [formData, setFormData] = useState({
-    className: '',
+    className: "",
   });
-  const [sections, setSections] = useState<Section[]>([{ sectionName: '', staffId: 0 }]);
+  const [sections, setSections] = useState<Section[]>([
+    { sectionName: "", staffId: 0 },
+  ]);
   const [staff, setStaff] = useState<Staff[]>([]);
-  const [error, setError] = useToastMessageState('error');
+  const [error, setError] = useToastMessageState("error");
   const [loading, setLoading] = useState(false);
   const [checkingTeachers, setCheckingTeachers] = useState(false);
   const [teacherConflicts, setTeacherConflicts] = useState<string[]>([]);
@@ -42,7 +56,7 @@ const AddClass: React.FC<AddClassProps> = ({ isOpen, onClose, schoolId, onSucces
     if (isOpen && schoolId) {
       setTeacherConflicts([]);
       fetchStaff();
-      setError('');
+      setError("");
     }
   }, [isOpen, schoolId]);
 
@@ -50,13 +64,16 @@ const AddClass: React.FC<AddClassProps> = ({ isOpen, onClose, schoolId, onSucces
     try {
       setCheckingTeachers(true);
       setStaff([]);
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/Common/by-school/${schoolId}`, {
-        headers: {
-          'accept': '*/*',
-          'Authorization': `Bearer ${token}`,
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `${API_BASE_URL}/api/Common/by-school/${schoolId}`,
+        {
+          headers: {
+            accept: "*/*",
+            Authorization: `Bearer ${token}`,
+          },
         },
-      });
+      );
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data) {
@@ -67,7 +84,7 @@ const AddClass: React.FC<AddClassProps> = ({ isOpen, onClose, schoolId, onSucces
         }
       }
     } catch (err) {
-      console.error('Failed to fetch staff');
+      console.error("Failed to fetch staff");
     } finally {
       setCheckingTeachers(false);
     }
@@ -76,7 +93,7 @@ const AddClass: React.FC<AddClassProps> = ({ isOpen, onClose, schoolId, onSucces
   const handleSubmit = async (e?: React.FormEvent, confirmed = false) => {
     e?.preventDefault();
     if (loading || !schoolId) return;
-    setError('');
+    setError("");
     if (!isValidClassName(formData.className)) {
       setError(`Please enter a valid class name. ${CLASS_NAME_GUIDANCE}`);
       return;
@@ -86,15 +103,15 @@ const AddClass: React.FC<AddClassProps> = ({ isOpen, onClose, schoolId, onSucces
       return;
     }
     setLoading(true);
-    
+
     try {
-      const token = localStorage.getItem('token');
-      const validSections = sections.filter(section => 
-        section.sectionName.trim() && section.staffId > 0
+      const token = localStorage.getItem("token");
+      const validSections = sections.filter(
+        (section) => section.sectionName.trim() && section.staffId > 0,
       );
 
       if (validSections.length === 0) {
-        setError('Please add at least one section with a staff member');
+        setError("Please add at least one section with a staff member");
         setLoading(false);
         return;
       }
@@ -102,7 +119,7 @@ const AddClass: React.FC<AddClassProps> = ({ isOpen, onClose, schoolId, onSucces
       const requestData = {
         className: formData.className,
         schoolId: schoolId,
-        sections: validSections
+        sections: validSections,
       };
 
       if (!confirmed) {
@@ -110,19 +127,39 @@ const AddClass: React.FC<AddClassProps> = ({ isOpen, onClose, schoolId, onSucces
         let page = 1;
         let totalPages = 1;
         do {
-          const classResponse = await fetch(`${API_BASE_URL}/api/Class/calss-list?schoolId=${schoolId}&page=${page}&pageSize=100`, {
-            cache: 'no-store', headers: { accept: '*/*', Authorization: `Bearer ${token}` },
-          });
+          const classResponse = await fetch(
+            `${API_BASE_URL}/api/Class/calss-list?schoolId=${schoolId}&page=${page}&pageSize=100`,
+            {
+              cache: "no-store",
+              headers: { accept: "*/*", Authorization: `Bearer ${token}` },
+            },
+          );
           const classResult = await classResponse.json();
-          if (!classResponse.ok || !classResult.success) throw new Error('Unable to check existing class teachers. Please try again.');
+          if (!classResponse.ok || !classResult.success)
+            throw new Error(
+              "Unable to check existing class teachers. Please try again.",
+            );
           for (const existingClass of classResult.data || []) {
-            if (classNameKey(existingClass.className) === classNameKey(formData.className)) {
-              throw new Error('A class with this name already exists in this school. Please use a different name.');
+            if (
+              classNameKey(existingClass.className) ===
+              classNameKey(formData.className)
+            ) {
+              throw new Error(
+                "A class with this name already exists in this school. Please use a different name.",
+              );
             }
             for (const section of existingClass.sections || []) {
-              if (validSections.some(selected => selected.staffId === section.staffId)) {
-                const teacher = staff.find(member => member.id === section.staffId);
-                assignments.push(`${teacher?.name || 'Selected teacher'} is already the class teacher of ${existingClass.className}, section ${section.sectionName}.`);
+              if (
+                validSections.some(
+                  (selected) => selected.staffId === section.staffId,
+                )
+              ) {
+                const teacher = staff.find(
+                  (member) => member.id === section.staffId,
+                );
+                assignments.push(
+                  `${teacher?.name || "Selected teacher"} is already the class teacher of ${existingClass.className}, section ${section.sectionName}.`,
+                );
               }
             }
           }
@@ -136,41 +173,46 @@ const AddClass: React.FC<AddClassProps> = ({ isOpen, onClose, schoolId, onSucces
       }
       setTeacherConflicts([]);
 
-      const response = await fetch(`${API_BASE_URL}/api/Class/create-class-with-sections`, {
-        method: 'POST',
-        headers: {
-          'accept': '*/*',
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+      const response = await fetch(
+        `${API_BASE_URL}/api/Class/create-class-with-sections`,
+        {
+          method: "POST",
+          headers: {
+            accept: "*/*",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(requestData),
         },
-        body: JSON.stringify(requestData),
-      });
-      
+      );
+
       const result = await response.json();
-      
+
       if (response.ok && result.success) {
         handleClear();
         onSuccess();
         onClose();
       } else {
-        setError(result.message || 'Failed to create class');
+        setError(result.message || "Failed to create class");
       }
     } catch (err) {
-      console.error('Failed to create class:', err);
-      setError(err instanceof Error ? err.message : 'Network error. Please try again.');
+      console.error("Failed to create class:", err);
+      setError(
+        err instanceof Error ? err.message : "Network error. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const handleClear = () => {
-    setFormData({ className: '' });
-    setSections([{ sectionName: '', staffId: 0 }]);
-    setError('');
+    setFormData({ className: "" });
+    setSections([{ sectionName: "", staffId: 0 }]);
+    setError("");
   };
 
   const handleAddSection = () => {
-    setSections([...sections, { sectionName: '', staffId: 0 }]);
+    setSections([...sections, { sectionName: "", staffId: 0 }]);
   };
 
   const handleRemoveSection = (index: number) => {
@@ -179,7 +221,11 @@ const AddClass: React.FC<AddClassProps> = ({ isOpen, onClose, schoolId, onSucces
     }
   };
 
-  const handleSectionChange = (index: number, field: keyof Section, value: string | number) => {
+  const handleSectionChange = (
+    index: number,
+    field: keyof Section,
+    value: string | number,
+  ) => {
     const updated = [...sections];
     updated[index] = { ...updated[index], [field]: value };
     setSections(updated);
@@ -187,100 +233,160 @@ const AddClass: React.FC<AddClassProps> = ({ isOpen, onClose, schoolId, onSucces
 
   return (
     <>
-    <Modal
-      isOpen={isOpen}
-      onClose={() => { if (!loading) { setTeacherConflicts([]); onClose(); } }}
-      title="Add New Class"
-      submitLabel="Create Class"
-      submitLoading={loading}
-      loadingText="Creating..."
-      onCancel={() => { if (!loading) handleClear(); }}
-      formId="add-class-form"
-      submitDisabled={loading || checkingTeachers || staff.length === 0}
-    >
-      {error && (
-        <div className="error-message">
-          {error}
-        </div>
-      )}
-      <form id="add-class-form" onSubmit={handleSubmit}>
-        <div className="form-grid">
-          <div className="form-group full-width">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <label htmlFor="add-class-name">Class Name *</label>
-              <div className="csv-import-hint" style={{ margin: 0 }} onMouseEnter={() => setShowClassHint(true)} onMouseLeave={() => setShowClassHint(false)}>
-                <button type="button" className="csv-import-hint-icon" style={{ width: 18, height: 18, fontSize: 11 }} aria-label="Class name guidance"
-                  aria-describedby={showClassHint ? 'class-name-guidance' : undefined}
-                  onFocus={() => setShowClassHint(true)} onBlur={() => setShowClassHint(false)}
-                  onClick={() => setShowClassHint(true)} onKeyDown={event => { if (event.key === 'Escape') setShowClassHint(false); }}>i</button>
-                {showClassHint && <div role="tooltip" id="class-name-guidance" className="csv-import-hint-tooltip">{CLASS_NAME_GUIDANCE}</div>}
+      <Modal
+        isOpen={isOpen}
+        onClose={() => {
+          if (!loading) {
+            setTeacherConflicts([]);
+            onClose();
+          }
+        }}
+        title="Add New Class"
+        submitLabel="Create Class"
+        submitLoading={loading}
+        loadingText="Creating..."
+        onCancel={() => {
+          if (!loading) handleClear();
+        }}
+        formId="add-class-form"
+        submitDisabled={loading || checkingTeachers || staff.length === 0}
+      >
+        {error && <div className="error-message">{error}</div>}
+        <form id="add-class-form" onSubmit={handleSubmit}>
+          <div className="form-grid">
+            <div className="form-group full-width">
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <label htmlFor="add-class-name">Class Name *</label>
+                <div
+                  className="csv-import-hint"
+                  style={{ margin: 0 }}
+                  onMouseEnter={() => setShowClassHint(true)}
+                  onMouseLeave={() => setShowClassHint(false)}
+                >
+                  <button
+                    type="button"
+                    className="csv-import-hint-icon"
+                    style={{ width: 18, height: 18, fontSize: 11 }}
+                    aria-label="Class name guidance"
+                    aria-describedby={
+                      showClassHint ? "class-name-guidance" : undefined
+                    }
+                    onFocus={() => setShowClassHint(true)}
+                    onBlur={() => setShowClassHint(false)}
+                    onClick={() => setShowClassHint(true)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Escape") setShowClassHint(false);
+                    }}
+                  >
+                    i
+                  </button>
+                  {showClassHint && (
+                    <div
+                      role="tooltip"
+                      id="class-name-guidance"
+                      className="csv-import-hint-tooltip"
+                    >
+                      {CLASS_NAME_GUIDANCE}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-            <input
-              type="text"
-              required
-              placeholder="e.g., 1st, 2nd, Nursery"
-              value={formData.className}
-              id="add-class-name"
-              onChange={(e) => setFormData({...formData, className: e.target.value})}
-            />
-          </div>
-        </div>
-
-        <div className="documents-section">
-          <div className="documents-header">
-            <label>Sections</label>
-            <button type="button" className="btn-add-doc" onClick={handleAddSection}><AdminActionIcon action="add" />Add Section
-            </button>
-          </div>
-          {sections.map((section, index) => (
-            <div key={index} className="new-document-row">
               <input
                 type="text"
-                placeholder="Section Name (e.g., A, B, C)"
-                value={section.sectionName}
-                onChange={(e) => handleSectionChange(index, 'sectionName', e.target.value)}
                 required
+                placeholder="e.g., 1st, 2nd, Nursery"
+                value={formData.className}
+                id="add-class-name"
+                onChange={(e) =>
+                  setFormData({ ...formData, className: e.target.value })
+                }
               />
-              <select
-                value={section.staffId}
-                onChange={(e) => handleSectionChange(index, 'staffId', Number(e.target.value))}
-                required
-                className="form-select"
-                disabled={checkingTeachers || staff.length === 0}
-              >
-                <option value="">{checkingTeachers ? 'Checking teachers...' : staff.length === 0 ? 'No teacher available' : 'Select Class Teacher'}</option>
-                {staff.map((member) => (
-                  <option key={member.id} value={member.id}>
-                    {member.name}
-                  </option>
-                ))}
-              </select>
-              {sections.length > 1 && (
-                <button 
-                  type="button" 
-                  className="btn-remove" 
-                  onClick={() => handleRemoveSection(index)}
-                 aria-label="Remove section"><AdminActionIcon action="delete" /></button>
-              )}
             </div>
+          </div>
+
+          <div className="documents-section">
+            <div className="documents-header">
+              <label>Sections</label>
+              <button
+                type="button"
+                className="btn-add-doc"
+                onClick={handleAddSection}
+              >
+                <AdminActionIcon action="add" />
+                Add Section
+              </button>
+            </div>
+            {sections.map((section, index) => (
+              <div key={index} className="new-document-row">
+                <input
+                  type="text"
+                  placeholder="Section Name (e.g., A, B, C)"
+                  value={section.sectionName}
+                  onChange={(e) =>
+                    handleSectionChange(index, "sectionName", e.target.value)
+                  }
+                  required
+                />
+                <select
+                  value={section.staffId}
+                  onChange={(e) =>
+                    handleSectionChange(
+                      index,
+                      "staffId",
+                      Number(e.target.value),
+                    )
+                  }
+                  required
+                  className="form-select"
+                  disabled={checkingTeachers || staff.length === 0}
+                >
+                  <option value="">
+                    {checkingTeachers
+                      ? "Checking teachers..."
+                      : staff.length === 0
+                        ? "No teacher available"
+                        : "Select Class Teacher"}
+                  </option>
+                  {staff.map((member) => (
+                    <option key={member.id} value={member.id}>
+                      {member.name}
+                    </option>
+                  ))}
+                </select>
+                {sections.length > 1 && (
+                  <button
+                    type="button"
+                    className="btn-remove"
+                    onClick={() => handleRemoveSection(index)}
+                    aria-label="Remove section"
+                  >
+                    <AdminActionIcon action="delete" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </form>
+      </Modal>
+      <Modal
+        isOpen={isOpen && teacherConflicts.length > 0}
+        onClose={() => setTeacherConflicts([])}
+        title="Confirm Class Teacher"
+        submitLabel="Yes, Create Class"
+        showCancel={false}
+        onSubmit={() => handleSubmit(undefined, true)}
+      >
+        <div style={{ padding: "24px 28px", textAlign: "center" }}>
+          {teacherConflicts.map((conflict) => (
+            <p key={conflict}>{conflict}</p>
           ))}
+          <p>
+            Do you also want to assign{" "}
+            {teacherConflicts.length > 1 ? "these teachers" : "this teacher"} to
+            class <strong>{formData.className}</strong>?
+          </p>
         </div>
-      </form>
-    </Modal>
-    <Modal
-      isOpen={isOpen && teacherConflicts.length > 0}
-      onClose={() => setTeacherConflicts([])}
-      title="Confirm Class Teacher"
-      submitLabel="Yes, Create Class"
-      showCancel={false}
-      onSubmit={() => handleSubmit(undefined, true)}
-    >
-      <div style={{ padding: '24px 28px', textAlign: 'center' }}>
-        {teacherConflicts.map(conflict => <p key={conflict}>{conflict}</p>)}
-        <p>Do you also want to assign {teacherConflicts.length > 1 ? 'these teachers' : 'this teacher'} to class <strong>{formData.className}</strong>?</p>
-      </div>
-    </Modal>
+      </Modal>
     </>
   );
 };

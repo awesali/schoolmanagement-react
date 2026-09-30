@@ -1,3 +1,4 @@
+/* Layout and component styles for Sidebar. */
 .sidebar {
   width: 240px;
   min-height: 100vh;
@@ -43,7 +44,11 @@
   font-weight: 800;
 }
 
-.logo-icon img { width: 100%; height: 100%; object-fit: cover; }
+.logo-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 
 .logo-text {
   font-size: 18px;
@@ -74,7 +79,9 @@
   text-align: left;
   width: 100%;
   border-radius: 0;
-  transition: background 0.2s, color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s;
 }
 
 .nav-item:hover {
@@ -150,7 +157,9 @@
   cursor: pointer;
   text-align: left;
   width: 100%;
-  transition: background 0.2s, color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s;
 }
 
 .nav-sub-item:hover {
@@ -179,7 +188,9 @@
   cursor: pointer;
   text-align: left;
   width: 100%;
-  transition: background 0.2s, color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s;
 }
 
 .nav-leaf-item:hover {
@@ -194,23 +205,77 @@
   padding-left: 57px;
 }
 
+/* Responsive layouts and screen-size adjustments. */
 @media (max-width: 768px) {
-  .sidebar { width: min(82vw, 290px); z-index: 200; box-shadow: 8px 0 24px rgba(15,23,42,.24); transition: transform .25s ease; }
-  .sidebar.collapsed { width: min(82vw, 290px); transform: translateX(-105%); box-shadow: none; }
-  .sidebar-logo { padding: 18px 16px; }
-  .sidebar-nav { padding-bottom: 80px; }
-  .nav-item, .nav-group-header { min-height: 44px; }
-  .nav-sub-item, .nav-leaf-item { min-height: 42px; }
+  .sidebar {
+    width: min(82vw, 290px);
+    z-index: 200;
+    box-shadow: 8px 0 24px rgba(15, 23, 42, 0.24);
+    transition: transform 0.25s ease;
+  }
+  .sidebar.collapsed {
+    width: min(82vw, 290px);
+    transform: translateX(-105%);
+    box-shadow: none;
+  }
+  .sidebar-logo {
+    padding: 18px 16px;
+  }
+  .sidebar-nav {
+    padding-bottom: 80px;
+  }
+  .nav-item,
+  .nav-group-header {
+    min-height: 44px;
+  }
+  .nav-sub-item,
+  .nav-leaf-item {
+    min-height: 42px;
+  }
 }
 
 /* Match the accountant navigation: section labels with a single active page. */
-.admin-sidebar-nav { gap: 0; padding: 8px 16px 24px; }
-.admin-sidebar-nav .nav-group { gap: 3px; }
-.admin-sidebar-nav .nav-group-header { margin: 24px 14px 10px; padding: 0; color: #92acb3; font-size: 10px; letter-spacing: 1.7px; cursor: default; }
-.admin-sidebar-nav .nav-item { margin: 3px 0; padding: 12px 14px; border-radius: 8px; color: #d4e2e4; font-size: 13px; }
-.admin-sidebar-nav .nav-item:hover { background: #20424a; color: #fff; }
+.admin-sidebar-nav {
+  gap: 0;
+  padding: 8px 16px 24px;
+}
+.admin-sidebar-nav .nav-group {
+  gap: 3px;
+}
+.admin-sidebar-nav .nav-group-header {
+  margin: 24px 14px 10px;
+  padding: 0;
+  color: #92acb3;
+  font-size: 10px;
+  letter-spacing: 1.7px;
+  cursor: default;
+}
+.admin-sidebar-nav .nav-item {
+  margin: 3px 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  color: #d4e2e4;
+  font-size: 13px;
+}
+.admin-sidebar-nav .nav-item:hover {
+  background: #20424a;
+  color: #fff;
+}
 .admin-sidebar-nav .nav-item.active,
-.admin-sidebar-nav .nav-item.active:hover { background: #dcf1e8; color: #143e3c; font-weight: 600; }
-.admin-sidebar-nav .nav-item:focus-visible { outline: 3px solid #389894; outline-offset: 2px; }
-.admin-sidebar-nav .nav-item svg { width: 19px; height: 19px; flex: 0 0 19px; }
-.admin-sidebar-nav .nav-item span { min-width: 0; }
+.admin-sidebar-nav .nav-item.active:hover {
+  background: #dcf1e8;
+  color: #143e3c;
+  font-weight: 600;
+}
+.admin-sidebar-nav .nav-item:focus-visible {
+  outline: 3px solid #389894;
+  outline-offset: 2px;
+}
+.admin-sidebar-nav .nav-item svg {
+  width: 19px;
+  height: 19px;
+  flex: 0 0 19px;
+}
+.admin-sidebar-nav .nav-item span {
+  min-width: 0;
+}

@@ -1,7 +1,13 @@
+/* Layout and component styles for Fee Receipt. */
+/* Responsive layouts and screen-size adjustments. */
 @media print {
-  body:has(.school-fee-receipt) * { visibility: hidden !important; }
+  body:has(.school-fee-receipt) * {
+    visibility: hidden !important;
+  }
   body .school-fee-receipt,
-  body .school-fee-receipt * { visibility: visible !important; }
+  body .school-fee-receipt * {
+    visibility: visible !important;
+  }
   body .school-fee-receipt-overlay {
     position: absolute !important;
     inset: 0 !important;
@@ -19,5 +25,7 @@
     box-shadow: none !important;
     color: #000;
   }
-  body .school-fee-receipt-actions { display: none !important; }
+  body .school-fee-receipt-actions {
+    display: none !important;
+  }
 }

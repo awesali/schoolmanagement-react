@@ -1,3 +1,4 @@
+/* Layout and component styles for Profile Id Card. */
 .profile-card-shell {
   padding: 28px;
   background: #eef3f9;
@@ -174,23 +175,40 @@
   background: #fff;
 }
 
+/* Responsive layouts and screen-size adjustments. */
 @media (max-width: 560px) {
-  .profile-card-shell { padding: 14px; }
-  .profile-card-person { padding: 20px; }
-  .profile-card-details { grid-template-columns: 1fr; padding: 8px 20px 18px; }
-  .profile-card-brand { padding: 20px; }
+  .profile-card-shell {
+    padding: 14px;
+  }
+  .profile-card-person {
+    padding: 20px;
+  }
+  .profile-card-details {
+    grid-template-columns: 1fr;
+    padding: 8px 20px 18px;
+  }
+  .profile-card-brand {
+    padding: 20px;
+  }
 }
 
 @media print {
-  body:has(.profile-id-card) * { visibility: hidden; }
-  .profile-id-card, .profile-id-card * { visibility: visible; }
+  body:has(.profile-id-card) * {
+    visibility: hidden;
+  }
+  .profile-id-card,
+  .profile-id-card * {
+    visibility: visible;
+  }
   .profile-id-card {
     position: fixed;
     inset: 20px auto auto 20px;
     width: 560px;
     box-shadow: none;
   }
-  .profile-card-actions { display: none; }
+  .profile-card-actions {
+    display: none;
+  }
 }
 .parent-profile-link {
   border: 0;

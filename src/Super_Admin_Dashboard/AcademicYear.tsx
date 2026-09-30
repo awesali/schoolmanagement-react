@@ -1,12 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import AcademicHolidays from './AcademicHolidays';
-import { API_BASE_URL } from '../config';
-import { PageLoader } from '../components/Loader/Loader';
-import { useToastMessageState } from '../components/Toast/Toast';
-import Modal from './Modal';
-import { AddCircleIcon } from '../components/Icons/Icons';
-import './ClassList.css';
+// Academic Year: imports and dependencies
+import React, { useEffect, useState } from "react";
+import AcademicHolidays from "./AcademicHolidays";
+import { API_BASE_URL } from "../config";
+import { PageLoader } from "../components/Loader/Loader";
+import { useToastMessageState } from "../components/Toast/Toast";
+import Modal from "./Modal";
+import { AddCircleIcon } from "../components/Icons/Icons";
+import "./ClassList.css";
 
+// Data types and contracts
 interface AcademicYearProps {
   selectedSchoolId: number | null;
 }
@@ -19,19 +21,24 @@ interface AcademicSession {
   createdAt: string;
 }
 
+// Main component and state
 const AcademicYear: React.FC<AcademicYearProps> = ({ selectedSchoolId }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formError, setFormError] = useToastMessageState('error');
-  const [formSuccess, setFormSuccess] = useToastMessageState('success');
+  const [formError, setFormError] = useToastMessageState("error");
+  const [formSuccess, setFormSuccess] = useToastMessageState("success");
   const [formLoading, setFormLoading] = useState(false);
   const [sessions, setSessions] = useState<AcademicSession[]>([]);
   const [loading, setLoading] = useState(false);
-  const [updatingSessionId, setUpdatingSessionId] = useState<number | null>(null);
-  const [pendingSession, setPendingSession] = useState<AcademicSession | null>(null);
-  const [error, setError] = useToastMessageState('error');
+  const [updatingSessionId, setUpdatingSessionId] = useState<number | null>(
+    null,
+  );
+  const [pendingSession, setPendingSession] = useState<AcademicSession | null>(
+    null,
+  );
+  const [error, setError] = useToastMessageState("error");
   const [formData, setFormData] = useState({
-    yearStart: '',
-    yearEnd: '',
+    yearStart: "",
+    yearEnd: "",
     isActive: true,
   });
 
@@ -49,29 +56,29 @@ const AcademicYear: React.FC<AcademicYearProps> = ({ selectedSchoolId }) => {
     if (!selectedSchoolId) return;
 
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const response = await fetch(
         `${API_BASE_URL}/api/Admin/academic-sessions?schoolId=${selectedSchoolId}`,
         {
           headers: {
-            accept: '*/*',
+            accept: "*/*",
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
       const result = await response.json();
 
       if (response.ok && result.success) {
         setSessions(result.data || []);
       } else {
-        setError(result.message || 'Failed to fetch academic sessions');
+        setError(result.message || "Failed to fetch academic sessions");
       }
     } catch (err) {
-      setError('Network error. Please try again.');
-      console.error('Failed to fetch academic sessions:', err);
+      setError("Network error. Please try again.");
+      console.error("Failed to fetch academic sessions:", err);
     } finally {
       setLoading(false);
     }
@@ -81,16 +88,16 @@ const AcademicYear: React.FC<AcademicYearProps> = ({ selectedSchoolId }) => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: type === "checkbox" ? checked : value,
     }));
-    setFormError('');
+    setFormError("");
   };
 
   const validateForm = (): boolean => {
     if (!formData.yearStart || !formData.yearEnd) {
-      setFormError('Both start and end dates are required');
+      setFormError("Both start and end dates are required");
       return false;
     }
 
@@ -98,7 +105,7 @@ const AcademicYear: React.FC<AcademicYearProps> = ({ selectedSchoolId }) => {
     const endDate = new Date(formData.yearEnd);
 
     if (endDate <= startDate) {
-      setFormError('End date must be greater than start date');
+      setFormError("End date must be greater than start date");
       return false;
     }
 
@@ -107,23 +114,23 @@ const AcademicYear: React.FC<AcademicYearProps> = ({ selectedSchoolId }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
 
-    setFormError('');
-    setFormSuccess('');
+    setFormError("");
+    setFormSuccess("");
     setFormLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const response = await fetch(`${API_BASE_URL}/api/Admin/create-session`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'accept': '*/*',
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          accept: "*/*",
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           schoolId: selectedSchoolId,
@@ -136,55 +143,61 @@ const AcademicYear: React.FC<AcademicYearProps> = ({ selectedSchoolId }) => {
       const result = await response.json();
 
       if (result.success) {
-        setFormSuccess('Academic session created successfully!');
+        setFormSuccess("Academic session created successfully!");
         await fetchSessions();
         handleClear();
         setTimeout(() => {
           setIsModalOpen(false);
-          setFormSuccess('');
+          setFormSuccess("");
         }, 1500);
       } else {
-        setFormError(result.message || 'Failed to create session');
+        setFormError(result.message || "Failed to create session");
       }
     } catch (err) {
-      setFormError('Network error. Please try again.');
-      console.error('Failed to create session:', err);
+      setFormError("Network error. Please try again.");
+      console.error("Failed to create session:", err);
     } finally {
       setFormLoading(false);
     }
   };
 
   const handleClear = () => {
-    setFormData({ yearStart: '', yearEnd: '', isActive: true });
-    setFormError('');
+    setFormData({ yearStart: "", yearEnd: "", isActive: true });
+    setFormError("");
   };
 
   const updateSessionStatus = async (session: AcademicSession) => {
     const nextStatus = !session.isActive;
-    const action = nextStatus ? 'activate' : 'deactivate';
+    const action = nextStatus ? "activate" : "deactivate";
     if (updatingSessionId !== null) return;
 
     setUpdatingSessionId(session.id);
-    setError('');
+    setError("");
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/Admin/academic-session-status`, {
-        method: 'PUT',
-        headers: {
-          accept: '*/*',
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `${API_BASE_URL}/api/Admin/academic-session-status`,
+        {
+          method: "PUT",
+          headers: {
+            accept: "*/*",
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            schoolId: selectedSchoolId,
+            sessionId: session.id,
+            isActive: nextStatus,
+          }),
         },
-        body: JSON.stringify({
-          schoolId: selectedSchoolId,
-          sessionId: session.id,
-          isActive: nextStatus,
-        }),
-      });
+      );
       const result = await response.json();
-      if (!response.ok || !result.success) throw new Error(result.message || `Failed to ${action} session`);
+      if (!response.ok || !result.success)
+        throw new Error(result.message || `Failed to ${action} session`);
       setPendingSession(null);
-      setFormSuccess(`Academic session ${nextStatus ? 'activated' : 'deactivated'} successfully!`);
+      setFormSuccess(
+        `Academic session ${nextStatus ? "activated" : "deactivated"} successfully!`,
+      );
       await fetchSessions();
     } catch (err: any) {
       setError(err.message || `Unable to ${action} academic session.`);
@@ -201,18 +214,26 @@ const AcademicYear: React.FC<AcademicYearProps> = ({ selectedSchoolId }) => {
     <div className="class-list-container">
       <div className="class-list-header">
         <h2>Academic Sessions</h2>
-        <button type="button" className="academic-session-add-icon" title="Create Session" aria-label="Create Session" onClick={() => setIsModalOpen(true)}>
+        <button
+          type="button"
+          className="academic-session-add-icon"
+          title="Create Session"
+          aria-label="Create Session"
+          onClick={() => setIsModalOpen(true)}
+        >
           <AddCircleIcon />
         </button>
       </div>
-      
+
       <div className="class-table-container">
         {loading ? (
           <PageLoader label="Loading academic sessions..." />
         ) : error ? (
           <div className="error">{error}</div>
         ) : sessions.length === 0 ? (
-          <div className="loading">No academic sessions available. Create a session to get started.</div>
+          <div className="loading">
+            No academic sessions available. Create a session to get started.
+          </div>
         ) : (
           <table className="class-table">
             <thead>
@@ -225,16 +246,20 @@ const AcademicYear: React.FC<AcademicYearProps> = ({ selectedSchoolId }) => {
               </tr>
             </thead>
             <tbody>
-              {sessions.map(session => (
+              {sessions.map((session) => (
                 <tr key={session.id}>
                   <td>{formatDate(session.yearStart)}</td>
                   <td>{formatDate(session.yearEnd)}</td>
                   <td>
-                    <span className={`status ${session.isActive ? 'active' : 'inactive'}`}>
-                      {session.isActive ? 'Active' : 'Inactive'}
+                    <span
+                      className={`status ${session.isActive ? "active" : "inactive"}`}
+                    >
+                      {session.isActive ? "Active" : "Inactive"}
                     </span>
                   </td>
-                  <td className="created-date">{formatDate(session.createdAt)}</td>
+                  <td className="created-date">
+                    {formatDate(session.createdAt)}
+                  </td>
                   <td>
                     <button
                       type="button"
@@ -242,12 +267,19 @@ const AcademicYear: React.FC<AcademicYearProps> = ({ selectedSchoolId }) => {
                       role="switch"
                       aria-checked={session.isActive}
                       aria-label={`Academic session ${formatDate(session.yearStart)} to ${formatDate(session.yearEnd)} active`}
-                      title={session.isActive ? 'Deactivate session' : 'Activate session'}
+                      title={
+                        session.isActive
+                          ? "Deactivate session"
+                          : "Activate session"
+                      }
                       aria-busy={updatingSessionId === session.id}
                       disabled={updatingSessionId !== null}
                       onClick={() => setPendingSession(session)}
                     >
-                      <span className="academic-session-toggle-thumb" aria-hidden="true" />
+                      <span
+                        className="academic-session-toggle-thumb"
+                        aria-hidden="true"
+                      />
                     </button>
                   </td>
                 </tr>
@@ -257,21 +289,42 @@ const AcademicYear: React.FC<AcademicYearProps> = ({ selectedSchoolId }) => {
         )}
       </div>
 
-      {sessions.length > 0 && <AcademicHolidays schoolId={selectedSchoolId} sessions={sessions} />}
+      {sessions.length > 0 && (
+        <AcademicHolidays schoolId={selectedSchoolId} sessions={sessions} />
+      )}
 
       <Modal
         isOpen={pendingSession !== null}
-        onClose={() => { if (updatingSessionId === null) setPendingSession(null); }}
-        title={pendingSession?.isActive ? 'Deactivate Academic Session' : 'Activate Academic Session'}
-        submitLabel={pendingSession?.isActive ? 'Deactivate' : 'Activate'}
+        onClose={() => {
+          if (updatingSessionId === null) setPendingSession(null);
+        }}
+        title={
+          pendingSession?.isActive
+            ? "Deactivate Academic Session"
+            : "Activate Academic Session"
+        }
+        submitLabel={pendingSession?.isActive ? "Deactivate" : "Activate"}
         submitLoading={updatingSessionId !== null}
         loadingText="Updating..."
-        onSubmit={() => { if (pendingSession) updateSessionStatus(pendingSession); }}
+        onSubmit={() => {
+          if (pendingSession) updateSessionStatus(pendingSession);
+        }}
         showCancel={false}
       >
-        <div style={{ padding: '32px 28px', textAlign: 'center' }}>
-          <p>Are you sure you want to {pendingSession?.isActive ? 'deactivate' : 'activate'} this academic session?</p>
-          {pendingSession && <p><strong>{formatDate(pendingSession.yearStart)} – {formatDate(pendingSession.yearEnd)}</strong></p>}
+        <div style={{ padding: "32px 28px", textAlign: "center" }}>
+          <p>
+            Are you sure you want to{" "}
+            {pendingSession?.isActive ? "deactivate" : "activate"} this academic
+            session?
+          </p>
+          {pendingSession && (
+            <p>
+              <strong>
+                {formatDate(pendingSession.yearStart)} –{" "}
+                {formatDate(pendingSession.yearEnd)}
+              </strong>
+            </p>
+          )}
         </div>
       </Modal>
 
@@ -285,23 +338,21 @@ const AcademicYear: React.FC<AcademicYearProps> = ({ selectedSchoolId }) => {
         onCancel={handleClear}
         formId="create-session-form"
       >
-        {formError && (
-          <div className="error-message">
-            {formError}
-          </div>
-        )}
+        {formError && <div className="error-message">{formError}</div>}
         {formSuccess && (
-          <div style={{
-            background: '#c6f6d5',
-            color: '#22543d',
-            padding: '12px 16px',
-            borderRadius: '8px',
-            marginBottom: '20px',
-            marginLeft: '28px',
-            marginRight: '28px',
-            fontSize: '14px',
-            border: '1px solid #9ae6b4'
-          }}>
+          <div
+            style={{
+              background: "#c6f6d5",
+              color: "#22543d",
+              padding: "12px 16px",
+              borderRadius: "8px",
+              marginBottom: "20px",
+              marginLeft: "28px",
+              marginRight: "28px",
+              fontSize: "14px",
+              border: "1px solid #9ae6b4",
+            }}
+          >
             {formSuccess}
           </div>
         )}
@@ -327,14 +378,24 @@ const AcademicYear: React.FC<AcademicYearProps> = ({ selectedSchoolId }) => {
                 required
               />
             </div>
-            <div className="form-group full-width" style={{ marginTop: '16px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+            <div
+              className="form-group full-width"
+              style={{ marginTop: "16px" }}
+            >
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  cursor: "pointer",
+                }}
+              >
                 <input
                   type="checkbox"
                   name="isActive"
                   checked={formData.isActive}
                   onChange={handleInputChange}
-                  style={{ cursor: 'pointer' }}
+                  style={{ cursor: "pointer" }}
                 />
                 <span>Set as Active Session</span>
               </label>

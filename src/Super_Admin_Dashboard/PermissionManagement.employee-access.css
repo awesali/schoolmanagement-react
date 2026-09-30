@@ -1,3 +1,4 @@
+/* Layout and component styles for Permission Management employee-access. */
 .permission-card label > select:disabled {
   cursor: not-allowed;
   appearance: none;

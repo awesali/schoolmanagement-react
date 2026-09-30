@@ -1,4 +1,5 @@
-﻿import React from "react";
+// Test setup and fixtures
+import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import TeacherStudentAttendance from "./TeacherStudentAttendance";
 import TeacherWorkspace, { teacherRequest } from "./TeacherWorkspace";
@@ -9,6 +10,8 @@ jest.mock("../security/Permissions", () => ({
   usePermissions: jest.fn(),
   PAGE_PERMISSIONS: {},
 }));
+
+// Constants and helper functions
 const permissions = usePermissions as jest.Mock;
 const roster = [
   {
@@ -162,15 +165,15 @@ test("history includes students who are no longer in the current roster", async 
             ? roster.slice(0, 2)
             : String(url).includes("student-attendance-history")
               ? [
-                {
-                  studentId: 99,
-                  enrollmentId: 199,
-                  studentName: "Former Student",
-                  className: "8",
-                  sectionName: "A",
-                  sectionId: 7,
-                  status: "Present",
-                },
+                  {
+                    studentId: 99,
+                    enrollmentId: 199,
+                    studentName: "Former Student",
+                    className: "8",
+                    sectionName: "A",
+                    sectionId: 7,
+                    status: "Present",
+                  },
                 ]
               : [],
         }),
@@ -186,12 +189,13 @@ test("history includes students who are no longer in the current roster", async 
 });
 
 test("turns a non-JSON server failure into a readable message", async () => {
-  global.fetch = jest.fn(async () =>
-    ({
-      ok: false,
-      status: 500,
-      text: async () => "Microsoft.Data.SqlClient.SqlException",
-    }) as Response,
+  global.fetch = jest.fn(
+    async () =>
+      ({
+        ok: false,
+        status: 500,
+        text: async () => "Microsoft.Data.SqlClient.SqlException",
+      }) as Response,
   );
 
   await expect(teacherRequest("/api/Teacher/homework")).rejects.toThrow(
@@ -201,44 +205,49 @@ test("turns a non-JSON server failure into a readable message", async () => {
 
 test("today's timetable shows only the logged-in teacher's assigned subject and class time", async () => {
   const today = new Date().getDay();
-  global.fetch = jest.fn(async () => ({
-    ok: true,
-    json: async () => ({
-      success: true,
-      attendancePending: 0,
-      studentsAbsent: 0,
-      classes: [
-        {
-          id: 8,
-          className: "Class 8",
-          sections: [
+  global.fetch = jest.fn(
+    async () =>
+      ({
+        ok: true,
+        json: async () => ({
+          success: true,
+          attendancePending: 0,
+          studentsAbsent: 0,
+          classes: [
             {
-              id: 7,
-              sectionName: "A",
-              isClassTeacher: false,
-              subjects: [{ subjectId: 3, subjectName: "Mathematics" }],
+              id: 8,
+              className: "Class 8",
+              sections: [
+                {
+                  id: 7,
+                  sectionName: "A",
+                  isClassTeacher: false,
+                  subjects: [{ subjectId: 3, subjectName: "Mathematics" }],
+                },
+              ],
             },
           ],
-        },
-      ],
-      slots: [
-        {
-          id: "7-today-1",
-          day: today,
-          period: 1,
-          start: "09:00",
-          end: "09:45",
-          className: "Class 8 · A",
-          subject: "Mathematics",
-          sectionId: 7,
-        },
-      ],
-    }),
-  } as Response));
+          slots: [
+            {
+              id: "7-today-1",
+              day: today,
+              period: 1,
+              start: "09:00",
+              end: "09:45",
+              className: "Class 8 · A",
+              subject: "Mathematics",
+              sectionId: 7,
+            },
+          ],
+        }),
+      }) as Response,
+  );
 
   render(<TeacherWorkspace userName="Rahul" onNavigate={jest.fn()} />);
 
-  expect(await screen.findByRole("heading", { name: "Class 8 · A" })).toBeInTheDocument();
+  expect(
+    await screen.findByRole("heading", { name: "Class 8 · A" }),
+  ).toBeInTheDocument();
   expect(screen.getByText("Mathematics")).toBeInTheDocument();
   expect(screen.getByText("09:00")).toBeInTheDocument();
   expect(screen.getByText("09:45")).toBeInTheDocument();

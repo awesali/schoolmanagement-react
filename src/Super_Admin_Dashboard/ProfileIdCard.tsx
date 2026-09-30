@@ -1,8 +1,10 @@
-import AdminActionIcon from './AdminActionIcon';
-import React from 'react';
-import { profilePictureUrl } from './ProfilePictureInput';
-import './ProfileIdCard.css';
+// Profile Id Card: imports and dependencies
+import AdminActionIcon from "./AdminActionIcon";
+import React from "react";
+import { profilePictureUrl } from "./ProfilePictureInput";
+import "./ProfileIdCard.css";
 
+// Data types and contracts
 export interface ProfileIdCardField {
   label: string;
   value?: React.ReactNode;
@@ -11,7 +13,7 @@ export interface ProfileIdCardField {
 interface ProfileIdCardProps {
   name: string;
   pictureUrl?: string | null;
-  type: 'Student' | 'Employee';
+  type: "Student" | "Employee";
   identifier: string;
   subtitle: string;
   organization?: string;
@@ -21,17 +23,36 @@ interface ProfileIdCardProps {
   hideActions?: boolean;
 }
 
+// Constants and helper functions
 const initialsFor = (name: string) =>
-  name.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase() || '?';
+  name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase() || "?";
 
+// Main component and state
 const ProfileIdCard: React.FC<ProfileIdCardProps> = ({
-  name, pictureUrl, type, identifier, subtitle, organization, status, fields, onEdit, hideActions = false
+  name,
+  pictureUrl,
+  type,
+  identifier,
+  subtitle,
+  organization,
+  status,
+  fields,
+  onEdit,
+  hideActions = false,
 }) => (
   <div className="profile-card-shell">
     <article className="profile-id-card">
       <header className="profile-card-brand">
         <div>
-          <span className="profile-card-eyebrow">{organization || 'School Management System'}</span>
+          <span className="profile-card-eyebrow">
+            {organization || "School Management System"}
+          </span>
           <h2>{type} Identity Card</h2>
         </div>
         <span className="profile-card-mark">ID</span>
@@ -39,22 +60,37 @@ const ProfileIdCard: React.FC<ProfileIdCardProps> = ({
 
       <section className="profile-card-person">
         <div className="profile-card-avatar" aria-label={`${name} profile`}>
-          {pictureUrl ? <img src={profilePictureUrl(pictureUrl)} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }} /> : initialsFor(name)}
+          {pictureUrl ? (
+            <img
+              src={profilePictureUrl(pictureUrl)}
+              alt={name}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                borderRadius: "inherit",
+              }}
+            />
+          ) : (
+            initialsFor(name)
+          )}
         </div>
         <div className="profile-card-person-copy">
           <h3>{name}</h3>
           <p>{subtitle}</p>
-          <span className={`profile-card-status ${status ? 'active' : 'inactive'}`}>
-            {status ? 'Active' : 'Inactive'}
+          <span
+            className={`profile-card-status ${status ? "active" : "inactive"}`}
+          >
+            {status ? "Active" : "Inactive"}
           </span>
         </div>
       </section>
 
       <dl className="profile-card-details">
-        {fields.map(field => (
+        {fields.map((field) => (
           <div key={field.label}>
             <dt>{field.label}</dt>
-            <dd>{field.value || '—'}</dd>
+            <dd>{field.value || "—"}</dd>
           </div>
         ))}
       </dl>
@@ -65,16 +101,24 @@ const ProfileIdCard: React.FC<ProfileIdCardProps> = ({
       </footer>
     </article>
 
-    {!hideActions && <div className="profile-card-actions">
-      {onEdit && (
-        <button type="button" className="profile-card-edit" onClick={onEdit}><AdminActionIcon action="edit" />
-          Edit Profile
+    {!hideActions && (
+      <div className="profile-card-actions">
+        {onEdit && (
+          <button type="button" className="profile-card-edit" onClick={onEdit}>
+            <AdminActionIcon action="edit" />
+            Edit Profile
+          </button>
+        )}
+        <button
+          type="button"
+          className="profile-card-print"
+          onClick={() => window.print()}
+        >
+          <AdminActionIcon action="print" />
+          Print ID Card
         </button>
-      )}
-      <button type="button" className="profile-card-print" onClick={() => window.print()}><AdminActionIcon action="print" />
-        Print ID Card
-      </button>
-    </div>}
+      </div>
+    )}
   </div>
 );
 

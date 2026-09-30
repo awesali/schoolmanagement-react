@@ -1,60 +1,71 @@
-﻿import React, { useState } from 'react';
-import { useToastMessageState } from '../components/Toast/Toast';
-import { LoadingButton } from '../components/Loader/Loader';
-import { useNavigate } from 'react-router-dom';
-import { API_BASE_URL } from '../config';
-import './Login.css';
+// Login: imports and dependencies
+import React, { useState } from "react";
+import { useToastMessageState } from "../components/Toast/Toast";
+import { LoadingButton } from "../components/Loader/Loader";
+import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../config";
+import "./Login.css";
 
+// Main component and state
 const Login: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useToastMessageState('error');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useToastMessageState("error");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setLoading(true);
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'accept': '*/*',
-          'Content-Type': 'application/json',
+          accept: "*/*",
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ email: email.trim(), password }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        localStorage.setItem('token', data.token);
+        localStorage.setItem("token", data.token);
         if (data.schoolId) {
-          localStorage.setItem('schoolId', data.schoolId.toString());
+          localStorage.setItem("schoolId", data.schoolId.toString());
         }
-        navigate('/dashboard');
+        navigate("/dashboard");
       } else {
-        const studentResponse = await fetch(`${API_BASE_URL}/api/StudentParentAuth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: email.trim(), password }),
-        });
+        const studentResponse = await fetch(
+          `${API_BASE_URL}/api/StudentParentAuth/login`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: email.trim(), password }),
+          },
+        );
         if (studentResponse.ok) {
           const result = await studentResponse.json();
           const token = result.data as string;
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          const role = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || payload.RoleName;
-          if (String(role).toLowerCase() !== 'student') throw new Error('This portal is for students only.');
-          localStorage.setItem('token', token);
-          localStorage.removeItem('schoolId');
-          navigate('/student');
+          const payload = JSON.parse(atob(token.split(".")[1]));
+          const role =
+            payload[
+              "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+            ] || payload.RoleName;
+          if (String(role).toLowerCase() !== "student")
+            throw new Error("This portal is for students only.");
+          localStorage.setItem("token", token);
+          localStorage.removeItem("schoolId");
+          navigate("/student");
         } else {
-          setError('Invalid email or password.');
+          setError("Invalid email or password.");
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
+      setError(
+        err instanceof Error ? err.message : "Login failed. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
@@ -86,7 +97,12 @@ const Login: React.FC = () => {
             />
           </div>
           {error && <div className="error">{error}</div>}
-          <LoadingButton type="submit" className="btn btn-primary" loading={loading} loadingText="Logging in...">
+          <LoadingButton
+            type="submit"
+            className="btn btn-primary"
+            loading={loading}
+            loadingText="Logging in..."
+          >
             Login
           </LoadingButton>
         </form>
@@ -96,5 +112,3 @@ const Login: React.FC = () => {
 };
 
 export default Login;
-
-

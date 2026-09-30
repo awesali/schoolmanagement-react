@@ -1,3 +1,4 @@
+// Receptionist Dashboard: imports and dependencies
 import React, { useEffect, useRef, useState } from "react";
 import { API_BASE_URL } from "../config";
 import { usePermissions } from "../security/Permissions";
@@ -9,6 +10,7 @@ import { downloadCsv } from "../utils/csv";
 import "./PrincipalDashboard.css";
 import "./ReceptionistDashboard.css";
 
+// Data types and contracts
 type Kind = "Visitor" | "Enquiry" | "Appointment" | "Call";
 type Page =
   | "Overview"
@@ -51,6 +53,8 @@ type Props = {
   onLogout: () => void;
   onProfile: () => void;
 };
+
+// Constants and helper functions
 const localDate = () =>
   new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Kolkata",
@@ -124,6 +128,7 @@ export const filterReceptionEntries = (
         .includes(search.trim().toLowerCase()),
   );
 
+// Main component and state
 export default function ReceptionistDashboard({
   userName,
   profilePicture,
@@ -154,6 +159,8 @@ export default function ReceptionistDashboard({
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
   const [parentId, setParentId] = useState<number | null>(null);
+
+  // Constants and helper functions
   const profileRef = useRef<HTMLDivElement>(null);
   const avatarRef = useRef<HTMLButtonElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);

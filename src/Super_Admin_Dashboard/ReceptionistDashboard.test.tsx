@@ -1,3 +1,4 @@
+// Test setup and fixtures
 import React from "react";
 import {
   fireEvent,
@@ -14,6 +15,8 @@ jest.mock("./StudentList", () => () => null);
 jest.mock("./ParentList", () => () => null);
 jest.mock("./StudentServicesManagement", () => () => null);
 jest.mock("./FinanceManagement", () => () => null);
+
+// Constants and helper functions
 const visitor: ReceptionEntry = {
   id: 1,
   kind: "Visitor",

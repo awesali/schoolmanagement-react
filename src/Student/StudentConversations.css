@@ -1,1 +1,184 @@
-﻿.scv{background:var(--sp-surface,#fff);border:1px solid var(--sp-border,#dce7eb);border-radius:16px;overflow:hidden}.scv-heading{padding:22px;border-bottom:1px solid var(--sp-border,#dce7eb)}.scv-heading h2{margin:0 0 5px}.scv-heading p{margin:0;color:var(--sp-muted,#647a86)}.scv-error{margin:14px 20px;padding:12px;background:#fff0ef;color:#9e322c;border-radius:8px}.scv-pick{display:flex;flex-wrap:wrap;align-items:end;gap:14px;padding:18px 22px;border-bottom:1px solid var(--sp-border,#dce7eb)}.scv-pick label{display:grid;gap:6px;min-width:180px;flex:1;font-size:13px;font-weight:600}.scv-pick select{border:1px solid var(--sp-border,#dce7eb);border-radius:9px;padding:10px;background:var(--sp-surface,#fff);color:var(--sp-text,#173449)}.scv-pick small{width:100%;color:var(--sp-muted,#647a86)}.scv-layout{display:grid;grid-template-columns:minmax(240px,320px) minmax(0,1fr);min-height:440px}.scv-list{border-right:1px solid var(--sp-border,#dce7eb);max-height:60vh;overflow:auto}.scv-person{width:100%;display:flex;justify-content:space-between;gap:10px;text-align:left;padding:16px;border:0;border-bottom:1px solid var(--sp-border,#dce7eb);background:transparent;color:var(--sp-text,#173449);cursor:pointer}.scv-person.selected,.scv-person:hover{background:#e8f5f3}.scv-person.unread{background:#edf8f5;border-left:4px solid #087f83}.scv-person>span{display:grid;gap:5px;min-width:0}.scv-person strong{font-size:14px}.scv-person small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--sp-muted,#647a86);font-size:11px}.scv-person>span:last-child{justify-items:end;flex:none}.scv-person b{border-radius:10px;padding:3px 7px;background:#087f83;color:white;font-size:11px}.scv-thread{display:flex;flex-direction:column;min-width:0}.scv-thread header{padding:15px 20px;border-bottom:1px solid var(--sp-border,#dce7eb)}.scv-thread h3{margin:0}.scv-thread header small{color:var(--sp-muted,#647a86)}.scv-messages{flex:1;display:flex;flex-direction:column;gap:12px;min-height:230px;max-height:50vh;overflow:auto;padding:20px;background:#f7faf9}.scv-bubble{max-width:min(78%,540px);padding:11px 14px;border-radius:14px;background:#e8f5f3;overflow-wrap:anywhere}.scv-bubble.mine{align-self:flex-end;background:#d5eeeb}.scv-bubble p{margin:0 0 5px;white-space:pre-wrap}.scv-bubble small{color:#647a86}.scv-empty{padding:22px;color:var(--sp-muted,#647a86)}.scv-compose{display:flex;gap:10px;padding:14px;border-top:1px solid var(--sp-border,#dce7eb)}.scv-compose textarea{flex:1;min-width:0;border:1px solid var(--sp-border,#dce7eb);border-radius:9px;padding:10px;resize:vertical}.scv-compose button{align-self:end}@media(max-width:700px){.scv-layout{grid-template-columns:1fr}.scv-list{border-right:0;border-bottom:1px solid var(--sp-border,#dce7eb);max-height:230px}}
+/* Layout and component styles for Student Conversations. */
+﻿.scv {
+  background: var(--sp-surface, #fff);
+  border: 1px solid var(--sp-border, #dce7eb);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.scv-heading {
+  padding: 22px;
+  border-bottom: 1px solid var(--sp-border, #dce7eb);
+}
+.scv-heading h2 {
+  margin: 0 0 5px;
+}
+.scv-heading p {
+  margin: 0;
+  color: var(--sp-muted, #647a86);
+}
+.scv-error {
+  margin: 14px 20px;
+  padding: 12px;
+  background: #fff0ef;
+  color: #9e322c;
+  border-radius: 8px;
+}
+.scv-pick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 14px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--sp-border, #dce7eb);
+}
+.scv-pick label {
+  display: grid;
+  gap: 6px;
+  min-width: 180px;
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+}
+.scv-pick select {
+  border: 1px solid var(--sp-border, #dce7eb);
+  border-radius: 9px;
+  padding: 10px;
+  background: var(--sp-surface, #fff);
+  color: var(--sp-text, #173449);
+}
+.scv-pick small {
+  width: 100%;
+  color: var(--sp-muted, #647a86);
+}
+.scv-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+  min-height: 440px;
+}
+.scv-list {
+  border-right: 1px solid var(--sp-border, #dce7eb);
+  max-height: 60vh;
+  overflow: auto;
+}
+.scv-person {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  text-align: left;
+  padding: 16px;
+  border: 0;
+  border-bottom: 1px solid var(--sp-border, #dce7eb);
+  background: transparent;
+  color: var(--sp-text, #173449);
+  cursor: pointer;
+}
+.scv-person.selected,
+.scv-person:hover {
+  background: #e8f5f3;
+}
+.scv-person.unread {
+  background: #edf8f5;
+  border-left: 4px solid #087f83;
+}
+.scv-person > span {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+.scv-person strong {
+  font-size: 14px;
+}
+.scv-person small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--sp-muted, #647a86);
+  font-size: 11px;
+}
+.scv-person > span:last-child {
+  justify-items: end;
+  flex: none;
+}
+.scv-person b {
+  border-radius: 10px;
+  padding: 3px 7px;
+  background: #087f83;
+  color: white;
+  font-size: 11px;
+}
+.scv-thread {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.scv-thread header {
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--sp-border, #dce7eb);
+}
+.scv-thread h3 {
+  margin: 0;
+}
+.scv-thread header small {
+  color: var(--sp-muted, #647a86);
+}
+.scv-messages {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 230px;
+  max-height: 50vh;
+  overflow: auto;
+  padding: 20px;
+  background: #f7faf9;
+}
+.scv-bubble {
+  max-width: min(78%, 540px);
+  padding: 11px 14px;
+  border-radius: 14px;
+  background: #e8f5f3;
+  overflow-wrap: anywhere;
+}
+.scv-bubble.mine {
+  align-self: flex-end;
+  background: #d5eeeb;
+}
+.scv-bubble p {
+  margin: 0 0 5px;
+  white-space: pre-wrap;
+}
+.scv-bubble small {
+  color: #647a86;
+}
+.scv-empty {
+  padding: 22px;
+  color: var(--sp-muted, #647a86);
+}
+.scv-compose {
+  display: flex;
+  gap: 10px;
+  padding: 14px;
+  border-top: 1px solid var(--sp-border, #dce7eb);
+}
+.scv-compose textarea {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--sp-border, #dce7eb);
+  border-radius: 9px;
+  padding: 10px;
+  resize: vertical;
+}
+.scv-compose button {
+  align-self: end;
+}
+@media (max-width: 700px) {
+  .scv-layout {
+    grid-template-columns: 1fr;
+  }
+  .scv-list {
+    border-right: 0;
+    border-bottom: 1px solid var(--sp-border, #dce7eb);
+    max-height: 230px;
+  }
+}

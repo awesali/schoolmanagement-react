@@ -1,8 +1,10 @@
-import AdminActionIcon from './AdminActionIcon';
-import React from 'react';
-import { LoadingButton } from '../components/Loader/Loader';
-import './Modal.css';
+// Modal: imports and dependencies
+import AdminActionIcon from "./AdminActionIcon";
+import React from "react";
+import { LoadingButton } from "../components/Loader/Loader";
+import "./Modal.css";
 
+// Data types and contracts
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -15,30 +17,31 @@ interface ModalProps {
   children: React.ReactNode;
   headerActions?: React.ReactNode;
   formId?: string;
-  size?: 'normal' | 'large';
+  size?: "normal" | "large";
   submitDisabled?: boolean;
   submitLoading?: boolean;
   loadingText?: string;
   loadingOverlay?: boolean;
 }
 
+// Main component and state
 const Modal: React.FC<ModalProps> = ({
   isOpen,
   onClose,
   title,
   onSubmit,
-  submitLabel = 'Submit',
+  submitLabel = "Submit",
   showSubmit = true,
   showCancel = true,
   onCancel,
   children,
   headerActions,
   formId,
-  size = 'normal',
-  submitDisabled = false
-  ,submitLoading = false
-  ,loadingText
-  ,loadingOverlay = true
+  size = "normal",
+  submitDisabled = false,
+  submitLoading = false,
+  loadingText,
+  loadingOverlay = true,
 }) => {
   if (!isOpen) return null;
 
@@ -50,28 +53,48 @@ const Modal: React.FC<ModalProps> = ({
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className={`modal-content ${size === 'large' ? 'modal-large' : ''}`} onClick={(e) => e.stopPropagation()}>
+      <div
+        className={`modal-content ${size === "large" ? "modal-large" : ""}`}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="modal-header">
           <h3>{title}</h3>
           <div className="header-actions">
             {headerActions}
             {showCancel && (
-              <button type="button" className="btn btn-primary" onClick={handleCancel}><AdminActionIcon action="reset" />
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleCancel}
+              >
+                <AdminActionIcon action="reset" />
                 Clear
               </button>
             )}
             {showSubmit && (
-              <LoadingButton type="submit" className="btn btn-primary" form={formId} onClick={onSubmit}
-                disabled={submitDisabled} loading={submitLoading} loadingText={loadingText} loadingOverlay={loadingOverlay}>
+              <LoadingButton
+                type="submit"
+                className="btn btn-primary"
+                form={formId}
+                onClick={onSubmit}
+                disabled={submitDisabled}
+                loading={submitLoading}
+                loadingText={loadingText}
+                loadingOverlay={loadingOverlay}
+              >
                 {submitLabel}
               </LoadingButton>
             )}
-            <button className="modal-close" onClick={onClose} aria-label="Close"><AdminActionIcon action="close" /></button>
+            <button
+              className="modal-close"
+              onClick={onClose}
+              aria-label="Close"
+            >
+              <AdminActionIcon action="close" />
+            </button>
           </div>
         </div>
-        <div className="modal-body">
-          {children}
-        </div>
+        <div className="modal-body">{children}</div>
       </div>
     </div>
   );

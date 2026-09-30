@@ -1,14 +1,21 @@
-import AdminActionIcon from './AdminActionIcon';
-import { useToastMessageState } from '../components/Toast/Toast';
-import React, { useState, useEffect } from 'react';
-import { API_BASE_URL } from '../config';
-import Modal from './Modal';
-import ProfilePictureInput from './ProfilePictureInput';
-import './AddStaff.css';
-import StaffDetailSections, { staffDetailValues, appendStaffDetails, validateStaffDetails, StaffDetailRecord } from './StaffDetailSections';
-import { GENDER_OPTIONS } from '../utils/gender';
-import { EMPLOYMENT_TYPES } from '../utils/employmentTypes';
+// Edit Staff: imports and dependencies
+import AdminActionIcon from "./AdminActionIcon";
+import { useToastMessageState } from "../components/Toast/Toast";
+import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../config";
+import Modal from "./Modal";
+import ProfilePictureInput from "./ProfilePictureInput";
+import "./AddStaff.css";
+import StaffDetailSections, {
+  staffDetailValues,
+  appendStaffDetails,
+  validateStaffDetails,
+  StaffDetailRecord,
+} from "./StaffDetailSections";
+import { GENDER_OPTIONS } from "../utils/gender";
+import { EMPLOYMENT_TYPES } from "../utils/employmentTypes";
 
+// Data types and contracts
 interface Document {
   documentId: number;
   documentName: string;
@@ -40,93 +47,116 @@ interface EditStaffProps {
   onSuccess: () => void;
 }
 
-const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess }) => {
+// Main component and state
+const EditStaff: React.FC<EditStaffProps> = ({
+  isOpen,
+  onClose,
+  staff,
+  onSuccess,
+}) => {
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
-  const [, setSaveError] = useToastMessageState('error');
+  const [, setSaveError] = useToastMessageState("error");
   const [saving, setSaving] = useState(false);
-  const [currentPictureUrl, setCurrentPictureUrl] = useState<string | null>(null);
+  const [currentPictureUrl, setCurrentPictureUrl] = useState<string | null>(
+    null,
+  );
   const [formData, setFormData] = useState({
-    name: '',
-    dob: '',
-    genderCode: '',
-    doj: '',
+    name: "",
+    dob: "",
+    genderCode: "",
+    doj: "",
     roleId: 0,
-    employmentType: '',
-    email: '',
-    phone: '',
+    employmentType: "",
+    email: "",
+    phone: "",
     ...staffDetailValues(),
-    isActive: true
+    isActive: true,
   });
 
-  const [newDocuments, setNewDocuments] = useState<Array<{ name: string; file: File }>>([]);
-  const [existingDocuments, setExistingDocuments] = useState<Array<{ id: number; name: string; url: string; originalName: string; newFile?: File }>>([]);
+  const [newDocuments, setNewDocuments] = useState<
+    Array<{ name: string; file: File }>
+  >([]);
+  const [existingDocuments, setExistingDocuments] = useState<
+    Array<{
+      id: number;
+      name: string;
+      url: string;
+      originalName: string;
+      newFile?: File;
+    }>
+  >([]);
 
   useEffect(() => {
     if (isOpen && staff) {
-      console.log('Staff data:', staff);
-      console.log('Documents:', staff.documents);
+      console.log("Staff data:", staff);
+      console.log("Documents:", staff.documents);
       setFormData({
         name: staff.name,
-        dob: staff.dob.split('T')[0],
-        genderCode: staff.genderCode || '',
-        doj: staff.doj.split('T')[0],
+        dob: staff.dob.split("T")[0],
+        genderCode: staff.genderCode || "",
+        doj: staff.doj.split("T")[0],
         roleId: staff.roleId,
-        employmentType: staff.employmentType || '',
+        employmentType: staff.employmentType || "",
         email: staff.email,
         phone: staff.phone,
         ...staffDetailValues(staff),
-        isActive: staff.isActive
+        isActive: staff.isActive,
       });
-      setExistingDocuments(staff.documents.map(doc => ({
-        id: doc.documentId,
-        name: doc.documentName,
-        url: doc.documentURL,
-        originalName: doc.documentName // Store original name to track changes
-      })));
+      setExistingDocuments(
+        staff.documents.map((doc) => ({
+          id: doc.documentId,
+          name: doc.documentName,
+          url: doc.documentURL,
+          originalName: doc.documentName, // Store original name to track changes
+        })),
+      );
       setProfilePicture(null);
-      setSaveError('');
+      setSaveError("");
       setCurrentPictureUrl(staff.profilePictureUrl || null);
       setNewDocuments([]);
-
     }
   }, [isOpen, staff]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const detailError = validateStaffDetails(formData);
-    if (detailError) { setSaveError(detailError); return; }
+    if (detailError) {
+      setSaveError(detailError);
+      return;
+    }
     if (!staff || saving) return;
     setSaving(true);
-    setSaveError('');
+    setSaveError("");
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const formDataToSend = new FormData();
-      if (profilePicture) formDataToSend.append('ProfilePicture', profilePicture);
-      
-      formDataToSend.append('Id', staff.id.toString());
-      formDataToSend.append('Name', formData.name);
-      formDataToSend.append('Email', formData.email);
-      formDataToSend.append('Phone', formData.phone);
-      formDataToSend.append('Address', formData.address);
+      if (profilePicture)
+        formDataToSend.append("ProfilePicture", profilePicture);
+
+      formDataToSend.append("Id", staff.id.toString());
+      formDataToSend.append("Name", formData.name);
+      formDataToSend.append("Email", formData.email);
+      formDataToSend.append("Phone", formData.phone);
+      formDataToSend.append("Address", formData.address);
       appendStaffDetails(formDataToSend, formData);
-      formDataToSend.append('DOB', new Date(formData.dob).toISOString());
-      formDataToSend.append('GenderCode', formData.genderCode);
-      formDataToSend.append('DOJ', new Date(formData.doj).toISOString());
-      formDataToSend.append('RoleId', formData.roleId.toString());
-      formDataToSend.append('EmploymentType', formData.employmentType);
-      formDataToSend.append('IsActive', formData.isActive.toString());
-      
+      formDataToSend.append("DOB", new Date(formData.dob).toISOString());
+      formDataToSend.append("GenderCode", formData.genderCode);
+      formDataToSend.append("DOJ", new Date(formData.doj).toISOString());
+      formDataToSend.append("RoleId", formData.roleId.toString());
+      formDataToSend.append("EmploymentType", formData.employmentType);
+      formDataToSend.append("IsActive", formData.isActive.toString());
+
       // Prepare arrays for proper alignment
       const documentIds: string[] = [];
       const documentNames: string[] = [];
       const files: File[] = [];
-      
+
       // Add only changed existing documents
-      existingDocuments.forEach(doc => {
+      existingDocuments.forEach((doc) => {
         const hasNameChanged = doc.name !== doc.originalName;
         const hasFileChanged = doc.newFile !== undefined;
-        
+
         // Only include if name or file has changed
         if (hasNameChanged || hasFileChanged) {
           documentIds.push(doc.id.toString());
@@ -135,66 +165,78 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
             files.push(doc.newFile);
           } else {
             // If only name changed, send empty file
-            const emptyFile = new File([], '', { type: 'application/octet-stream' });
+            const emptyFile = new File([], "", {
+              type: "application/octet-stream",
+            });
             files.push(emptyFile);
           }
         }
       });
-      
+
       // Add new documents (they don't have IDs, so no DocumentIds for these)
-      newDocuments.forEach(doc => {
+      newDocuments.forEach((doc) => {
         if (doc.file && doc.name.trim()) {
           // For new documents, we don't append DocumentIds (they don't exist yet)
           documentNames.push(doc.name);
           files.push(doc.file);
         }
       });
-      
+
       // Append to FormData in correct order
-      documentIds.forEach(id => formDataToSend.append('DocumentIds', id));
-      documentNames.forEach(name => formDataToSend.append('DocumentNames', name));
-      files.forEach(file => formDataToSend.append('Files', file));
-      
-      // Debug logging
-      const changedExistingDocs = existingDocuments.filter(doc => 
-        doc.name !== doc.originalName || doc.newFile !== undefined
+      documentIds.forEach((id) => formDataToSend.append("DocumentIds", id));
+      documentNames.forEach((name) =>
+        formDataToSend.append("DocumentNames", name),
       );
-      const validNewDocs = newDocuments.filter(doc => doc.file && doc.name.trim());
-      
-      console.log('=== UPDATE STAFF DOCUMENTS ===');
-      console.log('Changed existing documents:', changedExistingDocs.length);
-      console.log('New documents being added:', validNewDocs.length);
-      console.log('Total DocumentIds sent:', documentIds.length);
-      console.log('Total DocumentNames sent:', documentNames.length);
-      console.log('Total Files sent:', files.length);
-      console.log('DocumentIds:', documentIds);
-      console.log('DocumentNames:', documentNames);
-      console.log('Files:', files.map(f => f.name || 'empty'));
-      console.log('===============================');
+      files.forEach((file) => formDataToSend.append("Files", file));
+
+      // Debug logging
+      const changedExistingDocs = existingDocuments.filter(
+        (doc) => doc.name !== doc.originalName || doc.newFile !== undefined,
+      );
+      const validNewDocs = newDocuments.filter(
+        (doc) => doc.file && doc.name.trim(),
+      );
+
+      console.log("=== UPDATE STAFF DOCUMENTS ===");
+      console.log("Changed existing documents:", changedExistingDocs.length);
+      console.log("New documents being added:", validNewDocs.length);
+      console.log("Total DocumentIds sent:", documentIds.length);
+      console.log("Total DocumentNames sent:", documentNames.length);
+      console.log("Total Files sent:", files.length);
+      console.log("DocumentIds:", documentIds);
+      console.log("DocumentNames:", documentNames);
+      console.log(
+        "Files:",
+        files.map((f) => f.name || "empty"),
+      );
+      console.log("===============================");
 
       const response = await fetch(`${API_BASE_URL}/api/Admin/update-staff`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'accept': '*/*',
-          'Authorization': `Bearer ${token}`,
+          accept: "*/*",
+          Authorization: `Bearer ${token}`,
         },
         body: formDataToSend,
       });
       const result = await response.json();
-      if (!response.ok || result.success === false) throw new Error(result.message || 'Failed to update staff');
+      if (!response.ok || result.success === false)
+        throw new Error(result.message || "Failed to update staff");
       if (response.ok) {
         onSuccess();
         onClose();
       }
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Failed to update staff');
+      setSaveError(
+        err instanceof Error ? err.message : "Failed to update staff",
+      );
     } finally {
       setSaving(false);
     }
   };
 
   const handleAddDocument = () => {
-    setNewDocuments([...newDocuments, { name: '', file: null as any }]);
+    setNewDocuments([...newDocuments, { name: "", file: null as any }]);
   };
 
   const handleRemoveNewDocument = (index: number) => {
@@ -232,7 +274,9 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
   return (
     <Modal
       isOpen={isOpen}
-      onClose={() => { if (!saving) onClose(); }}
+      onClose={() => {
+        if (!saving) onClose();
+      }}
       submitLoading={saving}
       loadingText="Updating..."
       title="Edit Staff"
@@ -242,7 +286,12 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
       formId="edit-staff-form"
     >
       <form id="edit-staff-form" onSubmit={handleSubmit}>
-        <ProfilePictureInput id="edit-staff-picture" currentUrl={currentPictureUrl} file={profilePicture} onChange={setProfilePicture} />
+        <ProfilePictureInput
+          id="edit-staff-picture"
+          currentUrl={currentPictureUrl}
+          file={profilePicture}
+          onChange={setProfilePicture}
+        />
         <div className="form-grid">
           <div className="form-group">
             <label>Name *</label>
@@ -250,7 +299,9 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
               type="text"
               required
               value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
             />
           </div>
           <div className="form-group">
@@ -259,7 +310,9 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
               type="email"
               required
               value={formData.email}
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
             />
           </div>
           <div className="form-group">
@@ -271,9 +324,9 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
               pattern="[0-9]{10}"
               value={formData.phone}
               onChange={(e) => {
-                const value = e.target.value.replace(/[^0-9]/g, '');
+                const value = e.target.value.replace(/[^0-9]/g, "");
                 if (value.length <= 10) {
-                  setFormData({...formData, phone: value});
+                  setFormData({ ...formData, phone: value });
                 }
               }}
             />
@@ -284,7 +337,9 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
               type="date"
               required
               value={formData.dob}
-              onChange={(e) => setFormData({...formData, dob: e.target.value})}
+              onChange={(e) =>
+                setFormData({ ...formData, dob: e.target.value })
+              }
             />
           </div>
           <div className="form-group">
@@ -292,11 +347,15 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
             <select
               required
               value={formData.genderCode}
-              onChange={(e) => setFormData({...formData, genderCode: e.target.value})}
+              onChange={(e) =>
+                setFormData({ ...formData, genderCode: e.target.value })
+              }
             >
               <option value="">Select Gender</option>
-              {GENDER_OPTIONS.map(option => (
-                <option key={option.code} value={option.code}>{option.label}</option>
+              {GENDER_OPTIONS.map((option) => (
+                <option key={option.code} value={option.code}>
+                  {option.label}
+                </option>
               ))}
             </select>
           </div>
@@ -306,18 +365,33 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
               type="date"
               required
               value={formData.doj}
-              onChange={(e) => setFormData({...formData, doj: e.target.value})}
+              onChange={(e) =>
+                setFormData({ ...formData, doj: e.target.value })
+              }
             />
           </div>
           <div className="form-group">
-            <label>Role</label><input value={staff?.roleName || ''} readOnly /><small>Use Promote or Demote on the staff profile to change this role.</small>
+            <label>Role</label>
+            <input value={staff?.roleName || ""} readOnly />
+            <small>
+              Use Promote or Demote on the staff profile to change this role.
+            </small>
           </div>
           <div className="form-group">
             <label>Employment Type *</label>
-            <select required value={formData.employmentType}
-              onChange={(e) => setFormData({...formData, employmentType: e.target.value})}>
+            <select
+              required
+              value={formData.employmentType}
+              onChange={(e) =>
+                setFormData({ ...formData, employmentType: e.target.value })
+              }
+            >
               <option value="">Select Employment Type</option>
-              {EMPLOYMENT_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
+              {EMPLOYMENT_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
             </select>
           </div>
           <div className="form-group">
@@ -327,57 +401,86 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
                 <input
                   type="checkbox"
                   checked={formData.isActive}
-                  onChange={(e) => setFormData({...formData, isActive: e.target.checked})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, isActive: e.target.checked })
+                  }
                 />
                 <span className="toggle-slider"></span>
               </label>
-              <span className={`toggle-label ${formData.isActive ? 'active' : 'inactive'}`}>
-                {formData.isActive ? 'Active' : 'Inactive'}
+              <span
+                className={`toggle-label ${formData.isActive ? "active" : "inactive"}`}
+              >
+                {formData.isActive ? "Active" : "Inactive"}
               </span>
             </div>
           </div>
         </div>
 
-        <StaffDetailSections values={formData} disabled={saving} onChange={(key, value) => setFormData(current => ({ ...current, [key]: value }))} />
+        <StaffDetailSections
+          values={formData}
+          disabled={saving}
+          onChange={(key, value) =>
+            setFormData((current) => ({ ...current, [key]: value }))
+          }
+        />
 
-          <div className="documents-section">
+        <div className="documents-section">
           <div className="documents-header">
             <label>Existing Documents ({existingDocuments.length})</label>
           </div>
           {existingDocuments.length === 0 ? (
-            <p style={{ padding: '12px', color: '#718096', fontSize: '14px' }}>No existing documents</p>
+            <p style={{ padding: "12px", color: "#718096", fontSize: "14px" }}>
+              No existing documents
+            </p>
           ) : (
             existingDocuments.map((doc, index) => (
               <div key={doc.id} className="existing-doc-row-edit">
                 <input
                   type="text"
                   value={doc.name}
-                  onChange={(e) => handleExistingDocNameChange(index, e.target.value)}
+                  onChange={(e) =>
+                    handleExistingDocNameChange(index, e.target.value)
+                  }
                   placeholder="Document Name"
                 />
                 <div className="file-input-wrapper">
                   <input
                     type="file"
                     id={`existing-file-${index}`}
-                    onChange={(e) => handleExistingDocFileChange(index, e.target.files?.[0] || null)}
-                    style={{ display: 'none' }}
+                    onChange={(e) =>
+                      handleExistingDocFileChange(
+                        index,
+                        e.target.files?.[0] || null,
+                      )
+                    }
+                    style={{ display: "none" }}
                   />
-                  <label htmlFor={`existing-file-${index}`} className="file-input-label">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                      <polyline points="7,10 12,15 17,10"/>
-                      <line x1="12" y1="15" x2="12" y2="3"/>
+                  <label
+                    htmlFor={`existing-file-${index}`}
+                    className="file-input-label"
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7,10 12,15 17,10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
                     </svg>
-                    {doc.newFile ? doc.newFile.name : 'Upload'}
+                    {doc.newFile ? doc.newFile.name : "Upload"}
                   </label>
                 </div>
-                <a 
-                  href={`${API_BASE_URL}${doc.url}`} 
-                  target="_blank" 
+                <a
+                  href={`${API_BASE_URL}${doc.url}`}
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="btn-view-existing"
                   onClick={(e) => {
-                    console.log('View clicked:', `${API_BASE_URL}${doc.url}`);
+                    console.log("View clicked:", `${API_BASE_URL}${doc.url}`);
                   }}
                 >
                   View
@@ -390,7 +493,13 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
         <div className="documents-section">
           <div className="documents-header">
             <label>Add New Documents</label>
-            <button type="button" className="btn-add-doc" onClick={handleAddDocument}><AdminActionIcon action="add" />Add Document
+            <button
+              type="button"
+              className="btn-add-doc"
+              onClick={handleAddDocument}
+            >
+              <AdminActionIcon action="add" />
+              Add Document
             </button>
           </div>
           {newDocuments.map((doc, index) => (
@@ -399,25 +508,46 @@ const EditStaff: React.FC<EditStaffProps> = ({ isOpen, onClose, staff, onSuccess
                 type="text"
                 placeholder="Document Name"
                 value={doc.name}
-                onChange={(e) => handleDocumentNameChange(index, e.target.value)}
+                onChange={(e) =>
+                  handleDocumentNameChange(index, e.target.value)
+                }
               />
               <div className="file-input-wrapper">
                 <input
                   type="file"
                   id={`new-file-${index}`}
-                  onChange={(e) => handleDocumentFileChange(index, e.target.files?.[0] || null)}
-                  style={{ display: 'none' }}
+                  onChange={(e) =>
+                    handleDocumentFileChange(index, e.target.files?.[0] || null)
+                  }
+                  style={{ display: "none" }}
                 />
-                <label htmlFor={`new-file-${index}`} className="file-input-label">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="7,10 12,15 17,10"/>
-                    <line x1="12" y1="15" x2="12" y2="3"/>
+                <label
+                  htmlFor={`new-file-${index}`}
+                  className="file-input-label"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7,10 12,15 17,10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
                   </svg>
-                  {doc.file ? doc.file.name : 'Upload'}
+                  {doc.file ? doc.file.name : "Upload"}
                 </label>
               </div>
-              <button type="button" className="btn-remove" onClick={() => handleRemoveNewDocument(index)} aria-label="Remove document"><AdminActionIcon action="delete" /></button>
+              <button
+                type="button"
+                className="btn-remove"
+                onClick={() => handleRemoveNewDocument(index)}
+                aria-label="Remove document"
+              >
+                <AdminActionIcon action="delete" />
+              </button>
             </div>
           ))}
         </div>

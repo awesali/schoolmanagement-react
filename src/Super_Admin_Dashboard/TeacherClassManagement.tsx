@@ -1,8 +1,10 @@
-﻿import React, { useEffect, useState } from "react";
+// Teacher Class Management: imports and dependencies
+import React, { useEffect, useState } from "react";
 import { usePermissions } from "../security/Permissions";
 import { SchoolIcon, teacherRequest } from "./TeacherWorkspace";
 import "./TeacherWorkspace.css";
 
+// Data types and contracts
 type Section = {
   id: number;
   sectionName: string;
@@ -17,6 +19,8 @@ type Props = {
     sectionId?: number,
   ) => void;
 };
+
+// Main component and state
 export default function TeacherClassManagement({ onNavigate }: Props) {
   const { can } = usePermissions();
   const [classes, setClasses] = useState<AssignedClass[]>([]);
@@ -26,6 +30,7 @@ export default function TeacherClassManagement({ onNavigate }: Props) {
   const [expanded, setExpanded] = useState<number | null>(null);
   const [revision, setRevision] = useState(0);
   useEffect(() => {
+    // Constants and helper functions
     let alive = true;
     setLoading(true);
     setError("");

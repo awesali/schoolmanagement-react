@@ -1,17 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { PageLoader } from '../components/Loader/Loader';
-import { AddClassIcon, SubjectsIcon, TimeTableIcon } from '../components/Icons/Icons';
-import '../components/Icons/CreateIconButton.css';
-import { API_BASE_URL } from '../config';
-import { useToastMessageState } from '../components/Toast/Toast';
-import AddClass from './AddClass';
-import EditClass from './EditClass';
-import AssignSubjects from './AssignSubjects';
-import TimeTable from './TimeTable';
-import Pagination from './Pagination';
-import './ClassList.css';
-import { usePermissions } from '../security/Permissions';
+// Class List: imports and dependencies
+import React, { useState, useEffect } from "react";
+import { PageLoader } from "../components/Loader/Loader";
+import {
+  AddClassIcon,
+  SubjectsIcon,
+  TimeTableIcon,
+} from "../components/Icons/Icons";
+import "../components/Icons/CreateIconButton.css";
+import { API_BASE_URL } from "../config";
+import { useToastMessageState } from "../components/Toast/Toast";
+import AddClass from "./AddClass";
+import EditClass from "./EditClass";
+import AssignSubjects from "./AssignSubjects";
+import TimeTable from "./TimeTable";
+import Pagination from "./Pagination";
+import "./ClassList.css";
+import { usePermissions } from "../security/Permissions";
 
+// Data types and contracts
 interface Subject {
   subjectId: number;
   subjectName: string;
@@ -39,22 +45,30 @@ interface ClassListProps {
   selectedSchoolId: number | null;
 }
 
-const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId, onNavigate }) => {
+// Main component and state
+const ClassList: React.FC<ClassListProps> = ({
+  selectedSchoolId,
+  onNavigate,
+}) => {
   const { can } = usePermissions();
   const [classes, setClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useToastMessageState('error');
+  const [error, setError] = useToastMessageState("error");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const [pageSize, setPageSize] = useState(10);
-  const [pageInput, setPageInput] = useState('');
+  const [pageInput, setPageInput] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAssignSubjectsOpen, setIsAssignSubjectsOpen] = useState(false);
   const [isTimeTableOpen, setIsTimeTableOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
-  const [selectedSection, setSelectedSection] = useState<{id: number, name: string, subjects: Subject[]} | null>(null);
+  const [selectedSection, setSelectedSection] = useState<{
+    id: number;
+    name: string;
+    subjects: Subject[];
+  } | null>(null);
 
   useEffect(() => {
     if (selectedSchoolId) {
@@ -82,18 +96,21 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId, onNavigate }) =
 
   const fetchClasses = async (page: number = 1, size: number = pageSize) => {
     if (!selectedSchoolId) return;
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/Class/calss-list?schoolId=${selectedSchoolId}&page=${page}&pageSize=${size}`, {
-        headers: {
-          'accept': '*/*',
-          'Authorization': `Bearer ${token}`,
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `${API_BASE_URL}/api/Class/calss-list?schoolId=${selectedSchoolId}&page=${page}&pageSize=${size}`,
+        {
+          headers: {
+            accept: "*/*",
+            Authorization: `Bearer ${token}`,
+          },
         },
-      });
+      );
 
       if (response.ok) {
         const result = await response.json();
@@ -103,13 +120,13 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId, onNavigate }) =
           setTotalPages(result.totalPages);
           setTotalRecords(result.totalRecords);
         } else {
-          setError(result.message || 'Failed to fetch classes');
+          setError(result.message || "Failed to fetch classes");
         }
       } else {
-        setError('Failed to fetch classes');
+        setError("Failed to fetch classes");
       }
     } catch (err) {
-      setError('Network error occurred');
+      setError("Network error occurred");
     } finally {
       setLoading(false);
     }
@@ -131,13 +148,24 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId, onNavigate }) =
     <div className="staff-list-container">
       <div className="staff-list-header">
         <h2>Class List</h2>
-        {can('academics.classes','create')&&<button type="button" className="create-icon-button" title="Add Class" aria-label="Add Class" onClick={() => setIsAddModalOpen(true)}>
-          <AddClassIcon size={26} />
-        </button>}
+        {can("academics.classes", "create") && (
+          <button
+            type="button"
+            className="create-icon-button"
+            title="Add Class"
+            aria-label="Add Class"
+            onClick={() => setIsAddModalOpen(true)}
+          >
+            <AddClassIcon size={26} />
+          </button>
+        )}
       </div>
-      
+
       {classes.length === 0 ? (
-        <div className="staff-list-loading" style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+        <div
+          className="staff-list-loading"
+          style={{ textAlign: "center", padding: "40px", color: "#666" }}
+        >
           No classes available. Please add a new class.
         </div>
       ) : (
@@ -157,9 +185,10 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId, onNavigate }) =
               {classes.map((classItem) => (
                 <tr key={classItem.id}>
                   <td className="class-name">
-                    <span 
+                    <span
                       className="staff-name-link"
-                      onClick={() => { if(!can('academics.classes','update'))return;
+                      onClick={() => {
+                        if (!can("academics.classes", "update")) return;
                         setSelectedClass(classItem);
                         setIsEditModalOpen(true);
                       }}
@@ -182,7 +211,8 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId, onNavigate }) =
                       className="create-icon-button"
                       title="Subjects"
                       aria-label={`Subjects for ${classItem.className}`}
-                      onClick={() => { if(!can('academics.classes','update'))return;
+                      onClick={() => {
+                        if (!can("academics.classes", "update")) return;
                         setSelectedClass(classItem);
                         setIsAssignSubjectsOpen(true);
                       }}
@@ -205,8 +235,10 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId, onNavigate }) =
                     </button>
                   </td>
                   <td>
-                    <span className={`status-badge ${classItem.isActive ? 'active' : 'inactive'}`}>
-                      {classItem.isActive ? 'Active' : 'Inactive'}
+                    <span
+                      className={`status-badge ${classItem.isActive ? "active" : "inactive"}`}
+                    >
+                      {classItem.isActive ? "Active" : "Inactive"}
                     </span>
                   </td>
                   <td className="created-date">
@@ -248,10 +280,13 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId, onNavigate }) =
         onClose={() => setIsAssignSubjectsOpen(false)}
         classData={selectedClass}
         schoolId={selectedSchoolId}
-        onNavigateToSubjects={() => { setIsAssignSubjectsOpen(false); onNavigate?.("Subject List"); }}
+        onNavigateToSubjects={() => {
+          setIsAssignSubjectsOpen(false);
+          onNavigate?.("Subject List");
+        }}
         onSuccess={() => {
           fetchClasses(currentPage);
-          console.log('Subjects assigned successfully');
+          console.log("Subjects assigned successfully");
         }}
       />
 
@@ -261,7 +296,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchoolId, onNavigate }) =
         classData={selectedClass}
         schoolId={selectedSchoolId}
         onSuccess={() => {
-          console.log('TimeTable created successfully');
+          console.log("TimeTable created successfully");
         }}
       />
     </div>

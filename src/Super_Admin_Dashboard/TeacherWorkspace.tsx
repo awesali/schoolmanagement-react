@@ -1,8 +1,10 @@
-﻿import React, { useEffect, useState } from "react";
+// Teacher Workspace: imports and dependencies
+import React, { useEffect, useState } from "react";
 import { API_BASE_URL } from "../config";
 import { usePermissions } from "../security/Permissions";
 import "./TeacherWorkspace.css";
 
+// Constants and helper functions
 export const localDate = (date = new Date()) =>
   new Date(date.getTime() - date.getTimezoneOffset() * 60000)
     .toISOString()
@@ -50,6 +52,8 @@ export async function allTeacherPages(path: string) {
     if (page >= (result.totalPages || 1)) return rows;
   }
 }
+
+// Main component and state
 export function SchoolIcon({ name = "book" }: { name?: string }) {
   const paths: Record<string, string> = {
     book: "M3 4h6l3 2 3-2h6v15h-6l-3 2-3-2H3V4m9 2v15",
@@ -82,6 +86,8 @@ export function SchoolIcon({ name = "book" }: { name?: string }) {
     </svg>
   );
 }
+
+// Data types and contracts
 type AssignedClass = {
   id: number;
   className: string;
@@ -111,6 +117,8 @@ type Props = {
   ) => void;
   timetable?: boolean;
 };
+
+// Main component and state
 export default function TeacherWorkspace({
   userName,
   onNavigate,
@@ -129,6 +137,7 @@ export default function TeacherWorkspace({
   const [day, setDay] = useState(new Date().getDay() || 7);
   const [retry, setRetry] = useState(0);
   useEffect(() => {
+    // Constants and helper functions
     let alive = true;
     setLoading(true);
     setError("");

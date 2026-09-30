@@ -1,14 +1,19 @@
-import AdminActionIcon from './AdminActionIcon';
-import { useToastMessageState } from '../components/Toast/Toast';
-import React, { useState, useEffect } from 'react';
-import { API_BASE_URL } from '../config';
-import Modal from './Modal';
-import RelationshipSelect from './RelationshipSelect';
-import ProfilePictureInput from './ProfilePictureInput';
-import './AddStaff.css';
-import { GENDER_OPTIONS } from '../utils/gender';
-import StudentDetailSections, { appendStudentDetails, studentDetailValues } from './StudentDetailSections';
+// Edit Student: imports and dependencies
+import AdminActionIcon from "./AdminActionIcon";
+import { useToastMessageState } from "../components/Toast/Toast";
+import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../config";
+import Modal from "./Modal";
+import RelationshipSelect from "./RelationshipSelect";
+import ProfilePictureInput from "./ProfilePictureInput";
+import "./AddStaff.css";
+import { GENDER_OPTIONS } from "../utils/gender";
+import StudentDetailSections, {
+  appendStudentDetails,
+  studentDetailValues,
+} from "./StudentDetailSections";
 
+// Data types and contracts
 interface Document {
   documentId: number;
   documentName: string;
@@ -33,9 +38,20 @@ interface Student {
   documents: Document[];
 }
 
-interface ClassItem { id: number; name: string; }
-interface SectionItem { id: number; name: string; classId: number; }
-interface SessionItem { id: number; yearStart: string; yearEnd: string; }
+interface ClassItem {
+  id: number;
+  name: string;
+}
+interface SectionItem {
+  id: number;
+  name: string;
+  classId: number;
+}
+interface SessionItem {
+  id: number;
+  yearStart: string;
+  yearEnd: string;
+}
 
 interface EnrollmentData {
   classes: ClassItem[];
@@ -51,47 +67,70 @@ interface EditStudentProps {
   onSuccess: () => void;
 }
 
-const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, schoolId, onSuccess }) => {
+// Main component and state
+const EditStudent: React.FC<EditStudentProps> = ({
+  isOpen,
+  onClose,
+  student,
+  schoolId,
+  onSuccess,
+}) => {
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
-  const [, setSaveError] = useToastMessageState('error');
+  const [, setSaveError] = useToastMessageState("error");
   const [saving, setSaving] = useState(false);
-  const [currentPictureUrl, setCurrentPictureUrl] = useState<string | null>(null);
+  const [currentPictureUrl, setCurrentPictureUrl] = useState<string | null>(
+    null,
+  );
   const [formData, setFormData] = useState({
-    studentName: '',
-    parentRelationship: '',
-    rollNumber: '',
-    dob: '',
-    genderCode: '',
-    email: '',
-    phoneNumber: '',
-    classId: '',
-    sectionId: '',
-    sessionId: '',
+    studentName: "",
+    parentRelationship: "",
+    rollNumber: "",
+    dob: "",
+    genderCode: "",
+    email: "",
+    phoneNumber: "",
+    classId: "",
+    sectionId: "",
+    sessionId: "",
     ...studentDetailValues(),
     isActive: true,
   });
-  const [enrollment, setEnrollment] = useState<EnrollmentData>({ classes: [], sections: [], sessions: [] });
-  const [newDocuments, setNewDocuments] = useState<Array<{ name: string; file: File }>>([]);
-  const [existingDocuments, setExistingDocuments] = useState<Array<{ id: number; name: string; url: string; originalName: string; newFile?: File }>>([]);
+  const [enrollment, setEnrollment] = useState<EnrollmentData>({
+    classes: [],
+    sections: [],
+    sessions: [],
+  });
+  const [newDocuments, setNewDocuments] = useState<
+    Array<{ name: string; file: File }>
+  >([]);
+  const [existingDocuments, setExistingDocuments] = useState<
+    Array<{
+      id: number;
+      name: string;
+      url: string;
+      originalName: string;
+      newFile?: File;
+    }>
+  >([]);
 
   useEffect(() => {
     if (isOpen && student && schoolId) {
       setProfilePicture(null);
-      setSaveError('');
+      setSaveError("");
       setCurrentPictureUrl(student.profilePictureUrl || null);
       setNewDocuments([]);
       // Prefill form with data from the list first
       setFormData({
         studentName: student.studentName,
-        parentRelationship: student.parentRelationship || '',
-        rollNumber: student.rollNumber || '',
-        dob: student.dob.split('T')[0],
-        genderCode: student.genderCode || '',
+        parentRelationship: student.parentRelationship || "",
+        rollNumber: student.rollNumber || "",
+        dob: student.dob.split("T")[0],
+        genderCode: student.genderCode || "",
         email: student.email,
         phoneNumber: student.phoneNumber,
-        classId: '',
-        sectionId: '',
-        sessionId: '',
+        classId: "",
+        sectionId: "",
+        sessionId: "",
         ...studentDetailValues(student),
         isActive: student.isActive,
       });
@@ -101,18 +140,23 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
 
   const fetchStudentAndEnrollment = async (studentId: number, sId: number) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const [studentRes, enrollmentRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/Student/student-by-id?studentId=${studentId}`, {
-          headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
-        }),
+        fetch(
+          `${API_BASE_URL}/api/Student/student-by-id?studentId=${studentId}`,
+          {
+            headers: { accept: "*/*", Authorization: `Bearer ${token}` },
+          },
+        ),
         fetch(`${API_BASE_URL}/api/Student/enrollment-info?schoolId=${sId}`, {
-          headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
+          headers: { accept: "*/*", Authorization: `Bearer ${token}` },
         }),
       ]);
 
       const studentResult = studentRes.ok ? await studentRes.json() : null;
-      const enrollmentResult = enrollmentRes.ok ? await enrollmentRes.json() : null;
+      const enrollmentResult = enrollmentRes.ok
+        ? await enrollmentRes.json()
+        : null;
 
       if (enrollmentResult?.success && enrollmentResult.data) {
         setEnrollment({
@@ -125,116 +169,144 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
       if (studentResult?.success && studentResult.data) {
         const s = studentResult.data;
         setCurrentPictureUrl(s.profilePictureUrl || null);
-        console.log('Student data from API:', s);
+        console.log("Student data from API:", s);
         // Update form data but preserve rollNumber from list if API doesn't have it
-        setFormData(prev => ({
+        setFormData((prev) => ({
           studentName: s.studentName,
-          parentRelationship: s.parentRelationship || '',
+          parentRelationship: s.parentRelationship || "",
           rollNumber: s.rollNumber || s.rollNo || prev.rollNumber,
-          dob: s.dob.split('T')[0],
-          genderCode: s.genderCode || '',
+          dob: s.dob.split("T")[0],
+          genderCode: s.genderCode || "",
           email: s.email,
           phoneNumber: s.phoneNumber,
-          classId: s.classId?.toString() ?? '',
-          sectionId: s.sectionId?.toString() ?? '',
-          sessionId: s.sessionId?.toString() ?? '',
+          classId: s.classId?.toString() ?? "",
+          sectionId: s.sectionId?.toString() ?? "",
+          sessionId: s.sessionId?.toString() ?? "",
           ...studentDetailValues(s),
           isActive: s.isActive,
         }));
-        setExistingDocuments((s.documents ?? []).map((doc: any) => ({
-          id: doc.documentId,
-          name: doc.documentName,
-          url: doc.documentURL,
-          originalName: doc.documentName,
-        })));
+        setExistingDocuments(
+          (s.documents ?? []).map((doc: any) => ({
+            id: doc.documentId,
+            name: doc.documentName,
+            url: doc.documentURL,
+            originalName: doc.documentName,
+          })),
+        );
       }
     } catch (err) {
-      console.error('Failed to fetch student/enrollment info', err);
+      console.error("Failed to fetch student/enrollment info", err);
     }
   };
 
-  const filteredSections = enrollment.sections.filter(s => s.classId === Number(formData.classId));
+  const filteredSections = enrollment.sections.filter(
+    (s) => s.classId === Number(formData.classId),
+  );
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleClassChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const classId = e.target.value;
-    setFormData({ ...formData, classId, sectionId: '' });
+    setFormData({ ...formData, classId, sectionId: "" });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!student || saving) return;
     setSaving(true);
-    setSaveError('');
+    setSaveError("");
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const formDataToSend = new FormData();
-      if (profilePicture) formDataToSend.append('ProfilePicture', profilePicture);
+      if (profilePicture)
+        formDataToSend.append("ProfilePicture", profilePicture);
 
-      formDataToSend.append('Id', student.id.toString());
-      formDataToSend.append('StudentName', formData.studentName);
-      if (formData.parentRelationship) formDataToSend.append('Parent.Relationship', formData.parentRelationship);
-      formDataToSend.append('RollNumber', formData.rollNumber);
-      formDataToSend.append('Email', formData.email);
-      formDataToSend.append('PhoneNumber', formData.phoneNumber);
-      formDataToSend.append('DOB', new Date(formData.dob).toISOString());
-      formDataToSend.append('GenderCode', formData.genderCode);
-      formDataToSend.append('IsActive', formData.isActive.toString());
-      if (formData.classId) formDataToSend.append('ClassId', formData.classId);
-      if (formData.sectionId) formDataToSend.append('SectionId', formData.sectionId);
-      if (formData.sessionId) formDataToSend.append('SessionId', formData.sessionId);
+      formDataToSend.append("Id", student.id.toString());
+      formDataToSend.append("StudentName", formData.studentName);
+      if (formData.parentRelationship)
+        formDataToSend.append(
+          "Parent.Relationship",
+          formData.parentRelationship,
+        );
+      formDataToSend.append("RollNumber", formData.rollNumber);
+      formDataToSend.append("Email", formData.email);
+      formDataToSend.append("PhoneNumber", formData.phoneNumber);
+      formDataToSend.append("DOB", new Date(formData.dob).toISOString());
+      formDataToSend.append("GenderCode", formData.genderCode);
+      formDataToSend.append("IsActive", formData.isActive.toString());
+      if (formData.classId) formDataToSend.append("ClassId", formData.classId);
+      if (formData.sectionId)
+        formDataToSend.append("SectionId", formData.sectionId);
+      if (formData.sessionId)
+        formDataToSend.append("SessionId", formData.sessionId);
       appendStudentDetails(formDataToSend, formData);
 
       const documentIds: string[] = [];
       const documentNames: string[] = [];
       const files: File[] = [];
 
-      existingDocuments.forEach(doc => {
+      existingDocuments.forEach((doc) => {
         const hasNameChanged = doc.name !== doc.originalName;
         const hasFileChanged = doc.newFile !== undefined;
         if (hasNameChanged || hasFileChanged) {
           documentIds.push(doc.id.toString());
           documentNames.push(doc.name);
-          files.push(doc.newFile ?? new File([], '', { type: 'application/octet-stream' }));
+          files.push(
+            doc.newFile ??
+              new File([], "", { type: "application/octet-stream" }),
+          );
         }
       });
 
-      newDocuments.forEach(doc => {
+      newDocuments.forEach((doc) => {
         if (doc.file && doc.name.trim()) {
           documentNames.push(doc.name);
           files.push(doc.file);
         }
       });
 
-      documentIds.forEach(id => formDataToSend.append('DocumentIds', id));
-      documentNames.forEach(name => formDataToSend.append('DocumentNames', name));
-      files.forEach(file => formDataToSend.append('Files', file));
+      documentIds.forEach((id) => formDataToSend.append("DocumentIds", id));
+      documentNames.forEach((name) =>
+        formDataToSend.append("DocumentNames", name),
+      );
+      files.forEach((file) => formDataToSend.append("Files", file));
 
-      const response = await fetch(`${API_BASE_URL}/api/Student/update-student`, {
-        method: 'PUT',
-        headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
-        body: formDataToSend,
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/api/Student/update-student`,
+        {
+          method: "PUT",
+          headers: { accept: "*/*", Authorization: `Bearer ${token}` },
+          body: formDataToSend,
+        },
+      );
       const result = await response.json();
-      if (!response.ok || result.success === false) throw new Error(result.message || 'Failed to update student');
+      if (!response.ok || result.success === false)
+        throw new Error(result.message || "Failed to update student");
       if (response.ok) {
         onSuccess();
         onClose();
       }
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Failed to update student');
+      setSaveError(
+        err instanceof Error ? err.message : "Failed to update student",
+      );
     } finally {
       setSaving(false);
     }
   };
 
   // Document handlers
-  const handleAddDocument = () => setNewDocuments([...newDocuments, { name: '', file: null as any }]);
-  const handleRemoveNewDocument = (index: number) => setNewDocuments(newDocuments.filter((_, i) => i !== index));
+  const handleAddDocument = () =>
+    setNewDocuments([...newDocuments, { name: "", file: null as any }]);
+  const handleRemoveNewDocument = (index: number) =>
+    setNewDocuments(newDocuments.filter((_, i) => i !== index));
   const handleDocumentNameChange = (index: number, name: string) => {
     const updated = [...newDocuments];
     updated[index].name = name;
@@ -263,7 +335,9 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
   return (
     <Modal
       isOpen={isOpen}
-      onClose={() => { if (!saving) onClose(); }}
+      onClose={() => {
+        if (!saving) onClose();
+      }}
       submitLoading={saving}
       loadingText="Updating..."
       title="Edit Student"
@@ -273,7 +347,12 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
       formId="edit-student-form"
     >
       <form id="edit-student-form" onSubmit={handleSubmit}>
-        <ProfilePictureInput id="edit-student-picture" currentUrl={currentPictureUrl} file={profilePicture} onChange={setProfilePicture} />
+        <ProfilePictureInput
+          id="edit-student-picture"
+          currentUrl={currentPictureUrl}
+          file={profilePicture}
+          onChange={setProfilePicture}
+        />
         <div className="form-grid">
           <div className="form-group full-width">
             <label>— Student Details —</label>
@@ -281,19 +360,39 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
 
           <div className="form-group">
             <label>Student Name *</label>
-            <input type="text" name="studentName" required value={formData.studentName} onChange={handleChange} />
+            <input
+              type="text"
+              name="studentName"
+              required
+              value={formData.studentName}
+              onChange={handleChange}
+            />
           </div>
           <div className="form-group">
             <label>Relationship *</label>
-            <RelationshipSelect value={formData.parentRelationship} onChange={handleChange} />
+            <RelationshipSelect
+              value={formData.parentRelationship}
+              onChange={handleChange}
+            />
           </div>
           <div className="form-group">
             <label>Roll Number</label>
-            <input type="text" name="rollNumber" value={formData.rollNumber} onChange={handleChange} />
+            <input
+              type="text"
+              name="rollNumber"
+              value={formData.rollNumber}
+              onChange={handleChange}
+            />
           </div>
           <div className="form-group">
             <label>Email *</label>
-            <input type="email" name="email" required value={formData.email} onChange={handleChange} />
+            <input
+              type="email"
+              name="email"
+              required
+              value={formData.email}
+              onChange={handleChange}
+            />
           </div>
           <div className="form-group">
             <label>Phone *</label>
@@ -305,51 +404,85 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
               pattern="[0-9]{10}"
               value={formData.phoneNumber}
               onChange={(e) => {
-                const value = e.target.value.replace(/[^0-9]/g, '');
-                if (value.length <= 10) setFormData({ ...formData, phoneNumber: value });
+                const value = e.target.value.replace(/[^0-9]/g, "");
+                if (value.length <= 10)
+                  setFormData({ ...formData, phoneNumber: value });
               }}
             />
           </div>
           <div className="form-group">
             <label>Date of Birth *</label>
-            <input type="date" name="dob" required value={formData.dob} onChange={handleChange} />
+            <input
+              type="date"
+              name="dob"
+              required
+              value={formData.dob}
+              onChange={handleChange}
+            />
           </div>
           <div className="form-group">
             <label>Gender *</label>
-            <select name="genderCode" required value={formData.genderCode} onChange={handleChange}>
+            <select
+              name="genderCode"
+              required
+              value={formData.genderCode}
+              onChange={handleChange}
+            >
               <option value="">Select Gender</option>
-              {GENDER_OPTIONS.map(option => (
-                <option key={option.code} value={option.code}>{option.label}</option>
+              {GENDER_OPTIONS.map((option) => (
+                <option key={option.code} value={option.code}>
+                  {option.label}
+                </option>
               ))}
             </select>
           </div>
           <div className="form-group">
             <label>Class</label>
-            <select name="classId" value={formData.classId} onChange={handleClassChange}>
+            <select
+              name="classId"
+              value={formData.classId}
+              onChange={handleClassChange}
+            >
               <option value="">Select Class</option>
-              {enrollment.classes.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
+              {enrollment.classes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
               ))}
             </select>
           </div>
           <div className="form-group">
             <label>Section</label>
-            <select name="sectionId" value={formData.sectionId} onChange={handleChange}>
+            <select
+              name="sectionId"
+              value={formData.sectionId}
+              onChange={handleChange}
+            >
               <option value="">Select Section</option>
               {enrollment.sections
-                .filter(s => !formData.classId || s.classId === Number(formData.classId))
-                .map(s => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
+                .filter(
+                  (s) =>
+                    !formData.classId || s.classId === Number(formData.classId),
+                )
+                .map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
                 ))}
             </select>
           </div>
           <div className="form-group">
             <label>Session</label>
-            <select name="sessionId" value={formData.sessionId} onChange={handleChange} disabled>
+            <select
+              name="sessionId"
+              value={formData.sessionId}
+              onChange={handleChange}
+              disabled
+            >
               <option value="">No Session</option>
-              {enrollment.sessions.map(s => (
+              {enrollment.sessions.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.yearStart.split('-')[0]}
+                  {s.yearStart.split("-")[0]}
                 </option>
               ))}
             </select>
@@ -361,49 +494,77 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
                 <input
                   type="checkbox"
                   checked={formData.isActive}
-                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, isActive: e.target.checked })
+                  }
                 />
                 <span className="toggle-slider"></span>
               </label>
-              <span className={`toggle-label ${formData.isActive ? 'active' : 'inactive'}`}>
-                {formData.isActive ? 'Active' : 'Inactive'}
+              <span
+                className={`toggle-label ${formData.isActive ? "active" : "inactive"}`}
+              >
+                {formData.isActive ? "Active" : "Inactive"}
               </span>
             </div>
           </div>
         </div>
 
-        <StudentDetailSections values={formData} disabled={saving}
-          onChange={(name, value) => setFormData(current => ({ ...current, [name]: value }))} />
+        <StudentDetailSections
+          values={formData}
+          disabled={saving}
+          onChange={(name, value) =>
+            setFormData((current) => ({ ...current, [name]: value }))
+          }
+        />
 
         <div className="documents-section">
           <div className="documents-header">
             <label>Existing Documents ({existingDocuments.length})</label>
           </div>
           {existingDocuments.length === 0 ? (
-            <p style={{ padding: '12px', color: '#718096', fontSize: '14px' }}>No existing documents</p>
+            <p style={{ padding: "12px", color: "#718096", fontSize: "14px" }}>
+              No existing documents
+            </p>
           ) : (
             existingDocuments.map((doc, index) => (
               <div key={doc.id} className="existing-doc-row-edit">
                 <input
                   type="text"
                   value={doc.name}
-                  onChange={(e) => handleExistingDocNameChange(index, e.target.value)}
+                  onChange={(e) =>
+                    handleExistingDocNameChange(index, e.target.value)
+                  }
                   placeholder="Document Name"
                 />
                 <div className="file-input-wrapper">
                   <input
                     type="file"
                     id={`existing-file-${index}`}
-                    onChange={(e) => handleExistingDocFileChange(index, e.target.files?.[0] || null)}
-                    style={{ display: 'none' }}
+                    onChange={(e) =>
+                      handleExistingDocFileChange(
+                        index,
+                        e.target.files?.[0] || null,
+                      )
+                    }
+                    style={{ display: "none" }}
                   />
-                  <label htmlFor={`existing-file-${index}`} className="file-input-label">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                      <polyline points="7,10 12,15 17,10"/>
-                      <line x1="12" y1="15" x2="12" y2="3"/>
+                  <label
+                    htmlFor={`existing-file-${index}`}
+                    className="file-input-label"
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7,10 12,15 17,10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
                     </svg>
-                    {doc.newFile ? doc.newFile.name : 'Upload'}
+                    {doc.newFile ? doc.newFile.name : "Upload"}
                   </label>
                 </div>
                 <a
@@ -422,7 +583,13 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
         <div className="documents-section">
           <div className="documents-header">
             <label>Add New Documents</label>
-            <button type="button" className="btn-add-doc" onClick={handleAddDocument}><AdminActionIcon action="add" />Add Document
+            <button
+              type="button"
+              className="btn-add-doc"
+              onClick={handleAddDocument}
+            >
+              <AdminActionIcon action="add" />
+              Add Document
             </button>
           </div>
           {newDocuments.map((doc, index) => (
@@ -431,25 +598,46 @@ const EditStudent: React.FC<EditStudentProps> = ({ isOpen, onClose, student, sch
                 type="text"
                 placeholder="Document Name"
                 value={doc.name}
-                onChange={(e) => handleDocumentNameChange(index, e.target.value)}
+                onChange={(e) =>
+                  handleDocumentNameChange(index, e.target.value)
+                }
               />
               <div className="file-input-wrapper">
                 <input
                   type="file"
                   id={`new-file-${index}`}
-                  onChange={(e) => handleDocumentFileChange(index, e.target.files?.[0] || null)}
-                  style={{ display: 'none' }}
+                  onChange={(e) =>
+                    handleDocumentFileChange(index, e.target.files?.[0] || null)
+                  }
+                  style={{ display: "none" }}
                 />
-                <label htmlFor={`new-file-${index}`} className="file-input-label">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="7,10 12,15 17,10"/>
-                    <line x1="12" y1="15" x2="12" y2="3"/>
+                <label
+                  htmlFor={`new-file-${index}`}
+                  className="file-input-label"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7,10 12,15 17,10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
                   </svg>
-                  {doc.file ? doc.file.name : 'Upload'}
+                  {doc.file ? doc.file.name : "Upload"}
                 </label>
               </div>
-              <button type="button" className="btn-remove" onClick={() => handleRemoveNewDocument(index)} aria-label="Remove document"><AdminActionIcon action="delete" /></button>
+              <button
+                type="button"
+                className="btn-remove"
+                onClick={() => handleRemoveNewDocument(index)}
+                aria-label="Remove document"
+              >
+                <AdminActionIcon action="delete" />
+              </button>
             </div>
           ))}
         </div>

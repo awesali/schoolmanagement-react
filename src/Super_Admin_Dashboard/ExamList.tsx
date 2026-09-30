@@ -1,12 +1,14 @@
-import AdminActionIcon from './AdminActionIcon';
-import React, { useState, useEffect } from 'react';
-import { API_BASE_URL } from '../config';
-import { useToastMessageState } from '../components/Toast/Toast';
-import Pagination from './Pagination';
-import AddExam from './AddExam';
-import ExamDetailModal from './ExamDetailModal';
-import './StaffList.css';
+// Exam List: imports and dependencies
+import AdminActionIcon from "./AdminActionIcon";
+import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../config";
+import { useToastMessageState } from "../components/Toast/Toast";
+import Pagination from "./Pagination";
+import AddExam from "./AddExam";
+import ExamDetailModal from "./ExamDetailModal";
+import "./StaffList.css";
 
+// Data types and contracts
 interface Exam {
   examId: number;
   examName: string;
@@ -20,17 +22,22 @@ interface ExamListProps {
   selectedSchoolId: number | null;
 }
 
+// Main component and state
 const ExamList: React.FC<ExamListProps> = ({ selectedSchoolId }) => {
   const [exams, setExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useToastMessageState('error');
+  const [error, setError] = useToastMessageState("error");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [selectedExam, setSelectedExam] = useState<{examId: number, examName: string, examTitle: string} | null>(null);
+  const [selectedExam, setSelectedExam] = useState<{
+    examId: number;
+    examName: string;
+    examTitle: string;
+  } | null>(null);
 
   useEffect(() => {
     if (selectedSchoolId) {
@@ -57,27 +64,30 @@ const ExamList: React.FC<ExamListProps> = ({ selectedSchoolId }) => {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
   const fetchExams = async (page: number = 1, size: number = pageSize) => {
     if (!selectedSchoolId) return;
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/Exam/scheduled-exams?schoolId=${selectedSchoolId}&page=${page}&pageSize=${size}`, {
-        headers: {
-          'accept': '*/*',
-          'Authorization': `Bearer ${token}`,
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `${API_BASE_URL}/api/Exam/scheduled-exams?schoolId=${selectedSchoolId}&page=${page}&pageSize=${size}`,
+        {
+          headers: {
+            accept: "*/*",
+            Authorization: `Bearer ${token}`,
+          },
         },
-      });
+      );
 
       if (response.ok) {
         const result = await response.json();
@@ -93,7 +103,7 @@ const ExamList: React.FC<ExamListProps> = ({ selectedSchoolId }) => {
         setExams([]);
       }
     } catch (err) {
-      setError('Network error occurred');
+      setError("Network error occurred");
       setExams([]);
     } finally {
       setLoading(false);
@@ -117,13 +127,21 @@ const ExamList: React.FC<ExamListProps> = ({ selectedSchoolId }) => {
       <div className="staff-list-header">
         <h2>Exam Schedules</h2>
         <div className="header-buttons">
-          <button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}><AdminActionIcon action="add" />Add Exam
+          <button
+            className="btn btn-primary"
+            onClick={() => setIsAddModalOpen(true)}
+          >
+            <AdminActionIcon action="add" />
+            Add Exam
           </button>
         </div>
       </div>
-      
+
       {exams.length === 0 ? (
-        <div className="staff-list-loading" style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+        <div
+          className="staff-list-loading"
+          style={{ textAlign: "center", padding: "40px", color: "#666" }}
+        >
           No exam schedules available. Please add a new exam.
         </div>
       ) : (
@@ -144,34 +162,29 @@ const ExamList: React.FC<ExamListProps> = ({ selectedSchoolId }) => {
                 {exams.map((exam) => (
                   <tr key={exam.examId}>
                     <td>
-                      <span className="staff-name-link">
-                        {exam.examName}
-                      </span>
+                      <span className="staff-name-link">{exam.examName}</span>
                     </td>
                     <td>
-                      <span className="section-badge">
-                        {exam.examTitle}
-                      </span>
+                      <span className="section-badge">{exam.examTitle}</span>
                     </td>
                     <td>{formatDate(exam.startDate)}</td>
                     <td>{formatDate(exam.endDate)}</td>
                     <td>
-                      <span className="count-badge">
-                        {exam.classCount}
-                      </span>
+                      <span className="count-badge">{exam.classCount}</span>
                     </td>
                     <td>
-                      <button 
+                      <button
                         className="btn-view-docs"
                         onClick={() => {
                           setSelectedExam({
                             examId: exam.examId,
                             examName: exam.examName,
-                            examTitle: exam.examTitle
+                            examTitle: exam.examTitle,
                           });
                           setIsDetailModalOpen(true);
                         }}
-                      ><AdminActionIcon action="view" />
+                      >
+                        <AdminActionIcon action="view" />
                         View Schedule
                       </button>
                     </td>
@@ -198,7 +211,7 @@ const ExamList: React.FC<ExamListProps> = ({ selectedSchoolId }) => {
         schoolId={selectedSchoolId}
         onSuccess={() => {
           fetchExams(currentPage);
-          console.log('Exam created successfully');
+          console.log("Exam created successfully");
         }}
       />
 
@@ -210,7 +223,7 @@ const ExamList: React.FC<ExamListProps> = ({ selectedSchoolId }) => {
         }}
         schoolId={selectedSchoolId}
         examId={selectedExam?.examId || null}
-        examName={`${selectedExam?.examName || ''} - ${selectedExam?.examTitle || ''}`}
+        examName={`${selectedExam?.examName || ""} - ${selectedExam?.examTitle || ""}`}
       />
     </div>
   );

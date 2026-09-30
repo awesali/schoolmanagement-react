@@ -1,8 +1,13 @@
-﻿import React, { useEffect, useState } from "react";
+// Teacher Attendance: imports and dependencies
+import React, { useEffect, useState } from "react";
 import { usePermissions } from "../security/Permissions";
 import { SchoolIcon, teacherRequest, localDate } from "./TeacherWorkspace";
 import "./TeacherWorkspace.css";
+
+// Data types and contracts
 type Entry = { attendanceDate: string; status: string };
+
+// Main component and state
 export default function TeacherAttendance() {
   const { can } = usePermissions();
   const [month, setMonth] = useState(localDate().slice(0, 7));
@@ -14,6 +19,7 @@ export default function TeacherAttendance() {
   const [error, setError] = useState("");
   const [revision, setRevision] = useState(0);
   useEffect(() => {
+    // Constants and helper functions
     let alive = true;
     const last = new Date(
       Number(month.slice(0, 4)),

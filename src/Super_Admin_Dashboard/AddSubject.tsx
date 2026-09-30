@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { API_BASE_URL } from '../config';
-import { useToastMessageState } from '../components/Toast/Toast';
-import Modal from './Modal';
-import './AddStaff.css';
+// Add Subject: imports and dependencies
+import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../config";
+import { useToastMessageState } from "../components/Toast/Toast";
+import Modal from "./Modal";
+import "./AddStaff.css";
 
+// Data types and contracts
 interface AddSubjectProps {
   isOpen: boolean;
   onClose: () => void;
@@ -16,31 +18,40 @@ interface Staff {
   name: string;
 }
 
-const AddSubject: React.FC<AddSubjectProps> = ({ isOpen, onClose, schoolId, onSuccess }) => {
+// Main component and state
+const AddSubject: React.FC<AddSubjectProps> = ({
+  isOpen,
+  onClose,
+  schoolId,
+  onSuccess,
+}) => {
   const [formData, setFormData] = useState({
-    subjectName: '',
+    subjectName: "",
     staffId: 0,
   });
   const [staff, setStaff] = useState<Staff[]>([]);
-  const [error, setError] = useToastMessageState('error');
+  const [error, setError] = useToastMessageState("error");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen && schoolId) {
       fetchStaff();
-      setError('');
+      setError("");
     }
   }, [isOpen, schoolId]);
 
   const fetchStaff = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/Common/by-school/${schoolId}`, {
-        headers: {
-          'accept': '*/*',
-          'Authorization': `Bearer ${token}`,
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `${API_BASE_URL}/api/Common/by-school/${schoolId}`,
+        {
+          headers: {
+            accept: "*/*",
+            Authorization: `Bearer ${token}`,
+          },
         },
-      });
+      );
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data) {
@@ -48,53 +59,53 @@ const AddSubject: React.FC<AddSubjectProps> = ({ isOpen, onClose, schoolId, onSu
         }
       }
     } catch (err) {
-      console.error('Failed to fetch staff');
+      console.error("Failed to fetch staff");
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setLoading(true);
-    
+
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const requestData = {
         subjectName: formData.subjectName,
         schoolId: schoolId,
-        staffId: formData.staffId
+        staffId: formData.staffId,
       };
 
       const response = await fetch(`${API_BASE_URL}/api/Subject/add-subject`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'accept': '*/*',
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          accept: "*/*",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(requestData),
       });
-      
+
       const result = await response.json();
-      
+
       if (response.ok && result.success) {
         handleClear();
         onSuccess();
         onClose();
       } else {
-        setError(result.message || 'Failed to add subject');
+        setError(result.message || "Failed to add subject");
       }
     } catch (err) {
-      console.error('Failed to add subject:', err);
-      setError('Network error. Please try again.');
+      console.error("Failed to add subject:", err);
+      setError("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleClear = () => {
-    setFormData({ subjectName: '', staffId: 0 });
-    setError('');
+    setFormData({ subjectName: "", staffId: 0 });
+    setError("");
   };
 
   return (
@@ -108,11 +119,7 @@ const AddSubject: React.FC<AddSubjectProps> = ({ isOpen, onClose, schoolId, onSu
       onCancel={handleClear}
       formId="add-subject-form"
     >
-      {error && (
-        <div className="error-message">
-          {error}
-        </div>
-      )}
+      {error && <div className="error-message">{error}</div>}
       <form id="add-subject-form" onSubmit={handleSubmit}>
         <div className="form-grid">
           <div className="form-group">
@@ -122,7 +129,9 @@ const AddSubject: React.FC<AddSubjectProps> = ({ isOpen, onClose, schoolId, onSu
               required
               placeholder="e.g., Mathematics, English, Science"
               value={formData.subjectName}
-              onChange={(e) => setFormData({...formData, subjectName: e.target.value})}
+              onChange={(e) =>
+                setFormData({ ...formData, subjectName: e.target.value })
+              }
             />
           </div>
           <div className="form-group">
@@ -130,7 +139,9 @@ const AddSubject: React.FC<AddSubjectProps> = ({ isOpen, onClose, schoolId, onSu
             <select
               required
               value={formData.staffId}
-              onChange={(e) => setFormData({...formData, staffId: Number(e.target.value)})}
+              onChange={(e) =>
+                setFormData({ ...formData, staffId: Number(e.target.value) })
+              }
               className="form-select"
             >
               <option value="">Select Teacher</option>

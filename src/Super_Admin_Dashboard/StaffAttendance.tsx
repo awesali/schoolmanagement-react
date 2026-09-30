@@ -1,16 +1,18 @@
-import AdminActionIcon from './AdminActionIcon';
-import React, { useState, useEffect } from 'react';
-import { API_BASE_URL } from '../config';
-import { useToast } from '../components/Toast/Toast';
-import { TOAST_MESSAGES } from '../constants/toastMessages';
-import { LoadingButton, PageLoader } from '../components/Loader/Loader';
-import './StaffList.css';
-import './StaffAttendance.css';
-import { SearchIcon, ResetIcon } from '../components/Icons/Icons';
-import '../components/Icons/CreateIconButton.css';
+// Staff Attendance: imports and dependencies
+import AdminActionIcon from "./AdminActionIcon";
+import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../config";
+import { useToast } from "../components/Toast/Toast";
+import { TOAST_MESSAGES } from "../constants/toastMessages";
+import { LoadingButton, PageLoader } from "../components/Loader/Loader";
+import "./StaffList.css";
+import "./StaffAttendance.css";
+import { SearchIcon, ResetIcon } from "../components/Icons/Icons";
+import "../components/Icons/CreateIconButton.css";
 
-type AttendanceStatus = 'Present' | 'Absent' | null;
-type View = 'select' | 'mark' | 'history';
+// Data types and contracts
+type AttendanceStatus = "Present" | "Absent" | null;
+type View = "select" | "mark" | "history";
 
 interface StaffAttendanceRecord {
   staffName: string;
@@ -20,65 +22,91 @@ interface StaffAttendanceRecord {
   status: string;
 }
 
+// Constants and helper functions
 const statusStyle = (status: string) => ({
-  display: 'inline-block', padding: '4px 12px', borderRadius: '12px',
-  fontSize: '12px', fontWeight: 600 as const,
-  background: status === 'Present' ? '#c6f6d5' : status === 'Absent' ? '#fed7d7' : status === 'Late' ? '#e9d8fd' : '#fef3c7',
-  color: status === 'Present' ? '#22543d' : status === 'Absent' ? '#742a2a' : status === 'Late' ? '#553c9a' : '#78350f',
+  display: "inline-block",
+  padding: "4px 12px",
+  borderRadius: "12px",
+  fontSize: "12px",
+  fontWeight: 600 as const,
+  background:
+    status === "Present"
+      ? "#c6f6d5"
+      : status === "Absent"
+        ? "#fed7d7"
+        : status === "Late"
+          ? "#e9d8fd"
+          : "#fef3c7",
+  color:
+    status === "Present"
+      ? "#22543d"
+      : status === "Absent"
+        ? "#742a2a"
+        : status === "Late"
+          ? "#553c9a"
+          : "#78350f",
 });
 
 const getLocalDateValue = () => {
   const now = new Date();
   const offset = now.getTimezoneOffset() * 60 * 1000;
-  return new Date(now.getTime() - offset).toISOString().split('T')[0];
+  return new Date(now.getTime() - offset).toISOString().split("T")[0];
 };
 
-
-const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number | null }> = ({ userRole, selectedSchoolId }) => {
+// Main component and state
+const StaffAttendance: React.FC<{
+  userRole?: string;
+  selectedSchoolId?: number | null;
+}> = ({ userRole, selectedSchoolId }) => {
   const toast = useToast();
   const today = getLocalDateValue();
 
   // Admin state
-  const [adminAttendance, setAdminAttendance] = useState<StaffAttendanceRecord[]>([]);
+  const [adminAttendance, setAdminAttendance] = useState<
+    StaffAttendanceRecord[]
+  >([]);
   const [adminLoading, setAdminLoading] = useState(false);
   const [adminFromDate, setAdminFromDate] = useState(today);
   const [adminToDate, setAdminToDate] = useState(today);
   const [isFiltered, setIsFiltered] = useState(false);
 
   // Teacher state
-  const [view, setView] = useState<View>('select');
+  const [view, setView] = useState<View>("select");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [alreadyMarked, setAlreadyMarked] = useState(false);
   const [attendance, setAttendance] = useState<AttendanceStatus>(null);
-  const [fromDate, setFromDate] = useState('');
-  const [toDate, setToDate] = useState('');
-  const [history, setHistory] = useState<{ attendanceDate: string; status: string }[] | null>(null);
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [history, setHistory] = useState<
+    { attendanceDate: string; status: string }[] | null
+  >(null);
   const [historyLoading, setHistoryLoading] = useState(false);
 
   const fetchAdminAttendance = async (from?: string, to?: string) => {
     try {
       setAdminLoading(true);
-      const token = localStorage.getItem('token');
-      const url = from && to
-        ? `${API_BASE_URL}/api/Admin/GetStaffAttendanceHistoryByDate?schoolId=${selectedSchoolId}&fromDate=${from}&toDate=${to}`
-        : `${API_BASE_URL}/api/Admin/GetStaffAttendanceBySchool?schoolId=${selectedSchoolId}`;
+      const token = localStorage.getItem("token");
+      const url =
+        from && to
+          ? `${API_BASE_URL}/api/Admin/GetStaffAttendanceHistoryByDate?schoolId=${selectedSchoolId}&fromDate=${from}&toDate=${to}`
+          : `${API_BASE_URL}/api/Admin/GetStaffAttendanceBySchool?schoolId=${selectedSchoolId}`;
       const response = await fetch(url, {
-        headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
+        headers: { accept: "*/*", Authorization: `Bearer ${token}` },
       });
       if (response.ok) {
         const data = await response.json();
         setAdminAttendance(Array.isArray(data) ? data : []);
       }
     } catch (err) {
-      console.error('Failed to fetch staff attendance');
+      console.error("Failed to fetch staff attendance");
     } finally {
       setAdminLoading(false);
     }
   };
 
   useEffect(() => {
-    if (userRole === '1' && selectedSchoolId) {
+    if (userRole === "1" && selectedSchoolId) {
       setAdminFromDate(today);
       setAdminToDate(today);
       setIsFiltered(false);
@@ -87,11 +115,11 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
   }, [userRole, selectedSchoolId]); // eslint-disable-line
 
   useEffect(() => {
-    if (view === 'history') {
+    if (view === "history") {
       const now = new Date();
       const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      setFromDate(firstOfMonth.toISOString().split('T')[0]);
-      setToDate(now.toISOString().split('T')[0]);
+      setFromDate(firstOfMonth.toISOString().split("T")[0]);
+      setToDate(now.toISOString().split("T")[0]);
     }
   }, [view]);
 
@@ -102,19 +130,32 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
     }
     try {
       setSubmitting(true);
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/Staff/staff/mark-attendance`, {
-        method: 'POST',
-        headers: { 'accept': '*/*', 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ attendanceDate: new Date().toISOString(), status: attendance }),
-      });
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `${API_BASE_URL}/api/Staff/staff/mark-attendance`,
+        {
+          method: "POST",
+          headers: {
+            accept: "*/*",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            attendanceDate: new Date().toISOString(),
+            status: attendance,
+          }),
+        },
+      );
       const result = await response.json();
       if (response.ok && result?.success) {
         setSubmitted(true);
-        toast.success(result.message || TOAST_MESSAGES.attendance.saved(new Date().toLocaleDateString()));
+        toast.success(
+          result.message ||
+            TOAST_MESSAGES.attendance.saved(new Date().toLocaleDateString()),
+        );
       } else {
         const msg = result?.message || TOAST_MESSAGES.attendance.saveFailed;
-        if (msg.toLowerCase().includes('already')) setAlreadyMarked(true);
+        if (msg.toLowerCase().includes("already")) setAlreadyMarked(true);
         toast.error(msg);
       }
     } catch (err) {
@@ -129,10 +170,13 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
     try {
       setHistoryLoading(true);
       setHistory(null);
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/Staff/staff/attendance-history?fromDate=${fromDate}&toDate=${toDate}`, {
-        headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
-      });
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `${API_BASE_URL}/api/Staff/staff/attendance-history?fromDate=${fromDate}&toDate=${toDate}`,
+        {
+          headers: { accept: "*/*", Authorization: `Bearer ${token}` },
+        },
+      );
       if (response.ok) {
         const result = await response.json();
         setHistory(Array.isArray(result) ? result : []);
@@ -145,25 +189,78 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
   };
 
   // --- Super Admin View ---
-  if (userRole === '1') {
-    const presentCount = adminAttendance.filter(s => s.status === 'Present').length;
-    const absentCount = adminAttendance.filter(s => s.status === 'Absent').length;
-    const leaveCount = adminAttendance.filter(s => s.status === 'Leave').length;
-    const lateCount = adminAttendance.filter(s => s.status === 'Late').length;
+  if (userRole === "1") {
+    const presentCount = adminAttendance.filter(
+      (s) => s.status === "Present",
+    ).length;
+    const absentCount = adminAttendance.filter(
+      (s) => s.status === "Absent",
+    ).length;
+    const leaveCount = adminAttendance.filter(
+      (s) => s.status === "Leave",
+    ).length;
+    const lateCount = adminAttendance.filter((s) => s.status === "Late").length;
 
     return (
       <div className="staff-list-container">
         <div className="staff-list-header">
           <h2>Staff Attendance</h2>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-            <input type="date" value={adminFromDate} max={adminToDate} onChange={e => setAdminFromDate(e.target.value)}
-              style={{ padding: '8px 12px', borderRadius: '8px', border: '2px solid #e2e8f0', fontSize: '14px' }} />
-            <span style={{ color: '#718096', fontWeight: 600 }}>to</span>
-            <input type="date" value={adminToDate} min={adminFromDate} max={today} onChange={e => setAdminToDate(e.target.value)}
-              style={{ padding: '8px 12px', borderRadius: '8px', border: '2px solid #e2e8f0', fontSize: '14px' }} />
-            <button type="button" className="create-icon-button" title="Search" aria-label="Search attendance" onClick={() => { setIsFiltered(true); fetchAdminAttendance(adminFromDate, adminToDate); }} disabled={adminLoading}><SearchIcon size={26} /></button>
+          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            <input
+              type="date"
+              value={adminFromDate}
+              max={adminToDate}
+              onChange={(e) => setAdminFromDate(e.target.value)}
+              style={{
+                padding: "8px 12px",
+                borderRadius: "8px",
+                border: "2px solid #e2e8f0",
+                fontSize: "14px",
+              }}
+            />
+            <span style={{ color: "#718096", fontWeight: 600 }}>to</span>
+            <input
+              type="date"
+              value={adminToDate}
+              min={adminFromDate}
+              max={today}
+              onChange={(e) => setAdminToDate(e.target.value)}
+              style={{
+                padding: "8px 12px",
+                borderRadius: "8px",
+                border: "2px solid #e2e8f0",
+                fontSize: "14px",
+              }}
+            />
+            <button
+              type="button"
+              className="create-icon-button"
+              title="Search"
+              aria-label="Search attendance"
+              onClick={() => {
+                setIsFiltered(true);
+                fetchAdminAttendance(adminFromDate, adminToDate);
+              }}
+              disabled={adminLoading}
+            >
+              <SearchIcon size={26} />
+            </button>
             {isFiltered && (
-              <button type="button" className="create-icon-button" title="Reset" aria-label="Reset attendance filters" disabled={adminLoading} onClick={() => { setIsFiltered(false); setAdminFromDate(today); setAdminToDate(today); fetchAdminAttendance(today, today); }}><ResetIcon size={26} /></button>
+              <button
+                type="button"
+                className="create-icon-button"
+                title="Reset"
+                aria-label="Reset attendance filters"
+                disabled={adminLoading}
+                onClick={() => {
+                  setIsFiltered(false);
+                  setAdminFromDate(today);
+                  setAdminToDate(today);
+                  fetchAdminAttendance(today, today);
+                }}
+              >
+                <ResetIcon size={26} />
+              </button>
             )}
           </div>
         </div>
@@ -173,20 +270,29 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
         ) : (
           <>
             <div className="staff-attendance-metrics">
-              {[{ label: 'Present', count: presentCount },
-                { label: 'Absent', count: absentCount },
-                { label: 'Late', count: lateCount },
-                { label: 'On Leave', count: leaveCount }]
-                .map(({ label, count }) => (
-                  <div className="staff-attendance-metric" key={label}>
-                    <span>{label}</span>
-                    <strong>{count}</strong>
-                  </div>
-                ))}
+              {[
+                { label: "Present", count: presentCount },
+                { label: "Absent", count: absentCount },
+                { label: "Late", count: lateCount },
+                { label: "On Leave", count: leaveCount },
+              ].map(({ label, count }) => (
+                <div className="staff-attendance-metric" key={label}>
+                  <span>{label}</span>
+                  <strong>{count}</strong>
+                </div>
+              ))}
             </div>
             <div className="staff-table-wrapper">
               {adminAttendance.length === 0 ? (
-                <p style={{ padding: '20px', textAlign: 'center', color: '#718096' }}>No attendance records found.</p>
+                <p
+                  style={{
+                    padding: "20px",
+                    textAlign: "center",
+                    color: "#718096",
+                  }}
+                >
+                  No attendance records found.
+                </p>
               ) : (
                 <table className="staff-table">
                   <thead>
@@ -206,8 +312,18 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
                         <td>{staff.staffName}</td>
                         <td>{staff.email}</td>
                         <td>{staff.phone}</td>
-                        <td>{staff.attendanceDate.split('T')[0].split('-').reverse().join('/')}</td>
-                        <td><span style={statusStyle(staff.status)}>{staff.status}</span></td>
+                        <td>
+                          {staff.attendanceDate
+                            .split("T")[0]
+                            .split("-")
+                            .reverse()
+                            .join("/")}
+                        </td>
+                        <td>
+                          <span style={statusStyle(staff.status)}>
+                            {staff.status}
+                          </span>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -221,135 +337,387 @@ const StaffAttendance: React.FC<{ userRole?: string; selectedSchoolId?: number |
   }
 
   // --- Selection Screen ---
-  if (view === 'select') return (
-    <div className="staff-list-container">
-      <div className="staff-list-header"><h2>Staff Attendance</h2></div>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '12px' }}>
-        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '8px', letterSpacing: '0.5px', textTransform: 'uppercase', fontWeight: 600 }}>
-          What would you like to do today?
-        </p>
-        <div style={{ display: 'flex', gap: '24px' }}>
-          <div onClick={() => setView('mark')}
-            style={{ cursor: 'pointer', width: '260px', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 16px rgba(18,54,73,0.15)', border: '1px solid var(--border)', background: 'var(--surface)', transition: 'transform 0.2s, box-shadow 0.2s' }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(18,54,73,0.25)'; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(18,54,73,0.15)'; }}
+  if (view === "select")
+    return (
+      <div className="staff-list-container">
+        <div className="staff-list-header">
+          <h2>Staff Attendance</h2>
+        </div>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: "60vh",
+            gap: "12px",
+          }}
+        >
+          <p
+            style={{
+              fontSize: "14px",
+              color: "var(--text-secondary)",
+              marginBottom: "8px",
+              letterSpacing: "0.5px",
+              textTransform: "uppercase",
+              fontWeight: 600,
+            }}
           >
-            <div style={{ background: 'linear-gradient(135deg, var(--primary-color) 0%, #16676b 100%)', padding: '32px 24px', textAlign: 'center' }}>
-              <div style={{ fontSize: '52px', marginBottom: '8px' }}>📋</div>
-              <div style={{ color: 'white', fontWeight: 700, fontSize: '18px' }}>Mark Attendance</div>
+            What would you like to do today?
+          </p>
+          <div style={{ display: "flex", gap: "24px" }}>
+            <div
+              onClick={() => setView("mark")}
+              style={{
+                cursor: "pointer",
+                width: "260px",
+                borderRadius: "16px",
+                overflow: "hidden",
+                boxShadow: "0 4px 16px rgba(18,54,73,0.15)",
+                border: "1px solid var(--border)",
+                background: "var(--surface)",
+                transition: "transform 0.2s, box-shadow 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-4px)";
+                e.currentTarget.style.boxShadow =
+                  "0 8px 24px rgba(18,54,73,0.25)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow =
+                  "0 4px 16px rgba(18,54,73,0.15)";
+              }}
+            >
+              <div
+                style={{
+                  background:
+                    "linear-gradient(135deg, var(--primary-color) 0%, #16676b 100%)",
+                  padding: "32px 24px",
+                  textAlign: "center",
+                }}
+              >
+                <div style={{ fontSize: "52px", marginBottom: "8px" }}>📋</div>
+                <div
+                  style={{ color: "white", fontWeight: 700, fontSize: "18px" }}
+                >
+                  Mark Attendance
+                </div>
+              </div>
+              <div style={{ padding: "16px 24px", textAlign: "center" }}>
+                <div
+                  style={{
+                    fontSize: "13px",
+                    color: "var(--text-secondary)",
+                    marginBottom: "4px",
+                  }}
+                >
+                  Today
+                </div>
+                <div
+                  style={{
+                    fontSize: "15px",
+                    fontWeight: 700,
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  {new Date().toLocaleDateString("en-GB", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </div>
+              </div>
             </div>
-            <div style={{ padding: '16px 24px', textAlign: 'center' }}>
-              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Today</div>
-              <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+
+            <div
+              onClick={() => setView("history")}
+              style={{
+                cursor: "pointer",
+                width: "260px",
+                borderRadius: "16px",
+                overflow: "hidden",
+                boxShadow: "0 4px 16px rgba(8,127,131,0.15)",
+                border: "1px solid var(--border)",
+                background: "var(--surface)",
+                transition: "transform 0.2s, box-shadow 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-4px)";
+                e.currentTarget.style.boxShadow =
+                  "0 8px 24px rgba(8,127,131,0.25)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow =
+                  "0 4px 16px rgba(8,127,131,0.15)";
+              }}
+            >
+              <div
+                style={{
+                  background:
+                    "linear-gradient(135deg, var(--secondary-color) 0%, #16676b 100%)",
+                  padding: "32px 24px",
+                  textAlign: "center",
+                }}
+              >
+                <div style={{ fontSize: "52px", marginBottom: "8px" }}>📅</div>
+                <div
+                  style={{ color: "white", fontWeight: 700, fontSize: "18px" }}
+                >
+                  Previous Attendance
+                </div>
+              </div>
+              <div style={{ padding: "16px 24px", textAlign: "center" }}>
+                <div
+                  style={{
+                    fontSize: "13px",
+                    color: "var(--text-secondary)",
+                    marginBottom: "4px",
+                  }}
+                >
+                  View by date range
+                </div>
+                <div
+                  style={{
+                    fontSize: "15px",
+                    fontWeight: 700,
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  Check History
+                </div>
               </div>
             </div>
           </div>
-
-          <div onClick={() => setView('history')}
-            style={{ cursor: 'pointer', width: '260px', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 16px rgba(8,127,131,0.15)', border: '1px solid var(--border)', background: 'var(--surface)', transition: 'transform 0.2s, box-shadow 0.2s' }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(8,127,131,0.25)'; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(8,127,131,0.15)'; }}
-          >
-            <div style={{ background: 'linear-gradient(135deg, var(--secondary-color) 0%, #16676b 100%)', padding: '32px 24px', textAlign: 'center' }}>
-              <div style={{ fontSize: '52px', marginBottom: '8px' }}>📅</div>
-              <div style={{ color: 'white', fontWeight: 700, fontSize: '18px' }}>Previous Attendance</div>
-            </div>
-            <div style={{ padding: '16px 24px', textAlign: 'center' }}>
-              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>View by date range</div>
-              <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>Check History</div>
-            </div>
-          </div>
         </div>
       </div>
-    </div>
-  );
+    );
 
   // --- Mark Attendance ---
-  if (view === 'mark') return (
-    <div className="staff-list-container">
-      <div className="staff-list-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={() => setView('select')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px' }} aria-label="Back"><AdminActionIcon action="back" /></button>
-          <h2>Mark Attendance</h2>
+  if (view === "mark")
+    return (
+      <div className="staff-list-container">
+        <div className="staff-list-header">
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <button
+              onClick={() => setView("select")}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "20px",
+              }}
+              aria-label="Back"
+            >
+              <AdminActionIcon action="back" />
+            </button>
+            <h2>Mark Attendance</h2>
+          </div>
+          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            <span
+              style={{ fontSize: "14px", color: "#4a5568", fontWeight: 600 }}
+            >
+              📅{" "}
+              {new Date().toLocaleDateString("en-GB", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })}
+            </span>
+            <LoadingButton
+              className="btn btn-primary"
+              onClick={handleSubmit}
+              loading={submitting}
+              loadingText="Submitting..."
+              disabled={submitted}
+            >
+              {submitted ? "✓ Submitted" : "Submit Attendance"}
+            </LoadingButton>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <span style={{ fontSize: '14px', color: '#4a5568', fontWeight: 600 }}>
-            📅 {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-          </span>
-          <LoadingButton className="btn btn-primary" onClick={handleSubmit} loading={submitting}
-            loadingText="Submitting..." disabled={submitted}>
-            {submitted ? '✓ Submitted' : 'Submit Attendance'}
-          </LoadingButton>
-        </div>
-      </div>
 
-      {alreadyMarked && (
-        <div style={{ background: '#fef3c7', color: '#78350f', padding: '12px 20px', borderRadius: '8px', marginBottom: '16px', fontWeight: 600 }}>
-          ⚠️ Attendance has already been marked for today ({new Date().toLocaleDateString()}).
-        </div>
-      )}
+        {alreadyMarked && (
+          <div
+            style={{
+              background: "#fef3c7",
+              color: "#78350f",
+              padding: "12px 20px",
+              borderRadius: "8px",
+              marginBottom: "16px",
+              fontWeight: 600,
+            }}
+          >
+            ⚠️ Attendance has already been marked for today (
+            {new Date().toLocaleDateString()}).
+          </div>
+        )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '50vh', gap: '24px' }}>
-        <div style={{ textAlign: 'center' }}>
-          <p style={{ fontSize: '16px', color: 'var(--text-secondary)', marginBottom: '24px', fontWeight: 600 }}>
-            Mark your attendance for today
-          </p>
-          <div style={{ display: 'flex', gap: '16px' }}>
-            <button onClick={() => setAttendance('Present')} style={{
-              padding: '16px 32px', borderRadius: '12px', border: '3px solid', cursor: 'pointer',
-              fontWeight: 700, fontSize: '16px', transition: 'all 0.2s',
-              borderColor: attendance === 'Present' ? '#22543d' : '#e2e8f0',
-              background: attendance === 'Present' ? '#c6f6d5' : 'white',
-              color: attendance === 'Present' ? '#22543d' : '#718096',
-              boxShadow: attendance === 'Present' ? '0 4px 12px rgba(34, 84, 61, 0.2)' : 'none',
-            }}><AdminActionIcon action="present" />Present</button>
-            <button onClick={() => setAttendance('Absent')} style={{
-              padding: '16px 32px', borderRadius: '12px', border: '3px solid', cursor: 'pointer',
-              fontWeight: 700, fontSize: '16px', transition: 'all 0.2s',
-              borderColor: attendance === 'Absent' ? '#742a2a' : '#e2e8f0',
-              background: attendance === 'Absent' ? '#fed7d7' : 'white',
-              color: attendance === 'Absent' ? '#742a2a' : '#718096',
-              boxShadow: attendance === 'Absent' ? '0 4px 12px rgba(116, 42, 42, 0.2)' : 'none',
-            }}><AdminActionIcon action="absent" />Absent</button>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: "50vh",
+            gap: "24px",
+          }}
+        >
+          <div style={{ textAlign: "center" }}>
+            <p
+              style={{
+                fontSize: "16px",
+                color: "var(--text-secondary)",
+                marginBottom: "24px",
+                fontWeight: 600,
+              }}
+            >
+              Mark your attendance for today
+            </p>
+            <div style={{ display: "flex", gap: "16px" }}>
+              <button
+                onClick={() => setAttendance("Present")}
+                style={{
+                  padding: "16px 32px",
+                  borderRadius: "12px",
+                  border: "3px solid",
+                  cursor: "pointer",
+                  fontWeight: 700,
+                  fontSize: "16px",
+                  transition: "all 0.2s",
+                  borderColor: attendance === "Present" ? "#22543d" : "#e2e8f0",
+                  background: attendance === "Present" ? "#c6f6d5" : "white",
+                  color: attendance === "Present" ? "#22543d" : "#718096",
+                  boxShadow:
+                    attendance === "Present"
+                      ? "0 4px 12px rgba(34, 84, 61, 0.2)"
+                      : "none",
+                }}
+              >
+                <AdminActionIcon action="present" />
+                Present
+              </button>
+              <button
+                onClick={() => setAttendance("Absent")}
+                style={{
+                  padding: "16px 32px",
+                  borderRadius: "12px",
+                  border: "3px solid",
+                  cursor: "pointer",
+                  fontWeight: 700,
+                  fontSize: "16px",
+                  transition: "all 0.2s",
+                  borderColor: attendance === "Absent" ? "#742a2a" : "#e2e8f0",
+                  background: attendance === "Absent" ? "#fed7d7" : "white",
+                  color: attendance === "Absent" ? "#742a2a" : "#718096",
+                  boxShadow:
+                    attendance === "Absent"
+                      ? "0 4px 12px rgba(116, 42, 42, 0.2)"
+                      : "none",
+                }}
+              >
+                <AdminActionIcon action="absent" />
+                Absent
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
 
   // --- History ---
   return (
     <div className="staff-list-container">
       <div className="staff-list-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={() => setView('select')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px' }} aria-label="Back"><AdminActionIcon action="back" /></button>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <button
+            onClick={() => setView("select")}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "20px",
+            }}
+            aria-label="Back"
+          >
+            <AdminActionIcon action="back" />
+          </button>
           <h2>Attendance History</h2>
         </div>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <input type="date" value={fromDate} max={toDate || today} onChange={(e) => setFromDate(e.target.value)} style={{ padding: '8px 12px', borderRadius: '8px', border: '2px solid #e2e8f0', fontSize: '14px' }} />
-          <span style={{ color: '#718096', fontWeight: 600 }}>to</span>
-          <input type="date" value={toDate} min={fromDate} max={today} onChange={(e) => setToDate(e.target.value)} style={{ padding: '8px 12px', borderRadius: '8px', border: '2px solid #e2e8f0', fontSize: '14px' }} />
-          <LoadingButton className="btn btn-primary" onClick={fetchHistory} loading={historyLoading}
-            loadingText="Loading..." disabled={!fromDate || !toDate}>View</LoadingButton>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <input
+            type="date"
+            value={fromDate}
+            max={toDate || today}
+            onChange={(e) => setFromDate(e.target.value)}
+            style={{
+              padding: "8px 12px",
+              borderRadius: "8px",
+              border: "2px solid #e2e8f0",
+              fontSize: "14px",
+            }}
+          />
+          <span style={{ color: "#718096", fontWeight: 600 }}>to</span>
+          <input
+            type="date"
+            value={toDate}
+            min={fromDate}
+            max={today}
+            onChange={(e) => setToDate(e.target.value)}
+            style={{
+              padding: "8px 12px",
+              borderRadius: "8px",
+              border: "2px solid #e2e8f0",
+              fontSize: "14px",
+            }}
+          />
+          <LoadingButton
+            className="btn btn-primary"
+            onClick={fetchHistory}
+            loading={historyLoading}
+            loadingText="Loading..."
+            disabled={!fromDate || !toDate}
+          >
+            View
+          </LoadingButton>
         </div>
       </div>
 
       {history !== null && (
-        <div className="staff-table-wrapper" style={{ marginTop: '12px' }}>
+        <div className="staff-table-wrapper" style={{ marginTop: "12px" }}>
           {history.length === 0 ? (
-            <p style={{ padding: '20px', textAlign: 'center', color: '#718096' }}>No attendance records found for this date range.</p>
+            <p
+              style={{ padding: "20px", textAlign: "center", color: "#718096" }}
+            >
+              No attendance records found for this date range.
+            </p>
           ) : (
             <table className="staff-table">
               <thead>
-                <tr><th>#</th><th>Date</th><th>Status</th></tr>
+                <tr>
+                  <th>#</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                </tr>
               </thead>
               <tbody>
                 {history.map((record, index) => (
                   <tr key={index}>
                     <td>{index + 1}</td>
-                    <td>{record.attendanceDate.split('T')[0].split('-').reverse().join('/')}</td>
-                    <td><span className={`status-badge ${record.status === 'Present' ? 'active' : 'inactive'}`}>{record.status}</span></td>
+                    <td>
+                      {record.attendanceDate
+                        .split("T")[0]
+                        .split("-")
+                        .reverse()
+                        .join("/")}
+                    </td>
+                    <td>
+                      <span
+                        className={`status-badge ${record.status === "Present" ? "active" : "inactive"}`}
+                      >
+                        {record.status}
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>

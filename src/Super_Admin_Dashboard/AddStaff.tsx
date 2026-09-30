@@ -1,14 +1,20 @@
-import AdminActionIcon from './AdminActionIcon';
-import React, { useState, useEffect } from 'react';
-import { API_BASE_URL } from '../config';
-import { importDateError, formatImportDate } from '../utils/importDate';
-import { useToastMessageState } from '../components/Toast/Toast';
-import Modal from './Modal';
-import './AddStaff.css';
-import StaffDetailSections, { staffDetailValues, appendStaffDetails, validateStaffDetails } from './StaffDetailSections';
-import { GENDER_OPTIONS } from '../utils/gender';
-import { EMPLOYMENT_TYPES } from '../utils/employmentTypes';
+// Add Staff: imports and dependencies
+import AdminActionIcon from "./AdminActionIcon";
+import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../config";
+import { importDateError, formatImportDate } from "../utils/importDate";
+import { useToastMessageState } from "../components/Toast/Toast";
+import Modal from "./Modal";
+import "./AddStaff.css";
+import StaffDetailSections, {
+  staffDetailValues,
+  appendStaffDetails,
+  validateStaffDetails,
+} from "./StaffDetailSections";
+import { GENDER_OPTIONS } from "../utils/gender";
+import { EMPLOYMENT_TYPES } from "../utils/employmentTypes";
 
+// Data types and contracts
 interface AddStaffProps {
   isOpen: boolean;
   onClose: () => void;
@@ -21,40 +27,48 @@ interface Role {
   roleName: string;
 }
 
-const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSuccess }) => {
+// Main component and state
+const AddStaff: React.FC<AddStaffProps> = ({
+  isOpen,
+  onClose,
+  schoolId,
+  onSuccess,
+}) => {
   const [formData, setFormData] = useState({
-    name: '',
-    dob: '',
-    genderCode: '',
-    doj: '',
+    name: "",
+    dob: "",
+    genderCode: "",
+    doj: "",
     roleId: 0,
-    employmentType: '',
-    email: '',
-    phone: '',
-    ...staffDetailValues()
+    employmentType: "",
+    email: "",
+    phone: "",
+    ...staffDetailValues(),
   });
   const [roles, setRoles] = useState<Role[]>([]);
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
-  const [profilePreview, setProfilePreview] = useState('');
-  const [documents, setDocuments] = useState<Array<{ name: string; file: File }>>([]);
-  const [, setError] = useToastMessageState('error');
+  const [profilePreview, setProfilePreview] = useState("");
+  const [documents, setDocuments] = useState<
+    Array<{ name: string; file: File }>
+  >([]);
+  const [, setError] = useToastMessageState("error");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setSubmitting(false);
       fetchRoles();
-      setError(''); // Clear any previous errors when modal opens
+      setError(""); // Clear any previous errors when modal opens
     }
   }, [isOpen]);
 
   const fetchRoles = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const response = await fetch(`${API_BASE_URL}/api/Admin/Get-roles`, {
         headers: {
-          'accept': '*/*',
-          'Authorization': `Bearer ${token}`,
+          accept: "*/*",
+          Authorization: `Bearer ${token}`,
         },
       });
       if (response.ok) {
@@ -64,82 +78,92 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
         }
       }
     } catch (err) {
-      console.error('Failed to fetch roles');
+      console.error("Failed to fetch roles");
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const detailError = validateStaffDetails(formData);
-    if (detailError) { setError(detailError); return; }
-    const dateError = importDateError('Date of Birth', formatImportDate(formData.dob)) || importDateError('Date of Joining', formatImportDate(formData.doj));
-    if (dateError) { setError(dateError); return; }
+    if (detailError) {
+      setError(detailError);
+      return;
+    }
+    const dateError =
+      importDateError("Date of Birth", formatImportDate(formData.dob)) ||
+      importDateError("Date of Joining", formatImportDate(formData.doj));
+    if (dateError) {
+      setError(dateError);
+      return;
+    }
     if (submitting) return;
-    setError(''); // Clear previous errors
-    
+    setError(""); // Clear previous errors
+
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const formDataToSend = new FormData();
-      
-      formDataToSend.append('Name', formData.name);
-      formDataToSend.append('Email', formData.email);
-      formDataToSend.append('Phone', formData.phone);
-      formDataToSend.append('Address', formData.address);
+
+      formDataToSend.append("Name", formData.name);
+      formDataToSend.append("Email", formData.email);
+      formDataToSend.append("Phone", formData.phone);
+      formDataToSend.append("Address", formData.address);
       appendStaffDetails(formDataToSend, formData);
-      formDataToSend.append('DOB', formData.dob);
-      formDataToSend.append('GenderCode', formData.genderCode);
-      formDataToSend.append('DOJ', formData.doj);
-      formDataToSend.append('RoleId', formData.roleId.toString());
-      formDataToSend.append('EmploymentType', formData.employmentType);
-      formDataToSend.append('SchoolId', schoolId?.toString() || '0');
+      formDataToSend.append("DOB", formData.dob);
+      formDataToSend.append("GenderCode", formData.genderCode);
+      formDataToSend.append("DOJ", formData.doj);
+      formDataToSend.append("RoleId", formData.roleId.toString());
+      formDataToSend.append("EmploymentType", formData.employmentType);
+      formDataToSend.append("SchoolId", schoolId?.toString() || "0");
 
       // The API stores the profile picture separately but receives it through
       // the same multipart document arrays at matching indexes.
       if (profilePicture) {
-        formDataToSend.append('DocumentNames', 'Profile Picture');
-        formDataToSend.append('Files', profilePicture);
+        formDataToSend.append("DocumentNames", "Profile Picture");
+        formDataToSend.append("Files", profilePicture);
       }
-      
+
       // Only append documents if they exist and are valid
-      const validDocuments = documents.filter(doc => doc.file && doc.name.trim());
-      validDocuments.forEach(doc => {
-        formDataToSend.append('DocumentNames', doc.name);
-        formDataToSend.append('Files', doc.file);
+      const validDocuments = documents.filter(
+        (doc) => doc.file && doc.name.trim(),
+      );
+      validDocuments.forEach((doc) => {
+        formDataToSend.append("DocumentNames", doc.name);
+        formDataToSend.append("Files", doc.file);
       });
-      
-      console.log('Adding staff with:', {
+
+      console.log("Adding staff with:", {
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
-        documentsCount: validDocuments.length
+        documentsCount: validDocuments.length,
       });
 
       setSubmitting(true);
 
       const response = await fetch(`${API_BASE_URL}/api/Admin/add-staff`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'accept': '*/*',
-          'Authorization': `Bearer ${token}`,
+          accept: "*/*",
+          Authorization: `Bearer ${token}`,
         },
         body: formDataToSend,
       });
-      
+
       const result = await response.json();
-      console.log('API Response:', result);
-      
+      console.log("API Response:", result);
+
       if (response.ok && result.success) {
         handleClear();
         onSuccess();
         onClose();
       } else {
         // Show error message from API
-        console.error('API Error:', result);
+        console.error("API Error:", result);
         setError(result.message || `Failed to add staff (${response.status})`);
       }
     } catch (err) {
-      console.error('Failed to add staff:', err);
-      setError('Network error. Please try again.');
+      console.error("Failed to add staff:", err);
+      setError("Network error. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -147,24 +171,24 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
 
   const handleClear = () => {
     setFormData({
-      name: '',
-      dob: '',
-      genderCode: '',
-      doj: '',
+      name: "",
+      dob: "",
+      genderCode: "",
+      doj: "",
       roleId: roles.length > 0 ? roles[0].id : 2,
-      employmentType: '',
-      email: '',
-      phone: '',
-      ...staffDetailValues()
+      employmentType: "",
+      email: "",
+      phone: "",
+      ...staffDetailValues(),
     });
     setProfilePicture(null);
-    setProfilePreview('');
+    setProfilePreview("");
     setDocuments([]);
-    setError(''); // Clear errors when clearing form
+    setError(""); // Clear errors when clearing form
   };
 
   const handleAddDocument = () => {
-    setDocuments([...documents, { name: '', file: null as any }]);
+    setDocuments([...documents, { name: "", file: null as any }]);
   };
 
   const handleRemoveDocument = (index: number) => {
@@ -188,7 +212,9 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
   return (
     <Modal
       isOpen={isOpen}
-      onClose={() => { if (!submitting) onClose(); }}
+      onClose={() => {
+        if (!submitting) onClose();
+      }}
       title="Add New Staff"
       submitLabel="Add Staff"
       onCancel={handleClear}
@@ -198,151 +224,231 @@ const AddStaff: React.FC<AddStaffProps> = ({ isOpen, onClose, schoolId, onSucces
     >
       <form id="add-staff-form" onSubmit={handleSubmit}>
         <div className="profile-upload-area">
-          <input id="staff-profile-picture" type="file" accept="image/jpeg,image/png,image/webp"
+          <input
+            id="staff-profile-picture"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
             onChange={(e) => {
               const file = e.target.files?.[0] || null;
               setProfilePicture(file);
-              setProfilePreview(file ? URL.createObjectURL(file) : '');
-            }} />
-          <label htmlFor="staff-profile-picture" className={`profile-upload-circle ${profilePreview ? 'has-image' : ''}`}>
-            {profilePreview ? <img src={profilePreview} alt="Staff preview" /> : <span>+</span>}
+              setProfilePreview(file ? URL.createObjectURL(file) : "");
+            }}
+          />
+          <label
+            htmlFor="staff-profile-picture"
+            className={`profile-upload-circle ${profilePreview ? "has-image" : ""}`}
+          >
+            {profilePreview ? (
+              <img src={profilePreview} alt="Staff preview" />
+            ) : (
+              <span>+</span>
+            )}
           </label>
-          <div className="profile-upload-title">Add Profile Picture (Optional)</div>
+          <div className="profile-upload-title">
+            Add Profile Picture (Optional)
+          </div>
           <small>JPG, PNG or WebP · Max 5 MB</small>
         </div>
         <div className="form-grid">
-            <div className="form-group">
-              <label>Name *</label>
+          <div className="form-group">
+            <label>Name *</label>
+            <input
+              type="text"
+              required
+              value={formData.name}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+            />
+          </div>
+          <div className="form-group">
+            <label>Email *</label>
+            <input
+              type="email"
+              required
+              value={formData.email}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
+            />
+          </div>
+          <div className="form-group">
+            <label>Phone *</label>
+            <input
+              type="tel"
+              required
+              maxLength={10}
+              pattern="[0-9]{10}"
+              value={formData.phone}
+              onChange={(e) => {
+                const value = e.target.value.replace(/[^0-9]/g, "");
+                if (value.length <= 10) {
+                  setFormData({ ...formData, phone: value });
+                }
+              }}
+            />
+          </div>
+          <div className="form-group">
+            <label>Date of Birth *</label>
+            <input
+              type="date"
+              onInvalid={(event) =>
+                event.currentTarget.setCustomValidity(
+                  "Choose a valid date using the calendar or the format shown in this field. CSV dates accept MM-DD-YYYY or MM/DD/YYYY, e.g. 01-31-2010 or 1/31/2010.",
+                )
+              }
+              onInput={(event) => event.currentTarget.setCustomValidity("")}
+              required
+              value={formData.dob}
+              onChange={(e) =>
+                setFormData({ ...formData, dob: e.target.value })
+              }
+            />
+            <small>
+              Use the calendar or the date format shown above. CSV: MM-DD-YYYY
+              or MM/DD/YYYY (e.g. 01-31-2010 or 1/31/2010).
+            </small>
+          </div>
+          <div className="form-group">
+            <label>Gender *</label>
+            <select
+              required
+              value={formData.genderCode}
+              onChange={(e) =>
+                setFormData({ ...formData, genderCode: e.target.value })
+              }
+            >
+              <option value="">Select Gender</option>
+              {GENDER_OPTIONS.map((option) => (
+                <option key={option.code} value={option.code}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Date of Joining *</label>
+            <input
+              type="date"
+              onInvalid={(event) =>
+                event.currentTarget.setCustomValidity(
+                  "Choose a valid date using the calendar or the format shown in this field. CSV dates accept MM-DD-YYYY or MM/DD/YYYY, e.g. 01-31-2010 or 1/31/2010.",
+                )
+              }
+              onInput={(event) => event.currentTarget.setCustomValidity("")}
+              required
+              value={formData.doj}
+              onChange={(e) =>
+                setFormData({ ...formData, doj: e.target.value })
+              }
+            />
+            <small>
+              Use the calendar or the date format shown above. CSV: MM-DD-YYYY
+              or MM/DD/YYYY (e.g. 01-31-2010 or 1/31/2010).
+            </small>
+          </div>
+          <div className="form-group">
+            <label>Role *</label>
+            <select
+              required
+              value={formData.roleId}
+              onChange={(e) =>
+                setFormData({ ...formData, roleId: Number(e.target.value) })
+              }
+            >
+              <option value="">Select Role</option>
+              {roles.map((role) => (
+                <option key={role.id} value={role.id}>
+                  {role.roleName}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Employment Type *</label>
+            <select
+              required
+              value={formData.employmentType}
+              onChange={(e) =>
+                setFormData({ ...formData, employmentType: e.target.value })
+              }
+            >
+              <option value="">Select Employment Type</option>
+              {EMPLOYMENT_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <StaffDetailSections
+          values={formData}
+          disabled={submitting}
+          onChange={(key, value) =>
+            setFormData((current) => ({ ...current, [key]: value }))
+          }
+        />
+
+        <div className="documents-section">
+          <div className="documents-header">
+            <label>Documents</label>
+            <button
+              type="button"
+              className="btn-add-doc"
+              onClick={handleAddDocument}
+            >
+              <AdminActionIcon action="add" />
+              Add Document
+            </button>
+          </div>
+          {documents.map((doc, index) => (
+            <div key={index} className="new-document-row">
               <input
                 type="text"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                placeholder="Document Name"
+                value={doc.name}
+                onChange={(e) =>
+                  handleDocumentNameChange(index, e.target.value)
+                }
               />
-            </div>
-            <div className="form-group">
-              <label>Email *</label>
-              <input
-                type="email"
-                required
-                value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
-              />
-            </div>
-            <div className="form-group">
-              <label>Phone *</label>
-              <input
-                type="tel"
-                required
-                maxLength={10}
-                pattern="[0-9]{10}"
-                value={formData.phone}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/[^0-9]/g, '');
-                  if (value.length <= 10) {
-                    setFormData({...formData, phone: value});
+              <div className="file-input-wrapper">
+                <input
+                  type="file"
+                  id={`file-${index}`}
+                  onChange={(e) =>
+                    handleDocumentFileChange(index, e.target.files?.[0] || null)
                   }
-                }}
-              />
-            </div>
-            <div className="form-group">
-              <label>Date of Birth *</label>
-              <input
-                type="date"
-              onInvalid={event => event.currentTarget.setCustomValidity('Choose a valid date using the calendar or the format shown in this field. CSV dates accept MM-DD-YYYY or MM/DD/YYYY, e.g. 01-31-2010 or 1/31/2010.')}
-              onInput={event => event.currentTarget.setCustomValidity('')}
-                required
-                value={formData.dob}
-                onChange={(e) => setFormData({...formData, dob: e.target.value})}
-              />
-            <small>Use the calendar or the date format shown above. CSV: MM-DD-YYYY or MM/DD/YYYY (e.g. 01-31-2010 or 1/31/2010).</small>
-            </div>
-            <div className="form-group">
-              <label>Gender *</label>
-              <select
-                required
-                value={formData.genderCode}
-                onChange={(e) => setFormData({...formData, genderCode: e.target.value})}
+                  style={{ display: "none" }}
+                />
+                <label htmlFor={`file-${index}`} className="file-input-label">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7,10 12,15 17,10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
+                  {doc.file ? doc.file.name : "Upload"}
+                </label>
+              </div>
+              <button
+                type="button"
+                className="btn-remove"
+                onClick={() => handleRemoveDocument(index)}
+                aria-label="Remove document"
               >
-                <option value="">Select Gender</option>
-                {GENDER_OPTIONS.map(option => (
-                  <option key={option.code} value={option.code}>{option.label}</option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Date of Joining *</label>
-              <input
-                type="date"
-              onInvalid={event => event.currentTarget.setCustomValidity('Choose a valid date using the calendar or the format shown in this field. CSV dates accept MM-DD-YYYY or MM/DD/YYYY, e.g. 01-31-2010 or 1/31/2010.')}
-              onInput={event => event.currentTarget.setCustomValidity('')}
-                required
-                value={formData.doj}
-                onChange={(e) => setFormData({...formData, doj: e.target.value})}
-              />
-            <small>Use the calendar or the date format shown above. CSV: MM-DD-YYYY or MM/DD/YYYY (e.g. 01-31-2010 or 1/31/2010).</small>
-            </div>
-            <div className="form-group">
-              <label>Role *</label>
-              <select
-                required
-                value={formData.roleId}
-                onChange={(e) => setFormData({...formData, roleId: Number(e.target.value)})}
-              >
-                <option value="">Select Role</option>
-                {roles.map((role) => (
-                  <option key={role.id} value={role.id}>
-                    {role.roleName}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Employment Type *</label>
-              <select required value={formData.employmentType}
-                onChange={(e) => setFormData({...formData, employmentType: e.target.value})}>
-                <option value="">Select Employment Type</option>
-                {EMPLOYMENT_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
-              </select>
-            </div>
-          </div>
-
-          <StaffDetailSections values={formData} disabled={submitting} onChange={(key, value) => setFormData(current => ({ ...current, [key]: value }))} />
-
-          <div className="documents-section">
-            <div className="documents-header">
-              <label>Documents</label>
-              <button type="button" className="btn-add-doc" onClick={handleAddDocument}><AdminActionIcon action="add" />Add Document
+                <AdminActionIcon action="delete" />
               </button>
             </div>
-            {documents.map((doc, index) => (
-              <div key={index} className="new-document-row">
-                <input
-                  type="text"
-                  placeholder="Document Name"
-                  value={doc.name}
-                  onChange={(e) => handleDocumentNameChange(index, e.target.value)}
-                />
-                <div className="file-input-wrapper">
-                  <input
-                    type="file"
-                    id={`file-${index}`}
-                    onChange={(e) => handleDocumentFileChange(index, e.target.files?.[0] || null)}
-                    style={{ display: 'none' }}
-                  />
-                  <label htmlFor={`file-${index}`} className="file-input-label">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                      <polyline points="7,10 12,15 17,10"/>
-                      <line x1="12" y1="15" x2="12" y2="3"/>
-                    </svg>
-                    {doc.file ? doc.file.name : 'Upload'}
-                  </label>
-                </div>
-                <button type="button" className="btn-remove" onClick={() => handleRemoveDocument(index)} aria-label="Remove document"><AdminActionIcon action="delete" /></button>
-              </div>
-            ))}
-          </div>
+          ))}
+        </div>
       </form>
     </Modal>
   );

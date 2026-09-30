@@ -1,14 +1,23 @@
+// Teacher Portal: imports and dependencies
 import React, { useEffect, useMemo, useState } from "react";
 import { profilePictureUrl } from "./ProfilePictureInput";
 import { API_BASE_URL } from "../config";
 import { localDate, SchoolIcon, teacherRequest } from "./TeacherWorkspace";
 import "./TeacherWorkspace.css";
-import { downloadStudyMaterial, isUploadedStudyMaterial } from "../Student/studyMaterialFiles";
+import {
+  downloadStudyMaterial,
+  isUploadedStudyMaterial,
+} from "../Student/studyMaterialFiles";
 import SyllabusProgress from "./SyllabusProgress";
 import SchoolFinanceDocument from "./SchoolFinanceDocument";
 
+// Data types and contracts
 export type TeacherPortalPage =
-  "Homework & Assignments" | "Syllabus Progress" | "Calendar" | "Study Material" | "My Profile";
+  | "Homework & Assignments"
+  | "Syllabus Progress"
+  | "Calendar"
+  | "Study Material"
+  | "My Profile";
 type Navigate = (page: string, type?: "student" | "staff") => void;
 type TeachingOption = {
   sectionId: number;
@@ -18,6 +27,7 @@ type TeachingOption = {
   subjectName: string;
 };
 
+// Main component and state
 function Header({
   eyebrow,
   title,
@@ -319,19 +329,28 @@ function StudyMaterial() {
         body.append("description", form.description);
         body.append("resourceType", form.resourceType);
         body.append("file", file);
-        const response = await fetch(API_BASE_URL + "/api/Teacher/study-materials/upload", {
-          method: "POST", headers: { Authorization: "Bearer " + localStorage.getItem("token") }, body,
-        });
+        const response = await fetch(
+          API_BASE_URL + "/api/Teacher/study-materials/upload",
+          {
+            method: "POST",
+            headers: {
+              Authorization: "Bearer " + localStorage.getItem("token"),
+            },
+            body,
+          },
+        );
         const result = await response.json();
-        if (!response.ok || result.success === false) throw new Error(result.message || "Upload failed.");
-      } else await teacherRequest("/api/Teacher/study-materials", {
-        method: "POST",
-        body: JSON.stringify({
-          ...form,
-          sectionId: option.sectionId,
-          subjectId: option.subjectId,
-        }),
-      });
+        if (!response.ok || result.success === false)
+          throw new Error(result.message || "Upload failed.");
+      } else
+        await teacherRequest("/api/Teacher/study-materials", {
+          method: "POST",
+          body: JSON.stringify({
+            ...form,
+            sectionId: option.sectionId,
+            subjectId: option.subjectId,
+          }),
+        });
       setOpen(false);
       setFile(null);
       setSource("Link");
@@ -396,7 +415,11 @@ function StudyMaterial() {
             Resource type
             <select
               value={form.resourceType}
-              onChange={(e) => { setForm({ ...form, resourceType: e.target.value }); setFile(null); if (e.target.value === "Link") setSource("Link"); }}
+              onChange={(e) => {
+                setForm({ ...form, resourceType: e.target.value });
+                setFile(null);
+                if (e.target.value === "Link") setSource("Link");
+              }}
             >
               {["Link", "PDF", "Worksheet", "Notes"].map((x) => (
                 <option key={x}>{x}</option>
@@ -411,20 +434,67 @@ function StudyMaterial() {
               onChange={(e) => setForm({ ...form, title: e.target.value })}
             />
           </label>
-          <div className="tp-wide tp-resource-source" role="group" aria-label="Resource source">
-            <label><input type="radio" name="material-source" checked={source === "Link"} onChange={() => { setSource("Link"); setFile(null); }} /> Link</label>
-            {form.resourceType !== "Link" && <label><input type="radio" name="material-source" checked={source === "Upload"} onChange={() => { setSource("Upload"); setForm({ ...form, resourceUrl: "" }); }} /> Upload file</label>}
+          <div
+            className="tp-wide tp-resource-source"
+            role="group"
+            aria-label="Resource source"
+          >
+            <label>
+              <input
+                type="radio"
+                name="material-source"
+                checked={source === "Link"}
+                onChange={() => {
+                  setSource("Link");
+                  setFile(null);
+                }}
+              />{" "}
+              Link
+            </label>
+            {form.resourceType !== "Link" && (
+              <label>
+                <input
+                  type="radio"
+                  name="material-source"
+                  checked={source === "Upload"}
+                  onChange={() => {
+                    setSource("Upload");
+                    setForm({ ...form, resourceUrl: "" });
+                  }}
+                />{" "}
+                Upload file
+              </label>
+            )}
           </div>
-          {source === "Link" || form.resourceType === "Link" ? <label>
-            Resource link
-            <input type="url" required placeholder="https://example.com/material" value={form.resourceUrl}
-              onChange={(e) => setForm({ ...form, resourceUrl: e.target.value })} />
-          </label> : <label>
-            {form.resourceType} file
-            <input type="file" required accept={form.resourceType === "PDF" ? ".pdf" : ".pdf,.doc,.docx,.png,.jpg,.jpeg"}
-              onChange={(e) => setFile(e.target.files?.[0] || null)} />
-            <small>Maximum 100 MB</small>
-          </label>}
+          {source === "Link" || form.resourceType === "Link" ? (
+            <label>
+              Resource link
+              <input
+                type="url"
+                required
+                placeholder="https://example.com/material"
+                value={form.resourceUrl}
+                onChange={(e) =>
+                  setForm({ ...form, resourceUrl: e.target.value })
+                }
+              />
+            </label>
+          ) : (
+            <label>
+              {form.resourceType} file
+              <input
+                type="file"
+                required
+                accept={
+                  form.resourceType === "PDF"
+                    ? ".pdf"
+                    : ".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                }
+                onChange={(e) => setFile(e.target.files?.[0] || null)}
+              />
+              <small>Maximum 100 MB</small>
+            </label>
+          )}
           <label className="tp-wide">
             Description
             <textarea
@@ -447,28 +517,71 @@ function StudyMaterial() {
           {rows.map((row) => (
             <article className="tw-panel tp-study-card" key={row.id}>
               <div className="tp-study-card-head">
-                <span className="tw-class-icon" aria-hidden="true"><SchoolIcon name="material" /></span>
+                <span className="tw-class-icon" aria-hidden="true">
+                  <SchoolIcon name="material" />
+                </span>
                 <span className="tw-pill">{row.resourceType}</span>
               </div>
               <div className="tp-study-card-body">
                 <h3>{row.title}</h3>
-                <p className="tp-study-card-class">{row.className} · {row.sectionName}</p>
+                <p className="tp-study-card-class">
+                  {row.className} · {row.sectionName}
+                </p>
                 <p className="tp-study-card-subject">{row.subjectName}</p>
-                {row.description && <p className="tp-study-card-description">{row.description}</p>}
+                {row.description && (
+                  <p className="tp-study-card-description">{row.description}</p>
+                )}
               </div>
               <div className="tp-study-card-footer">
-                {isUploadedStudyMaterial(row.resourceUrl) ?
-                  <button className="tp-study-card-action" type="button" onClick={() => void downloadStudyMaterial(row.id, row.title).catch((failure: Error) => setError(failure.message))}>
-                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v3h16v-3" /></svg>
+                {isUploadedStudyMaterial(row.resourceUrl) ? (
+                  <button
+                    className="tp-study-card-action"
+                    type="button"
+                    onClick={() =>
+                      void downloadStudyMaterial(row.id, row.title).catch(
+                        (failure: Error) => setError(failure.message),
+                      )
+                    }
+                  >
+                    <svg
+                      aria-hidden="true"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v3h16v-3" />
+                    </svg>
                     Download file
-                  </button> :
-                  <a className="tp-study-card-action" href={row.resourceUrl} target="_blank" rel="noreferrer">
-                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 5h5v5m0-5-9 9" /><path d="M19 13v6H5V5h6" /></svg>
+                  </button>
+                ) : (
+                  <a
+                    className="tp-study-card-action"
+                    href={row.resourceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M14 5h5v5m0-5-9 9" />
+                      <path d="M19 13v6H5V5h6" />
+                    </svg>
                     Open link
-                  </a>}
+                  </a>
+                )}
               </div>
             </article>
-          ))}       </div>
+          ))}{" "}
+        </div>
       )}
     </div>
   );
@@ -490,11 +603,14 @@ function Calendar() {
   }, [month]);
   const grouped = useMemo<Record<string, any[]>>(
     () =>
-      rows.reduce((all: Record<string, any[]>, item) => {
-        const key = String(item.date).slice(0, 10);
-        (all[key] ||= []).push(item);
-        return all;
-      }, {} as Record<string, any[]>),
+      rows.reduce(
+        (all: Record<string, any[]>, item) => {
+          const key = String(item.date).slice(0, 10);
+          (all[key] ||= []).push(item);
+          return all;
+        },
+        {} as Record<string, any[]>,
+      ),
     [rows],
   );
   return (
@@ -562,7 +678,15 @@ function Calendar() {
   );
 }
 
-function Profile({ onNavigate, schoolName, schoolLogoUrl }: { onNavigate: Navigate; schoolName?: string; schoolLogoUrl?: string | null }) {
+function Profile({
+  onNavigate,
+  schoolName,
+  schoolLogoUrl,
+}: {
+  onNavigate: Navigate;
+  schoolName?: string;
+  schoolLogoUrl?: string | null;
+}) {
   const [tab, setTab] = useState("Personal Details"),
     [data, setData] = useState<any>(null),
     [rows, setRows] = useState<any[]>([]),
@@ -836,7 +960,9 @@ function Profile({ onNavigate, schoolName, schoolLogoUrl }: { onNavigate: Naviga
                       {Number(row.deduction).toLocaleString("en-IN")}
                     </span>
                   </div>
-                  <button onClick={() => setSelectedPayslip(row)}>View payslip</button>
+                  <button onClick={() => setSelectedPayslip(row)}>
+                    View payslip
+                  </button>
                 </article>
               ))}
             </div>
@@ -874,30 +1000,38 @@ function Profile({ onNavigate, schoolName, schoolLogoUrl }: { onNavigate: Naviga
           )}
         </>
       )}
-      {selectedPayslip && <SchoolFinanceDocument
-        title="Salary Payslip"
-        kind="payslip"
-        schoolName={schoolName || data?.schoolName}
-        schoolLogoUrl={schoolLogoUrl}
-        reference={`${selectedPayslip.salaryMonth}/${selectedPayslip.salaryYear}`}
-        date={selectedPayslip.paymentDate}
-        recipientLabel="Employee"
-        recipient={data?.name || 'Staff member'}
-        fields={[
-          { label: 'Designation', value: data?.designation },
-          { label: 'Payment method', value: selectedPayslip.paymentMethod },
-          { label: 'Remarks', value: selectedPayslip.remarks },
-        ]}
-        lines={[
-          { label: 'Basic salary', amount: Number(selectedPayslip.basicSalary) || 0 },
-          { label: 'Bonus', amount: Number(selectedPayslip.bonus) || 0 },
-          { label: 'Deduction', amount: -(Number(selectedPayslip.deduction) || 0) },
-        ]}
-        totalLabel="Net salary paid"
-        total={Number(selectedPayslip.netSalary) || 0}
-        onClose={() => setSelectedPayslip(null)}
-        printLabel="Print payslip"
-      />}
+      {selectedPayslip && (
+        <SchoolFinanceDocument
+          title="Salary Payslip"
+          kind="payslip"
+          schoolName={schoolName || data?.schoolName}
+          schoolLogoUrl={schoolLogoUrl}
+          reference={`${selectedPayslip.salaryMonth}/${selectedPayslip.salaryYear}`}
+          date={selectedPayslip.paymentDate}
+          recipientLabel="Employee"
+          recipient={data?.name || "Staff member"}
+          fields={[
+            { label: "Designation", value: data?.designation },
+            { label: "Payment method", value: selectedPayslip.paymentMethod },
+            { label: "Remarks", value: selectedPayslip.remarks },
+          ]}
+          lines={[
+            {
+              label: "Basic salary",
+              amount: Number(selectedPayslip.basicSalary) || 0,
+            },
+            { label: "Bonus", amount: Number(selectedPayslip.bonus) || 0 },
+            {
+              label: "Deduction",
+              amount: -(Number(selectedPayslip.deduction) || 0),
+            },
+          ]}
+          totalLabel="Net salary paid"
+          total={Number(selectedPayslip.netSalary) || 0}
+          onClose={() => setSelectedPayslip(null)}
+          printLabel="Print payslip"
+        />
+      )}
     </div>
   );
 }
@@ -913,10 +1047,16 @@ export default function TeacherPortal({
   schoolName?: string;
   schoolLogoUrl?: string | null;
 }) {
-  if (page === "Syllabus Progress") return <SyllabusProgress date={localDate()} teacher />;
+  if (page === "Syllabus Progress")
+    return <SyllabusProgress date={localDate()} teacher />;
   if (page === "Homework & Assignments") return <Homework />;
   if (page === "Calendar") return <Calendar />;
   if (page === "Study Material") return <StudyMaterial />;
-  return <Profile onNavigate={onNavigate} schoolName={schoolName} schoolLogoUrl={schoolLogoUrl} />;
+  return (
+    <Profile
+      onNavigate={onNavigate}
+      schoolName={schoolName}
+      schoolLogoUrl={schoolLogoUrl}
+    />
+  );
 }
-

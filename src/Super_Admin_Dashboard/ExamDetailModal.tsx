@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { API_BASE_URL } from '../config';
-import { useToastMessageState } from '../components/Toast/Toast';
-import Modal from './Modal';
+// Exam Detail Modal: imports and dependencies
+import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../config";
+import { useToastMessageState } from "../components/Toast/Toast";
+import Modal from "./Modal";
 
+// Data types and contracts
 interface Subject {
   subjectId: number;
   subjectName: string;
@@ -40,15 +42,28 @@ interface ExamDetailModalProps {
   examName: string;
 }
 
-const fmt = (d: string) => d
-  ? new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
-  : 'Not Scheduled';
-const fmtTime = (t: string) => t ? t.substring(0, 5) : 'Not Scheduled';
+// Constants and helper functions
+const fmt = (d: string) =>
+  d
+    ? new Date(d).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
+    : "Not Scheduled";
+const fmtTime = (t: string) => (t ? t.substring(0, 5) : "Not Scheduled");
 
-const ExamDetailModal: React.FC<ExamDetailModalProps> = ({ isOpen, onClose, schoolId, examId, examName }) => {
+// Main component and state
+const ExamDetailModal: React.FC<ExamDetailModalProps> = ({
+  isOpen,
+  onClose,
+  schoolId,
+  examId,
+  examName,
+}) => {
   const [detail, setDetail] = useState<ExamDetail | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useToastMessageState('error');
+  const [error, setError] = useToastMessageState("error");
 
   useEffect(() => {
     if (isOpen && examId && schoolId) {
@@ -58,20 +73,23 @@ const ExamDetailModal: React.FC<ExamDetailModalProps> = ({ isOpen, onClose, scho
 
   const fetchDetail = async () => {
     setLoading(true);
-    setError('');
+    setError("");
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE_URL}/api/Exam/Exam_detail?examId=${examId}&schoolId=${schoolId}`, {
-        headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
-      });
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `${API_BASE_URL}/api/Exam/Exam_detail?examId=${examId}&schoolId=${schoolId}`,
+        {
+          headers: { accept: "*/*", Authorization: `Bearer ${token}` },
+        },
+      );
       const result = await res.json();
       if (result.success && result.data) {
         setDetail(result.data);
       } else {
-        setError(result.message || 'Failed to fetch exam details');
+        setError(result.message || "Failed to fetch exam details");
       }
     } catch {
-      setError('Network error occurred');
+      setError("Network error occurred");
     } finally {
       setLoading(false);
     }
@@ -79,47 +97,146 @@ const ExamDetailModal: React.FC<ExamDetailModalProps> = ({ isOpen, onClose, scho
 
   const handleClose = () => {
     setDetail(null);
-    setError('');
+    setError("");
     onClose();
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title={`Exam Detail: ${examName}`} size="large" showSubmit={false} showCancel={false}>
-      {loading && <div style={{ padding: '20px', textAlign: 'center' }}>Loading...</div>}
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title={`Exam Detail: ${examName}`}
+      size="large"
+      showSubmit={false}
+      showCancel={false}
+    >
+      {loading && (
+        <div style={{ padding: "20px", textAlign: "center" }}>Loading...</div>
+      )}
       {error && <div className="error-message">{error}</div>}
       {detail && (
-        <div style={{ padding: '0 28px 28px' }}>
-          <div style={{ display: 'flex', gap: '24px', marginBottom: '20px', background: '#f9fafb', padding: '16px', borderRadius: '8px' }}>
-            <div><strong>Exam Name:</strong> {detail.examName}</div>
-            <div><strong>Type:</strong> {detail.examType}</div>
-            <div><strong>Start:</strong> {fmt(detail.startDate)}</div>
-            <div><strong>End:</strong> {fmt(detail.endDate)}</div>
+        <div style={{ padding: "0 28px 28px" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: "24px",
+              marginBottom: "20px",
+              background: "#f9fafb",
+              padding: "16px",
+              borderRadius: "8px",
+            }}
+          >
+            <div>
+              <strong>Exam Name:</strong> {detail.examName}
+            </div>
+            <div>
+              <strong>Type:</strong> {detail.examType}
+            </div>
+            <div>
+              <strong>Start:</strong> {fmt(detail.startDate)}
+            </div>
+            <div>
+              <strong>End:</strong> {fmt(detail.endDate)}
+            </div>
           </div>
 
-          {detail.classes.map(cls => (
-            <div key={cls.classId} style={{ marginBottom: '24px' }}>
-              <h3 style={{ color: '#374151', marginBottom: '12px', fontSize: '16px', fontWeight: '600' }}>
+          {detail.classes.map((cls) => (
+            <div key={cls.classId} style={{ marginBottom: "24px" }}>
+              <h3
+                style={{
+                  color: "#374151",
+                  marginBottom: "12px",
+                  fontSize: "16px",
+                  fontWeight: "600",
+                }}
+              >
                 Class: {cls.className}
               </h3>
-              {cls.sections.map(section => (
-                <div key={section.sectionId} style={{ marginBottom: '16px', paddingLeft: '12px' }}>
-                  <h4 style={{ color: '#6b7280', marginBottom: '8px', fontSize: '14px' }}>Section: {section.sectionName}</h4>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden' }}>
+              {cls.sections.map((section) => (
+                <div
+                  key={section.sectionId}
+                  style={{ marginBottom: "16px", paddingLeft: "12px" }}
+                >
+                  <h4
+                    style={{
+                      color: "#6b7280",
+                      marginBottom: "8px",
+                      fontSize: "14px",
+                    }}
+                  >
+                    Section: {section.sectionName}
+                  </h4>
+                  <table
+                    style={{
+                      width: "100%",
+                      borderCollapse: "collapse",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "8px",
+                      overflow: "hidden",
+                    }}
+                  >
                     <thead>
-                      <tr style={{ backgroundColor: '#f3f4f6' }}>
-                        <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Subject</th>
-                        <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Exam Date</th>
-                        <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Start Time</th>
-                        <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>End Time</th>
+                      <tr style={{ backgroundColor: "#f3f4f6" }}>
+                        <th
+                          style={{
+                            padding: "10px 12px",
+                            textAlign: "left",
+                            fontWeight: "600",
+                            color: "#374151",
+                          }}
+                        >
+                          Subject
+                        </th>
+                        <th
+                          style={{
+                            padding: "10px 12px",
+                            textAlign: "left",
+                            fontWeight: "600",
+                            color: "#374151",
+                          }}
+                        >
+                          Exam Date
+                        </th>
+                        <th
+                          style={{
+                            padding: "10px 12px",
+                            textAlign: "left",
+                            fontWeight: "600",
+                            color: "#374151",
+                          }}
+                        >
+                          Start Time
+                        </th>
+                        <th
+                          style={{
+                            padding: "10px 12px",
+                            textAlign: "left",
+                            fontWeight: "600",
+                            color: "#374151",
+                          }}
+                        >
+                          End Time
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {section.subjects.map(sub => (
-                        <tr key={sub.subjectId} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                          <td style={{ padding: '10px 12px' }}>{sub.subjectName}</td>
-                          <td style={{ padding: '10px 12px' }}>{fmt(sub.examDate)}</td>
-                          <td style={{ padding: '10px 12px' }}>{fmtTime(sub.startTime)}</td>
-                          <td style={{ padding: '10px 12px' }}>{fmtTime(sub.endTime)}</td>
+                      {section.subjects.map((sub) => (
+                        <tr
+                          key={sub.subjectId}
+                          style={{ borderBottom: "1px solid #e5e7eb" }}
+                        >
+                          <td style={{ padding: "10px 12px" }}>
+                            {sub.subjectName}
+                          </td>
+                          <td style={{ padding: "10px 12px" }}>
+                            {fmt(sub.examDate)}
+                          </td>
+                          <td style={{ padding: "10px 12px" }}>
+                            {fmtTime(sub.startTime)}
+                          </td>
+                          <td style={{ padding: "10px 12px" }}>
+                            {fmtTime(sub.endTime)}
+                          </td>
                         </tr>
                       ))}
                     </tbody>

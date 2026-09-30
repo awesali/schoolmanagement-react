@@ -1,84 +1,183 @@
-import AdminActionIcon from './AdminActionIcon';
-import React, { useState, useEffect } from 'react';
-import { API_BASE_URL } from '../config';
-import { LoadingButton, PageLoader } from '../components/Loader/Loader';
-import CreateExamSchedule from './CreateExamSchedule';
-import StudentReportCards from '../Student/StudentReportCards';
-import './StaffList.css';
-import './ManagementTabs.css';
+// Exam Management: imports and dependencies
+import AdminActionIcon from "./AdminActionIcon";
+import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../config";
+import { LoadingButton, PageLoader } from "../components/Loader/Loader";
+import CreateExamSchedule from "./CreateExamSchedule";
+import StudentReportCards from "../Student/StudentReportCards";
+import "./StaffList.css";
+import "./ManagementTabs.css";
 
-type ExamView = 'examTypes' | 'exams' | 'subjects' | 'schedule' | 'timetable' | 'results';
+// Data types and contracts
+type ExamView =
+  "examTypes" | "exams" | "subjects" | "schedule" | "timetable" | "results";
 
-interface ExamType { id: number; name: string; isActive: boolean; schoolId: number; }
+interface ExamType {
+  id: number;
+  name: string;
+  isActive: boolean;
+  schoolId: number;
+}
 interface Exam {
-  id: number; name: string; examTypeId: number; schoolId: number;
-  startDate: string; endDate: string; isPublished: boolean;
-  resultPublished: boolean; createdDate: string; isActive: boolean;
+  id: number;
+  name: string;
+  examTypeId: number;
+  schoolId: number;
+  startDate: string;
+  endDate: string;
+  isPublished: boolean;
+  resultPublished: boolean;
+  createdDate: string;
+  isActive: boolean;
 }
 interface ExamSubject {
-  id: number; examId: number; subjectId: number; subjectName: string;
-  classId: number; className: string; sectionId: number; sectionName: string;
-  maxMarks: number; passingMarks: number;
+  id: number;
+  examId: number;
+  subjectId: number;
+  subjectName: string;
+  classId: number;
+  className: string;
+  sectionId: number;
+  sectionName: string;
+  maxMarks: number;
+  passingMarks: number;
 }
-interface ClassItem { id: number; name: string; }
-interface SectionItem { id: number; name: string; classId: number; }
-interface SessionItem { id: number; yearStart: string; yearEnd: string; }
-interface SubjectItem { subjectId: number; subjectName: string; }
+interface ClassItem {
+  id: number;
+  name: string;
+}
+interface SectionItem {
+  id: number;
+  name: string;
+  classId: number;
+}
+interface SessionItem {
+  id: number;
+  yearStart: string;
+  yearEnd: string;
+}
+interface SubjectItem {
+  subjectId: number;
+  subjectName: string;
+}
 interface ResultItem {
-  studentId: number; studentName: string; examName: string; totalMarks: number;
-  obtainedMarks: number; percentage: number; grade: string; resultStatus: string; rank: number;
-  subjects: { subjectId: number; subjectName: string; maxMarks: number; passingMarks: number; obtainedMarks: number; status: string; remarks: string; }[];
+  studentId: number;
+  studentName: string;
+  examName: string;
+  totalMarks: number;
+  obtainedMarks: number;
+  percentage: number;
+  grade: string;
+  resultStatus: string;
+  rank: number;
+  subjects: {
+    subjectId: number;
+    subjectName: string;
+    maxMarks: number;
+    passingMarks: number;
+    obtainedMarks: number;
+    status: string;
+    remarks: string;
+  }[];
 }
 
 interface StudentResultDetail {
-  studentId: number; studentName: string; examName: string;
-  schoolName?: string; schoolAddress?: string; schoolLogoUrl?: string; rollNumber?: string; className?: string; sectionName?: string; parentName?: string; expectedSubjectCount?: number; recordedSubjectCount?: number; isComplete?: boolean;
-  totalMarks: number; obtainedMarks: number; percentage: number;
-  grade: string; resultStatus: string;
-  subjects: { subjectId: number; subjectName: string; maxMarks: number; passingMarks: number; obtainedMarks: number; status: string; remarks: string; }[];
+  studentId: number;
+  studentName: string;
+  examName: string;
+  schoolName?: string;
+  schoolAddress?: string;
+  schoolLogoUrl?: string;
+  rollNumber?: string;
+  className?: string;
+  sectionName?: string;
+  parentName?: string;
+  expectedSubjectCount?: number;
+  recordedSubjectCount?: number;
+  isComplete?: boolean;
+  totalMarks: number;
+  obtainedMarks: number;
+  percentage: number;
+  grade: string;
+  resultStatus: string;
+  subjects: {
+    subjectId: number;
+    subjectName: string;
+    maxMarks: number;
+    passingMarks: number;
+    obtainedMarks: number;
+    status: string;
+    remarks: string;
+  }[];
 }
 
+// Constants and helper functions
 const selectStyle: React.CSSProperties = {
-  padding: '8px 12px', borderRadius: '8px', border: '2px solid #e2e8f0',
-  fontSize: '14px', minWidth: '160px', background: 'white',
+  padding: "8px 12px",
+  borderRadius: "8px",
+  border: "2px solid #e2e8f0",
+  fontSize: "14px",
+  minWidth: "160px",
+  background: "white",
 };
 
 const badgeStyle = (published: boolean): React.CSSProperties => ({
-  display: 'inline-block', padding: '3px 10px', borderRadius: '12px',
-  fontSize: '12px', fontWeight: 600,
-  background: published ? '#c6f6d5' : '#fef3c7',
-  color: published ? '#22543d' : '#78350f',
+  display: "inline-block",
+  padding: "3px 10px",
+  borderRadius: "12px",
+  fontSize: "12px",
+  fontWeight: 600,
+  background: published ? "#c6f6d5" : "#fef3c7",
+  color: published ? "#22543d" : "#78350f",
 });
 
 const TAB_LABELS: Record<ExamView, string> = {
-  examTypes: 'Exam Types', exams: 'Exams', subjects: 'Exam Subjects',
-  schedule: 'Exam Schedule', timetable: 'Timetable', results: 'Results',
+  examTypes: "Exam Types",
+  exams: "Exams",
+  subjects: "Exam Subjects",
+  schedule: "Exam Schedule",
+  timetable: "Timetable",
+  results: "Results",
 };
 
-const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selectedSchoolId }) => {
-  const [view, setView] = useState<ExamView>('examTypes');
+// Main component and state
+const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({
+  selectedSchoolId,
+}) => {
+  const [view, setView] = useState<ExamView>("examTypes");
 
   // Exam Types
   const [examTypes, setExamTypes] = useState<ExamType[]>([]);
   const [pendingLookups, setPendingLookups] = useState(0);
   const [examTypesLoading, setExamTypesLoading] = useState(false);
   const [showAddExamType, setShowAddExamType] = useState(false);
-  const [newExamTypeName, setNewExamTypeName] = useState('');
+  const [newExamTypeName, setNewExamTypeName] = useState("");
   const [savingExamType, setSavingExamType] = useState(false);
-  const [examTypeMsg, setExamTypeMsg] = useState<{ text: string; ok: boolean } | null>(null);
+  const [examTypeMsg, setExamTypeMsg] = useState<{
+    text: string;
+    ok: boolean;
+  } | null>(null);
 
   // Exams
   const [exams, setExams] = useState<Exam[]>([]);
   const [examsLoading, setExamsLoading] = useState(false);
   const [showAddExam, setShowAddExam] = useState(false);
-  const [examForm, setExamForm] = useState({ name: '', examTypeId: '', academicSessionId: '', startDate: '', endDate: '' });
+  const [examForm, setExamForm] = useState({
+    name: "",
+    examTypeId: "",
+    academicSessionId: "",
+    startDate: "",
+    endDate: "",
+  });
   const [savingExam, setSavingExam] = useState(false);
-  const [examMsg, setExamMsg] = useState<{ text: string; ok: boolean } | null>(null);
+  const [examMsg, setExamMsg] = useState<{ text: string; ok: boolean } | null>(
+    null,
+  );
 
   // Exam Subjects
-  const [selectedExamId, setSelectedExamId] = useState('');
-  const [subjectFilterClassId, setSubjectFilterClassId] = useState('');
-  const [subjectFilterSectionId, setSubjectFilterSectionId] = useState('');
+  const [selectedExamId, setSelectedExamId] = useState("");
+  const [subjectFilterClassId, setSubjectFilterClassId] = useState("");
+  const [subjectFilterSectionId, setSubjectFilterSectionId] = useState("");
   const [examSubjects, setExamSubjects] = useState<ExamSubject[]>([]);
   const [subjectsLoading, setSubjectsLoading] = useState(false);
   const [showAddSubject, setShowAddSubject] = useState(false);
@@ -86,30 +185,53 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
   const [sections, setSections] = useState<SectionItem[]>([]);
   const [sessions, setSessions] = useState<SessionItem[]>([]);
   const [subjects, setSubjects] = useState<SubjectItem[]>([]);
-  const [subjectForm, setSubjectForm] = useState({ classId: '', sectionId: '', subjectId: '', maxMarks: '', passingMarks: '' });
+  const [subjectForm, setSubjectForm] = useState({
+    classId: "",
+    sectionId: "",
+    subjectId: "",
+    maxMarks: "",
+    passingMarks: "",
+  });
   const [selectedSubjectIds, setSelectedSubjectIds] = useState<number[]>([]);
   const [savingSubject, setSavingSubject] = useState(false);
-  const [subjectMsg, setSubjectMsg] = useState<{ text: string; ok: boolean } | null>(null);
+  const [subjectMsg, setSubjectMsg] = useState<{
+    text: string;
+    ok: boolean;
+  } | null>(null);
 
   // Timetable
-  const [timetableExamId, setTimetableExamId] = useState('');
+  const [timetableExamId, setTimetableExamId] = useState("");
   const [timetable, setTimetable] = useState<any[]>([]);
   const [timetableLoading, setTimetableLoading] = useState(false);
 
   // Results
-  const [resultsExamId, setResultsExamId] = useState('');
+  const [resultsExamId, setResultsExamId] = useState("");
   const [results, setResults] = useState<ResultItem[]>([]);
   const [resultsLoading, setResultsLoading] = useState(false);
   const [generatingResults, setGeneratingResults] = useState(false);
   const [publishingResults, setPublishingResults] = useState(false);
-  const [resultsMsg, setResultsMsg] = useState<{ text: string; ok: boolean } | null>(null);
-  const [studentDetail, setStudentDetail] = useState<StudentResultDetail | null>(null);
+  const [resultsMsg, setResultsMsg] = useState<{
+    text: string;
+    ok: boolean;
+  } | null>(null);
+  const [studentDetail, setStudentDetail] =
+    useState<StudentResultDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
-  const token = () => localStorage.getItem('token');
-  const headers = () => ({ 'accept': '*/*', 'Authorization': `Bearer ${token()}` });
-  const jsonHeaders = () => ({ ...headers(), 'Content-Type': 'application/json' });
-  const fmt = (d: string) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-';
+  const token = () => localStorage.getItem("token");
+  const headers = () => ({ accept: "*/*", Authorization: `Bearer ${token()}` });
+  const jsonHeaders = () => ({
+    ...headers(),
+    "Content-Type": "application/json",
+  });
+  const fmt = (d: string) =>
+    d
+      ? new Date(d).toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        })
+      : "-";
 
   useEffect(() => {
     if (selectedSchoolId) {
@@ -123,79 +245,151 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
   const fetchExamTypes = async () => {
     try {
       setExamTypesLoading(true);
-      const res = await fetch(`${API_BASE_URL}/api/Exam/GetExamTypes?schoolId=${selectedSchoolId}`, { headers: headers() });
+      const res = await fetch(
+        `${API_BASE_URL}/api/Exam/GetExamTypes?schoolId=${selectedSchoolId}`,
+        { headers: headers() },
+      );
       if (res.ok) {
         const data = await res.json();
         setExamTypes(data?.data ?? (Array.isArray(data) ? data : []));
       }
-    } catch { } finally { setExamTypesLoading(false); }
+    } catch {
+    } finally {
+      setExamTypesLoading(false);
+    }
   };
 
   const handleAddExamType = async () => {
-    if (!newExamTypeName.trim()) { setExamTypeMsg({ text: 'Name is required.', ok: false }); return; }
+    if (!newExamTypeName.trim()) {
+      setExamTypeMsg({ text: "Name is required.", ok: false });
+      return;
+    }
     try {
-      setSavingExamType(true); setExamTypeMsg(null);
+      setSavingExamType(true);
+      setExamTypeMsg(null);
       const res = await fetch(`${API_BASE_URL}/api/Exam/CreateExamType`, {
-        method: 'POST', headers: jsonHeaders(),
-        body: JSON.stringify({ name: newExamTypeName.trim(), schoolId: selectedSchoolId }),
+        method: "POST",
+        headers: jsonHeaders(),
+        body: JSON.stringify({
+          name: newExamTypeName.trim(),
+          schoolId: selectedSchoolId,
+        }),
       });
       const result = await res.json();
       if (res.ok && result.success) {
-        setExamTypeMsg({ text: result.message || 'Exam type created!', ok: true });
-        setNewExamTypeName(''); setShowAddExamType(false); fetchExamTypes();
-      } else { setExamTypeMsg({ text: result.message || 'Failed.', ok: false }); }
-    } catch { setExamTypeMsg({ text: 'Error creating exam type.', ok: false }); }
-    finally { setSavingExamType(false); }
+        setExamTypeMsg({
+          text: result.message || "Exam type created!",
+          ok: true,
+        });
+        setNewExamTypeName("");
+        setShowAddExamType(false);
+        fetchExamTypes();
+      } else {
+        setExamTypeMsg({ text: result.message || "Failed.", ok: false });
+      }
+    } catch {
+      setExamTypeMsg({ text: "Error creating exam type.", ok: false });
+    } finally {
+      setSavingExamType(false);
+    }
   };
 
   // ── Exams ──
   const fetchExams = async () => {
     try {
       setExamsLoading(true);
-      const res = await fetch(`${API_BASE_URL}/api/Exam/GetExams?schoolId=${selectedSchoolId}`, { headers: headers() });
+      const res = await fetch(
+        `${API_BASE_URL}/api/Exam/GetExams?schoolId=${selectedSchoolId}`,
+        { headers: headers() },
+      );
       if (res.ok) {
         const data = await res.json();
         setExams(data?.data ?? (Array.isArray(data) ? data : []));
       }
-    } catch { } finally { setExamsLoading(false); }
+    } catch {
+    } finally {
+      setExamsLoading(false);
+    }
   };
 
   const handleAddExam = async () => {
-    const { name, examTypeId, academicSessionId, startDate, endDate } = examForm;
-    if (!name.trim() || !examTypeId || !academicSessionId || !startDate || !endDate) {
-      setExamMsg({ text: 'All fields, including academic session, are required.', ok: false }); return;
+    const { name, examTypeId, academicSessionId, startDate, endDate } =
+      examForm;
+    if (
+      !name.trim() ||
+      !examTypeId ||
+      !academicSessionId ||
+      !startDate ||
+      !endDate
+    ) {
+      setExamMsg({
+        text: "All fields, including academic session, are required.",
+        ok: false,
+      });
+      return;
     }
     if (endDate < startDate) {
-      setExamMsg({ text: 'End date must be the same as or later than the start date.', ok: false }); return;
+      setExamMsg({
+        text: "End date must be the same as or later than the start date.",
+        ok: false,
+      });
+      return;
     }
     try {
-      setSavingExam(true); setExamMsg(null);
+      setSavingExam(true);
+      setExamMsg(null);
       const res = await fetch(`${API_BASE_URL}/api/Exam/CreateExam`, {
-        method: 'POST', headers: jsonHeaders(),
-        body: JSON.stringify({ name: name.trim(), examTypeId: Number(examTypeId), academicSessionId: Number(academicSessionId), schoolId: selectedSchoolId, startDate: new Date(startDate).toISOString(), endDate: new Date(endDate).toISOString() }),
+        method: "POST",
+        headers: jsonHeaders(),
+        body: JSON.stringify({
+          name: name.trim(),
+          examTypeId: Number(examTypeId),
+          academicSessionId: Number(academicSessionId),
+          schoolId: selectedSchoolId,
+          startDate: new Date(startDate).toISOString(),
+          endDate: new Date(endDate).toISOString(),
+        }),
       });
       const result = await res.json();
       if (res.ok && result.success) {
-        setExamMsg({ text: result.message || 'Exam created!', ok: true });
-        setExamForm({ name: '', examTypeId: '', academicSessionId: '', startDate: '', endDate: '' });
-        setShowAddExam(false); fetchExams();
-      } else { setExamMsg({ text: result.message || 'Failed.', ok: false }); }
-    } catch { setExamMsg({ text: 'Error creating exam.', ok: false }); }
-    finally { setSavingExam(false); }
+        setExamMsg({ text: result.message || "Exam created!", ok: true });
+        setExamForm({
+          name: "",
+          examTypeId: "",
+          academicSessionId: "",
+          startDate: "",
+          endDate: "",
+        });
+        setShowAddExam(false);
+        fetchExams();
+      } else {
+        setExamMsg({ text: result.message || "Failed.", ok: false });
+      }
+    } catch {
+      setExamMsg({ text: "Error creating exam.", ok: false });
+    } finally {
+      setSavingExam(false);
+    }
   };
 
   const handlePublishExam = async (examId: number) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/Exam/PublishExam?examId=${examId}`, { method: 'PUT', headers: headers() });
+      const res = await fetch(
+        `${API_BASE_URL}/api/Exam/PublishExam?examId=${examId}`,
+        { method: "PUT", headers: headers() },
+      );
       if (res.ok) fetchExams();
-    } catch { }
+    } catch {}
   };
 
   // ── Exam Subjects ──
   const fetchEnrollmentInfo = async () => {
-    setPendingLookups(count => count + 1);
+    setPendingLookups((count) => count + 1);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/Student/enrollment-info?schoolId=${selectedSchoolId}`, { headers: headers() });
+      const res = await fetch(
+        `${API_BASE_URL}/api/Student/enrollment-info?schoolId=${selectedSchoolId}`,
+        { headers: headers() },
+      );
       if (res.ok) {
         const result = await res.json();
         if (result.success && result.data) {
@@ -204,140 +398,261 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
           setSessions(result.data.sessions || []);
         }
       }
-    } catch { } finally { setPendingLookups(count => count - 1); }
+    } catch {
+    } finally {
+      setPendingLookups((count) => count - 1);
+    }
   };
 
   const fetchSectionSubjects = async (sectionId: string) => {
-    setPendingLookups(count => count + 1);
+    setPendingLookups((count) => count + 1);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/Class/section-subjects/${sectionId}`, { headers: headers() });
+      const res = await fetch(
+        `${API_BASE_URL}/api/Class/section-subjects/${sectionId}`,
+        { headers: headers() },
+      );
       if (res.ok) {
         const result = await res.json();
         setSubjects(result.success ? result.data : []);
       }
-    } catch { } finally { setPendingLookups(count => count - 1); }
+    } catch {
+    } finally {
+      setPendingLookups((count) => count - 1);
+    }
   };
 
   const fetchExamSubjects = async (examId: string) => {
     if (!examId) return;
     try {
       setSubjectsLoading(true);
-      const res = await fetch(`${API_BASE_URL}/api/Exam/GetExamSubjects?examId=${examId}`, { headers: headers() });
+      const res = await fetch(
+        `${API_BASE_URL}/api/Exam/GetExamSubjects?examId=${examId}`,
+        { headers: headers() },
+      );
       if (res.ok) {
         const data = await res.json();
         setExamSubjects(data?.data ?? (Array.isArray(data) ? data : []));
       }
-    } catch { } finally { setSubjectsLoading(false); }
+    } catch {
+    } finally {
+      setSubjectsLoading(false);
+    }
   };
 
   const handleAddExamSubject = async () => {
     const { classId, sectionId, maxMarks, passingMarks } = subjectForm;
-    if (!selectedExamId || !classId || !sectionId || !selectedSubjectIds.length || !maxMarks || passingMarks === '') {
-      setSubjectMsg({ text: 'All fields are required.', ok: false }); return;
+    if (
+      !selectedExamId ||
+      !classId ||
+      !sectionId ||
+      !selectedSubjectIds.length ||
+      !maxMarks ||
+      passingMarks === ""
+    ) {
+      setSubjectMsg({ text: "All fields are required.", ok: false });
+      return;
     }
-    if (Number(maxMarks) <= 0 || Number(passingMarks) < 0 || Number(passingMarks) >= Number(maxMarks)) {
-      setSubjectMsg({ text: 'Passing marks must be less than total marks.', ok: false }); return;
+    if (
+      Number(maxMarks) <= 0 ||
+      Number(passingMarks) < 0 ||
+      Number(passingMarks) >= Number(maxMarks)
+    ) {
+      setSubjectMsg({
+        text: "Passing marks must be less than total marks.",
+        ok: false,
+      });
+      return;
     }
     try {
-      setSavingSubject(true); setSubjectMsg(null);
-      const results = await Promise.all(selectedSubjectIds.map(async subjectId => {
-        const res = await fetch(`${API_BASE_URL}/api/Exam/AddExamSubject`, {
-          method: 'POST', headers: jsonHeaders(),
-          body: JSON.stringify({ schoolId: selectedSchoolId, examId: Number(selectedExamId), classId: Number(classId), sectionId: Number(sectionId), subjectId, maxMarks: Number(maxMarks), passingMarks: Number(passingMarks) }),
-        });
-        const result = await res.json();
-        return { ok: res.ok && result.success, message: result.message };
-      }));
-      const failures = results.filter(result => !result.ok);
+      setSavingSubject(true);
+      setSubjectMsg(null);
+      const results = await Promise.all(
+        selectedSubjectIds.map(async (subjectId) => {
+          const res = await fetch(`${API_BASE_URL}/api/Exam/AddExamSubject`, {
+            method: "POST",
+            headers: jsonHeaders(),
+            body: JSON.stringify({
+              schoolId: selectedSchoolId,
+              examId: Number(selectedExamId),
+              classId: Number(classId),
+              sectionId: Number(sectionId),
+              subjectId,
+              maxMarks: Number(maxMarks),
+              passingMarks: Number(passingMarks),
+            }),
+          });
+          const result = await res.json();
+          return { ok: res.ok && result.success, message: result.message };
+        }),
+      );
+      const failures = results.filter((result) => !result.ok);
       if (!failures.length) {
-        setSubjectMsg({ text: `${results.length} subject(s) added successfully.`, ok: true });
-        setSubjectForm({ classId: '', sectionId: '', subjectId: '', maxMarks: '', passingMarks: '' });
+        setSubjectMsg({
+          text: `${results.length} subject(s) added successfully.`,
+          ok: true,
+        });
+        setSubjectForm({
+          classId: "",
+          sectionId: "",
+          subjectId: "",
+          maxMarks: "",
+          passingMarks: "",
+        });
         setSelectedSubjectIds([]);
-        setShowAddSubject(false); fetchExamSubjects(selectedExamId);
+        setShowAddSubject(false);
+        fetchExamSubjects(selectedExamId);
       } else {
         await fetchExamSubjects(selectedExamId);
-        setSubjectMsg({ text: `${results.length - failures.length} added; ${failures.length} failed. ${failures[0].message || ''}`, ok: false });
+        setSubjectMsg({
+          text: `${results.length - failures.length} added; ${failures.length} failed. ${failures[0].message || ""}`,
+          ok: false,
+        });
       }
-    } catch { setSubjectMsg({ text: 'Error adding subject.', ok: false }); }
-    finally { setSavingSubject(false); }
+    } catch {
+      setSubjectMsg({ text: "Error adding subject.", ok: false });
+    } finally {
+      setSavingSubject(false);
+    }
   };
 
   const fetchTimetable = async (eid: string) => {
     if (!eid) return;
     try {
-      setTimetableLoading(true); setTimetable([]);
-      const res = await fetch(`${API_BASE_URL}/api/Exam/GetExamSubjects?examId=${eid}`, { headers: headers() });
+      setTimetableLoading(true);
+      setTimetable([]);
+      const res = await fetch(
+        `${API_BASE_URL}/api/Exam/GetExamSubjects?examId=${eid}`,
+        { headers: headers() },
+      );
       if (res.ok) {
         const data = await res.json();
         setTimetable(data?.data ?? []);
       }
-    } catch { } finally { setTimetableLoading(false); }
+    } catch {
+    } finally {
+      setTimetableLoading(false);
+    }
   };
 
   // ── Results ──
   const fetchResults = async () => {
     if (!resultsExamId) return;
     try {
-      setResultsLoading(true); setResults([]);
-      const res = await fetch(`${API_BASE_URL}/api/Exam/GetResults?examId=${resultsExamId}&schoolId=${selectedSchoolId}`, { headers: headers() });
+      setResultsLoading(true);
+      setResults([]);
+      const res = await fetch(
+        `${API_BASE_URL}/api/Exam/GetResults?examId=${resultsExamId}&schoolId=${selectedSchoolId}`,
+        { headers: headers() },
+      );
       const data = await res.json();
       if (res.ok) {
         setResults(data?.data ?? []);
       }
-    } catch { } finally { setResultsLoading(false); }
+    } catch {
+    } finally {
+      setResultsLoading(false);
+    }
   };
 
   const handleGenerateResults = async () => {
     try {
-      setGeneratingResults(true); setResultsMsg(null);
+      setGeneratingResults(true);
+      setResultsMsg(null);
       const res = await fetch(`${API_BASE_URL}/api/Exam/GenerateResults`, {
-        method: 'POST', headers: jsonHeaders(),
-        body: JSON.stringify({ schoolId: selectedSchoolId, examId: Number(resultsExamId) }),
+        method: "POST",
+        headers: jsonHeaders(),
+        body: JSON.stringify({
+          schoolId: selectedSchoolId,
+          examId: Number(resultsExamId),
+        }),
       });
       const result = await res.json();
-      setResultsMsg({ text: result.message || (res.ok ? 'Results generated!' : 'Failed.'), ok: res.ok && result.success });
+      setResultsMsg({
+        text: result.message || (res.ok ? "Results generated!" : "Failed."),
+        ok: res.ok && result.success,
+      });
       if (res.ok) fetchResults();
-    } catch { setResultsMsg({ text: 'Error generating results.', ok: false }); }
-    finally { setGeneratingResults(false); }
+    } catch {
+      setResultsMsg({ text: "Error generating results.", ok: false });
+    } finally {
+      setGeneratingResults(false);
+    }
   };
 
   const handlePublishResults = async () => {
     try {
-      setPublishingResults(true); setResultsMsg(null);
-      const res = await fetch(`${API_BASE_URL}/api/Exam/publish?examId=${resultsExamId}&schoolId=${selectedSchoolId}`, { method: 'PUT', headers: headers() });
+      setPublishingResults(true);
+      setResultsMsg(null);
+      const res = await fetch(
+        `${API_BASE_URL}/api/Exam/publish?examId=${resultsExamId}&schoolId=${selectedSchoolId}`,
+        { method: "PUT", headers: headers() },
+      );
       const result = await res.json();
-      setResultsMsg({ text: result.message || (res.ok ? 'Results published!' : 'Failed.'), ok: res.ok && result.success });
-      if (res.ok && result.success) { void fetchResults(); void fetchExams(); }
-    } catch { setResultsMsg({ text: 'Error publishing results.', ok: false }); }
-    finally { setPublishingResults(false); }
+      setResultsMsg({
+        text: result.message || (res.ok ? "Results published!" : "Failed."),
+        ok: res.ok && result.success,
+      });
+      if (res.ok && result.success) {
+        void fetchResults();
+        void fetchExams();
+      }
+    } catch {
+      setResultsMsg({ text: "Error publishing results.", ok: false });
+    } finally {
+      setPublishingResults(false);
+    }
   };
 
   const fetchStudentDetail = async (studentId: number) => {
     if (!studentId) return;
     try {
-      setDetailLoading(true); setStudentDetail(null);
-      const res = await fetch(`${API_BASE_URL}/api/Exam/student-result-detail?studentId=${studentId}&examId=${resultsExamId}&schoolId=${selectedSchoolId}`, { headers: headers() });
+      setDetailLoading(true);
+      setStudentDetail(null);
+      const res = await fetch(
+        `${API_BASE_URL}/api/Exam/student-result-detail?studentId=${studentId}&examId=${resultsExamId}&schoolId=${selectedSchoolId}`,
+        { headers: headers() },
+      );
       const data = await res.json();
       if (res.ok && data.success) setStudentDetail(data.data);
-    } catch { } finally { setDetailLoading(false); }
+    } catch {
+    } finally {
+      setDetailLoading(false);
+    }
   };
 
-  const filteredSections = sections.filter(s => s.classId === Number(subjectForm.classId));
-  const subjectFilterSections = sections.filter(s => s.classId === Number(subjectFilterClassId));
-  const filteredExamSubjects = examSubjects.filter(subject =>
-    subject.classId === Number(subjectFilterClassId) &&
-    subject.sectionId === Number(subjectFilterSectionId)
+  const filteredSections = sections.filter(
+    (s) => s.classId === Number(subjectForm.classId),
   );
-  const examTypeName = (id: number) => examTypes.find(t => t.id === id)?.name || '-';
-
-  if (!selectedSchoolId) return <div className="staff-list-loading">Please select a school</div>;
-
-  const msgBanner = (msg: { text: string; ok: boolean } | null) => msg && (
-    <div style={{ marginBottom: '12px', padding: '10px 16px', borderRadius: '8px', fontWeight: 600, fontSize: '14px',
-      background: msg.ok ? '#c6f6d5' : '#fed7d7', color: msg.ok ? '#22543d' : '#742a2a' }}>
-      {msg.ok ? '✅' : '⚠️'} {msg.text}
-    </div>
+  const subjectFilterSections = sections.filter(
+    (s) => s.classId === Number(subjectFilterClassId),
   );
+  const filteredExamSubjects = examSubjects.filter(
+    (subject) =>
+      subject.classId === Number(subjectFilterClassId) &&
+      subject.sectionId === Number(subjectFilterSectionId),
+  );
+  const examTypeName = (id: number) =>
+    examTypes.find((t) => t.id === id)?.name || "-";
+
+  if (!selectedSchoolId)
+    return <div className="staff-list-loading">Please select a school</div>;
+
+  const msgBanner = (msg: { text: string; ok: boolean } | null) =>
+    msg && (
+      <div
+        style={{
+          marginBottom: "12px",
+          padding: "10px 16px",
+          borderRadius: "8px",
+          fontWeight: 600,
+          fontSize: "14px",
+          background: msg.ok ? "#c6f6d5" : "#fed7d7",
+          color: msg.ok ? "#22543d" : "#742a2a",
+        }}
+      >
+        {msg.ok ? "✅" : "⚠️"} {msg.text}
+      </div>
+    );
 
   return (
     <div className="staff-list-container">
@@ -347,14 +662,18 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
         <h2>Exam Management</h2>
       </div>
 
-      <div className="management-tabs" role="tablist" aria-label="Exam management sections">
-        {(Object.keys(TAB_LABELS) as ExamView[]).map(v => (
+      <div
+        className="management-tabs"
+        role="tablist"
+        aria-label="Exam management sections"
+      >
+        {(Object.keys(TAB_LABELS) as ExamView[]).map((v) => (
           <button
             key={v}
             type="button"
             role="tab"
             aria-selected={view === v}
-            className={`management-tab ${view === v ? 'active' : ''}`}
+            className={`management-tab ${view === v ? "active" : ""}`}
             onClick={() => setView(v)}
           >
             {TAB_LABELS[v]}
@@ -363,46 +682,147 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
       </div>
 
       {/* ── EXAM TYPES ── */}
-      {view === 'examTypes' && (
+      {view === "examTypes" && (
         <>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
-            <button className="btn btn-primary" onClick={() => { setShowAddExamType(true); setExamTypeMsg(null); }}><AdminActionIcon action="add" />Add Exam Type</button>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginBottom: "16px",
+            }}
+          >
+            <button
+              className="btn btn-primary"
+              onClick={() => {
+                setShowAddExamType(true);
+                setExamTypeMsg(null);
+              }}
+            >
+              <AdminActionIcon action="add" />
+              Add Exam Type
+            </button>
           </div>
           {msgBanner(examTypeMsg)}
-          {examTypesLoading ? <PageLoader label="Loading exam data..." />
-            : examTypes.length === 0 ? <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>No exam types yet. Add one to get started.</p>
-            : (
-              <div className="staff-table-wrapper">
-                <table className="staff-table">
-                  <thead><tr><th>S. No.</th><th>Name</th><th>Status</th></tr></thead>
-                  <tbody>
-                    {examTypes.map((et, i) => (
-                      <tr key={et.id}>
-                        <td>{i + 1}</td>
-                        <td style={{ fontWeight: 600 }}>{et.name}</td>
-                        <td><span style={badgeStyle(et.isActive)}>{et.isActive ? 'Active' : 'Inactive'}</span></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+          {examTypesLoading ? (
+            <PageLoader label="Loading exam data..." />
+          ) : examTypes.length === 0 ? (
+            <p
+              style={{ color: "#718096", textAlign: "center", padding: "40px" }}
+            >
+              No exam types yet. Add one to get started.
+            </p>
+          ) : (
+            <div className="staff-table-wrapper">
+              <table className="staff-table">
+                <thead>
+                  <tr>
+                    <th>S. No.</th>
+                    <th>Name</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {examTypes.map((et, i) => (
+                    <tr key={et.id}>
+                      <td>{i + 1}</td>
+                      <td style={{ fontWeight: 600 }}>{et.name}</td>
+                      <td>
+                        <span style={badgeStyle(et.isActive)}>
+                          {et.isActive ? "Active" : "Inactive"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {showAddExamType && (
-            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-              <div style={{ background: 'white', borderRadius: '16px', padding: '32px', width: '100%', maxWidth: '400px', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
-                <h3 style={{ marginBottom: '20px', color: '#1e2a3a' }}>Add Exam Type</h3>
-                <div style={{ marginBottom: '16px' }}>
-                  <label style={{ fontSize: '13px', fontWeight: 600, color: '#4a5568', display: 'block', marginBottom: '6px' }}>Name *</label>
-                  <input value={newExamTypeName} onChange={e => setNewExamTypeName(e.target.value)}
-                    placeholder="e.g. Quarterly" style={{ ...selectStyle, width: '100%', boxSizing: 'border-box' }} />
+            <div
+              style={{
+                position: "fixed",
+                inset: 0,
+                background: "rgba(0,0,0,0.45)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 1000,
+              }}
+            >
+              <div
+                style={{
+                  background: "white",
+                  borderRadius: "16px",
+                  padding: "32px",
+                  width: "100%",
+                  maxWidth: "400px",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+                }}
+              >
+                <h3 style={{ marginBottom: "20px", color: "#1e2a3a" }}>
+                  Add Exam Type
+                </h3>
+                <div style={{ marginBottom: "16px" }}>
+                  <label
+                    style={{
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      color: "#4a5568",
+                      display: "block",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    Name *
+                  </label>
+                  <input
+                    value={newExamTypeName}
+                    onChange={(e) => setNewExamTypeName(e.target.value)}
+                    placeholder="e.g. Quarterly"
+                    style={{
+                      ...selectStyle,
+                      width: "100%",
+                      boxSizing: "border-box",
+                    }}
+                  />
                 </div>
                 {examTypeMsg && !examTypeMsg.ok && (
-                  <div style={{ marginBottom: '12px', padding: '8px 14px', borderRadius: '8px', fontSize: '13px', background: '#fed7d7', color: '#742a2a', fontWeight: 600 }}>⚠️ {examTypeMsg.text}</div>
+                  <div
+                    style={{
+                      marginBottom: "12px",
+                      padding: "8px 14px",
+                      borderRadius: "8px",
+                      fontSize: "13px",
+                      background: "#fed7d7",
+                      color: "#742a2a",
+                      fontWeight: 600,
+                    }}
+                  >
+                    ⚠️ {examTypeMsg.text}
+                  </div>
                 )}
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <LoadingButton className="btn btn-primary" style={{ flex: 1 }} onClick={handleAddExamType} loading={savingExamType} loadingText="Saving...">Save</LoadingButton>
-                  <button className="btn" style={{ flex: 1, border: '1px solid #e2e8f0' }} onClick={() => { setShowAddExamType(false); setNewExamTypeName(''); setExamTypeMsg(null); }}><AdminActionIcon action="close" />Cancel</button>
+                <div style={{ display: "flex", gap: "10px" }}>
+                  <LoadingButton
+                    className="btn btn-primary"
+                    style={{ flex: 1 }}
+                    onClick={handleAddExamType}
+                    loading={savingExamType}
+                    loadingText="Saving..."
+                  >
+                    Save
+                  </LoadingButton>
+                  <button
+                    className="btn"
+                    style={{ flex: 1, border: "1px solid #e2e8f0" }}
+                    onClick={() => {
+                      setShowAddExamType(false);
+                      setNewExamTypeName("");
+                      setExamTypeMsg(null);
+                    }}
+                  >
+                    <AdminActionIcon action="close" />
+                    Cancel
+                  </button>
                 </div>
               </div>
             </div>
@@ -411,80 +831,260 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
       )}
 
       {/* ── EXAMS ── */}
-      {view === 'exams' && (
+      {view === "exams" && (
         <>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
-            <button className="btn btn-primary" onClick={() => { setShowAddExam(true); setExamMsg(null); }}><AdminActionIcon action="add" />Create Exam</button>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginBottom: "16px",
+            }}
+          >
+            <button
+              className="btn btn-primary"
+              onClick={() => {
+                setShowAddExam(true);
+                setExamMsg(null);
+              }}
+            >
+              <AdminActionIcon action="add" />
+              Create Exam
+            </button>
           </div>
           {msgBanner(examMsg)}
-          {examsLoading ? <PageLoader label="Loading exam data..." />
-            : exams.length === 0 ? <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>No exams yet.</p>
-            : (
-              <div className="staff-table-wrapper">
-                <table className="staff-table">
-                  <thead><tr><th>S. No.</th><th>Name</th><th>Type</th><th>Start</th><th>End</th><th>Published</th><th>Result</th><th>Action</th></tr></thead>
-                  <tbody>
-                    {exams.map((ex, i) => (
-                      <tr key={ex.id}>
-                        <td>{i + 1}</td>
-                        <td style={{ fontWeight: 600 }}>{ex.name}</td>
-                        <td>{examTypeName(ex.examTypeId)}</td>
-                        <td>{fmt(ex.startDate)}</td>
-                        <td>{fmt(ex.endDate)}</td>
-                        <td><span style={badgeStyle(ex.isPublished)}>{ex.isPublished ? 'Published' : 'Draft'}</span></td>
-                        <td><span style={badgeStyle(ex.resultPublished)}>{ex.resultPublished ? 'Published' : 'Pending'}</span></td>
-                        <td>
-                          {!ex.isPublished && (
-                            <button className="btn btn-primary" style={{ padding: '5px 12px', fontSize: '12px' }} onClick={() => handlePublishExam(ex.id)}><AdminActionIcon action="publish" />Publish</button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+          {examsLoading ? (
+            <PageLoader label="Loading exam data..." />
+          ) : exams.length === 0 ? (
+            <p
+              style={{ color: "#718096", textAlign: "center", padding: "40px" }}
+            >
+              No exams yet.
+            </p>
+          ) : (
+            <div className="staff-table-wrapper">
+              <table className="staff-table">
+                <thead>
+                  <tr>
+                    <th>S. No.</th>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Published</th>
+                    <th>Result</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {exams.map((ex, i) => (
+                    <tr key={ex.id}>
+                      <td>{i + 1}</td>
+                      <td style={{ fontWeight: 600 }}>{ex.name}</td>
+                      <td>{examTypeName(ex.examTypeId)}</td>
+                      <td>{fmt(ex.startDate)}</td>
+                      <td>{fmt(ex.endDate)}</td>
+                      <td>
+                        <span style={badgeStyle(ex.isPublished)}>
+                          {ex.isPublished ? "Published" : "Draft"}
+                        </span>
+                      </td>
+                      <td>
+                        <span style={badgeStyle(ex.resultPublished)}>
+                          {ex.resultPublished ? "Published" : "Pending"}
+                        </span>
+                      </td>
+                      <td>
+                        {!ex.isPublished && (
+                          <button
+                            className="btn btn-primary"
+                            style={{ padding: "5px 12px", fontSize: "12px" }}
+                            onClick={() => handlePublishExam(ex.id)}
+                          >
+                            <AdminActionIcon action="publish" />
+                            Publish
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {showAddExam && (
-            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-              <div style={{ background: 'white', borderRadius: '16px', padding: '32px', width: '100%', maxWidth: '480px', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
-                <h3 style={{ marginBottom: '20px', color: '#1e2a3a' }}>Create Exam</h3>
+            <div
+              style={{
+                position: "fixed",
+                inset: 0,
+                background: "rgba(0,0,0,0.45)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 1000,
+              }}
+            >
+              <div
+                style={{
+                  background: "white",
+                  borderRadius: "16px",
+                  padding: "32px",
+                  width: "100%",
+                  maxWidth: "480px",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+                }}
+              >
+                <h3 style={{ marginBottom: "20px", color: "#1e2a3a" }}>
+                  Create Exam
+                </h3>
                 {[
-                  { label: 'Exam Name *', key: 'name', type: 'text', placeholder: 'e.g. Quarterly Exam 2026' },
-                  { label: 'Start Date *', key: 'startDate', type: 'date' },
-                  { label: 'End Date *', key: 'endDate', type: 'date' },
+                  {
+                    label: "Exam Name *",
+                    key: "name",
+                    type: "text",
+                    placeholder: "e.g. Quarterly Exam 2026",
+                  },
+                  { label: "Start Date *", key: "startDate", type: "date" },
+                  { label: "End Date *", key: "endDate", type: "date" },
                 ].map(({ label, key, type, placeholder }) => (
-                  <div key={key} style={{ marginBottom: '14px' }}>
-                    <label style={{ fontSize: '13px', fontWeight: 600, color: '#4a5568', display: 'block', marginBottom: '6px' }}>{label}</label>
-                    <input type={type} value={(examForm as any)[key]} placeholder={placeholder}
-                      min={key === 'endDate' ? examForm.startDate : undefined}
-                      onChange={e => setExamForm(f => ({
-                        ...f, [key]: e.target.value,
-                        ...(key === 'startDate' && f.endDate && f.endDate < e.target.value ? { endDate: '' } : {})
-                      }))}
-                      style={{ ...selectStyle, width: '100%', boxSizing: 'border-box' }} />
+                  <div key={key} style={{ marginBottom: "14px" }}>
+                    <label
+                      style={{
+                        fontSize: "13px",
+                        fontWeight: 600,
+                        color: "#4a5568",
+                        display: "block",
+                        marginBottom: "6px",
+                      }}
+                    >
+                      {label}
+                    </label>
+                    <input
+                      type={type}
+                      value={(examForm as any)[key]}
+                      placeholder={placeholder}
+                      min={key === "endDate" ? examForm.startDate : undefined}
+                      onChange={(e) =>
+                        setExamForm((f) => ({
+                          ...f,
+                          [key]: e.target.value,
+                          ...(key === "startDate" &&
+                          f.endDate &&
+                          f.endDate < e.target.value
+                            ? { endDate: "" }
+                            : {}),
+                        }))
+                      }
+                      style={{
+                        ...selectStyle,
+                        width: "100%",
+                        boxSizing: "border-box",
+                      }}
+                    />
                   </div>
                 ))}
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{ fontSize: '13px', fontWeight: 600, color: '#4a5568', display: 'block', marginBottom: '6px' }}>Exam Type *</label>
-                  <select value={examForm.examTypeId} onChange={e => setExamForm(f => ({ ...f, examTypeId: e.target.value }))} style={{ ...selectStyle, width: '100%' }}>
+                <div style={{ marginBottom: "20px" }}>
+                  <label
+                    style={{
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      color: "#4a5568",
+                      display: "block",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    Exam Type *
+                  </label>
+                  <select
+                    value={examForm.examTypeId}
+                    onChange={(e) =>
+                      setExamForm((f) => ({ ...f, examTypeId: e.target.value }))
+                    }
+                    style={{ ...selectStyle, width: "100%" }}
+                  >
                     <option value="">Select Exam Type</option>
-                    {examTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    {examTypes.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{ fontSize: '13px', fontWeight: 600, color: '#4a5568', display: 'block', marginBottom: '6px' }}>Academic Session *</label>
-                  <select value={examForm.academicSessionId} onChange={e => setExamForm(f => ({ ...f, academicSessionId: e.target.value }))} style={{ ...selectStyle, width: '100%' }}>
+                <div style={{ marginBottom: "20px" }}>
+                  <label
+                    style={{
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      color: "#4a5568",
+                      display: "block",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    Academic Session *
+                  </label>
+                  <select
+                    value={examForm.academicSessionId}
+                    onChange={(e) =>
+                      setExamForm((f) => ({
+                        ...f,
+                        academicSessionId: e.target.value,
+                      }))
+                    }
+                    style={{ ...selectStyle, width: "100%" }}
+                  >
                     <option value="">Select Academic Session</option>
-                    {sessions.map(s => <option key={s.id} value={s.id}>{new Date(s.yearStart).toLocaleDateString('en-GB')} to {new Date(s.yearEnd).toLocaleDateString('en-GB')} (ID {s.id})</option>)}
+                    {sessions.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {new Date(s.yearStart).toLocaleDateString("en-GB")} to{" "}
+                        {new Date(s.yearEnd).toLocaleDateString("en-GB")} (ID{" "}
+                        {s.id})
+                      </option>
+                    ))}
                   </select>
                 </div>
                 {examMsg && !examMsg.ok && (
-                  <div style={{ marginBottom: '12px', padding: '8px 14px', borderRadius: '8px', fontSize: '13px', background: '#fed7d7', color: '#742a2a', fontWeight: 600 }}>⚠️ {examMsg.text}</div>
+                  <div
+                    style={{
+                      marginBottom: "12px",
+                      padding: "8px 14px",
+                      borderRadius: "8px",
+                      fontSize: "13px",
+                      background: "#fed7d7",
+                      color: "#742a2a",
+                      fontWeight: 600,
+                    }}
+                  >
+                    ⚠️ {examMsg.text}
+                  </div>
                 )}
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <LoadingButton className="btn btn-primary" style={{ flex: 1 }} onClick={handleAddExam} loading={savingExam} loadingText="Creating...">Create</LoadingButton>
-                  <button className="btn" style={{ flex: 1, border: '1px solid #e2e8f0' }} onClick={() => { setShowAddExam(false); setExamForm({ name: '', examTypeId: '', academicSessionId: '', startDate: '', endDate: '' }); setExamMsg(null); }}><AdminActionIcon action="close" />Cancel</button>
+                <div style={{ display: "flex", gap: "10px" }}>
+                  <LoadingButton
+                    className="btn btn-primary"
+                    style={{ flex: 1 }}
+                    onClick={handleAddExam}
+                    loading={savingExam}
+                    loadingText="Creating..."
+                  >
+                    Create
+                  </LoadingButton>
+                  <button
+                    className="btn"
+                    style={{ flex: 1, border: "1px solid #e2e8f0" }}
+                    onClick={() => {
+                      setShowAddExam(false);
+                      setExamForm({
+                        name: "",
+                        examTypeId: "",
+                        academicSessionId: "",
+                        startDate: "",
+                        endDate: "",
+                      });
+                      setExamMsg(null);
+                    }}
+                  >
+                    <AdminActionIcon action="close" />
+                    Cancel
+                  </button>
                 </div>
               </div>
             </div>
@@ -493,119 +1093,413 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
       )}
 
       {/* ── EXAM SUBJECTS ── */}
-      {view === 'subjects' && (
+      {view === "subjects" && (
         <>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap' }}>
-            <select style={selectStyle} value={selectedExamId} onChange={e => {
-              setSelectedExamId(e.target.value);
-              setSubjectFilterClassId('');
-              setSubjectFilterSectionId('');
-              setExamSubjects([]);
-              fetchExamSubjects(e.target.value);
-              setSubjectMsg(null);
-            }}>
+          <div
+            style={{
+              display: "flex",
+              gap: "10px",
+              alignItems: "center",
+              marginBottom: "16px",
+              flexWrap: "wrap",
+            }}
+          >
+            <select
+              style={selectStyle}
+              value={selectedExamId}
+              onChange={(e) => {
+                setSelectedExamId(e.target.value);
+                setSubjectFilterClassId("");
+                setSubjectFilterSectionId("");
+                setExamSubjects([]);
+                fetchExamSubjects(e.target.value);
+                setSubjectMsg(null);
+              }}
+            >
               <option value="">Select Exam</option>
-              {exams.map(ex => <option key={ex.id} value={ex.id}>{ex.name}</option>)}
+              {exams.map((ex) => (
+                <option key={ex.id} value={ex.id}>
+                  {ex.name}
+                </option>
+              ))}
             </select>
             <select
               style={selectStyle}
               value={subjectFilterClassId}
               disabled={!selectedExamId}
-              onChange={e => {
+              onChange={(e) => {
                 setSubjectFilterClassId(e.target.value);
-                setSubjectFilterSectionId('');
+                setSubjectFilterSectionId("");
               }}
             >
               <option value="">Select Class</option>
-              {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {classes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
             </select>
             <select
               style={selectStyle}
               value={subjectFilterSectionId}
               disabled={!subjectFilterClassId}
-              onChange={e => setSubjectFilterSectionId(e.target.value)}
+              onChange={(e) => setSubjectFilterSectionId(e.target.value)}
             >
               <option value="">Select Section</option>
-              {subjectFilterSections.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              {subjectFilterSections.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
             </select>
             {selectedExamId && (
-              <button className="btn btn-primary" onClick={() => { setShowAddSubject(true); setSubjectMsg(null); }}><AdminActionIcon action="add" />Add Subject</button>
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  setShowAddSubject(true);
+                  setSubjectMsg(null);
+                }}
+              >
+                <AdminActionIcon action="add" />
+                Add Subject
+              </button>
             )}
           </div>
           {msgBanner(subjectMsg)}
-          {subjectsLoading ? <PageLoader label="Loading exam data..." />
-            : !selectedExamId ? <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>Select an exam to view subjects.</p>
-            : !subjectFilterClassId ? <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>Select a class to view subjects.</p>
-            : !subjectFilterSectionId ? <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>Select a section to view subjects.</p>
-            : filteredExamSubjects.length === 0 ? <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>No subjects configured for the selected class and section.</p>
-            : (
-              <div className="staff-table-wrapper">
-                <table className="staff-table">
-                  <thead><tr><th>S. No.</th><th>Subject</th><th>Class</th><th>Section</th><th>Total Marks</th><th>Passing Marks</th></tr></thead>
-                  <tbody>
-                    {filteredExamSubjects.map((s, i) => (
-                      <tr key={s.id}>
-                        <td>{i + 1}</td>
-                        <td style={{ fontWeight: 600 }}>{s.subjectName}</td>
-                        <td>{s.className}</td>
-                        <td>{s.sectionName}</td>
-                        <td>{s.maxMarks}</td>
-                        <td>{s.passingMarks}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+          {subjectsLoading ? (
+            <PageLoader label="Loading exam data..." />
+          ) : !selectedExamId ? (
+            <p
+              style={{ color: "#718096", textAlign: "center", padding: "40px" }}
+            >
+              Select an exam to view subjects.
+            </p>
+          ) : !subjectFilterClassId ? (
+            <p
+              style={{ color: "#718096", textAlign: "center", padding: "40px" }}
+            >
+              Select a class to view subjects.
+            </p>
+          ) : !subjectFilterSectionId ? (
+            <p
+              style={{ color: "#718096", textAlign: "center", padding: "40px" }}
+            >
+              Select a section to view subjects.
+            </p>
+          ) : filteredExamSubjects.length === 0 ? (
+            <p
+              style={{ color: "#718096", textAlign: "center", padding: "40px" }}
+            >
+              No subjects configured for the selected class and section.
+            </p>
+          ) : (
+            <div className="staff-table-wrapper">
+              <table className="staff-table">
+                <thead>
+                  <tr>
+                    <th>S. No.</th>
+                    <th>Subject</th>
+                    <th>Class</th>
+                    <th>Section</th>
+                    <th>Total Marks</th>
+                    <th>Passing Marks</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredExamSubjects.map((s, i) => (
+                    <tr key={s.id}>
+                      <td>{i + 1}</td>
+                      <td style={{ fontWeight: 600 }}>{s.subjectName}</td>
+                      <td>{s.className}</td>
+                      <td>{s.sectionName}</td>
+                      <td>{s.maxMarks}</td>
+                      <td>{s.passingMarks}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {showAddSubject && (
-            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-              <div style={{ background: 'white', borderRadius: '16px', padding: '32px', width: '100%', maxWidth: '460px', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
-                <h3 style={{ marginBottom: '20px', color: '#1e2a3a' }}>Add Exam Subject</h3>
-                <div style={{ marginBottom: '14px' }}>
-                  <label style={{ fontSize: '13px', fontWeight: 600, color: '#4a5568', display: 'block', marginBottom: '6px' }}>Class *</label>
-                  <select value={subjectForm.classId} onChange={e => { setSubjectForm(f => ({ ...f, classId: e.target.value, sectionId: '', subjectId: '' })); setSelectedSubjectIds([]); setSubjects([]); }} style={{ ...selectStyle, width: '100%' }}>
+            <div
+              style={{
+                position: "fixed",
+                inset: 0,
+                background: "rgba(0,0,0,0.45)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 1000,
+              }}
+            >
+              <div
+                style={{
+                  background: "white",
+                  borderRadius: "16px",
+                  padding: "32px",
+                  width: "100%",
+                  maxWidth: "460px",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+                }}
+              >
+                <h3 style={{ marginBottom: "20px", color: "#1e2a3a" }}>
+                  Add Exam Subject
+                </h3>
+                <div style={{ marginBottom: "14px" }}>
+                  <label
+                    style={{
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      color: "#4a5568",
+                      display: "block",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    Class *
+                  </label>
+                  <select
+                    value={subjectForm.classId}
+                    onChange={(e) => {
+                      setSubjectForm((f) => ({
+                        ...f,
+                        classId: e.target.value,
+                        sectionId: "",
+                        subjectId: "",
+                      }));
+                      setSelectedSubjectIds([]);
+                      setSubjects([]);
+                    }}
+                    style={{ ...selectStyle, width: "100%" }}
+                  >
                     <option value="">Select Class</option>
-                    {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    {classes.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
-                <div style={{ marginBottom: '14px' }}>
-                  <label style={{ fontSize: '13px', fontWeight: 600, color: '#4a5568', display: 'block', marginBottom: '6px' }}>Section *</label>
-                  <select value={subjectForm.sectionId} onChange={e => { setSubjectForm(f => ({ ...f, sectionId: e.target.value, subjectId: '' })); setSelectedSubjectIds([]); fetchSectionSubjects(e.target.value); }} style={{ ...selectStyle, width: '100%' }} disabled={!subjectForm.classId}>
+                <div style={{ marginBottom: "14px" }}>
+                  <label
+                    style={{
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      color: "#4a5568",
+                      display: "block",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    Section *
+                  </label>
+                  <select
+                    value={subjectForm.sectionId}
+                    onChange={(e) => {
+                      setSubjectForm((f) => ({
+                        ...f,
+                        sectionId: e.target.value,
+                        subjectId: "",
+                      }));
+                      setSelectedSubjectIds([]);
+                      fetchSectionSubjects(e.target.value);
+                    }}
+                    style={{ ...selectStyle, width: "100%" }}
+                    disabled={!subjectForm.classId}
+                  >
                     <option value="">Select Section</option>
-                    {filteredSections.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    {filteredSections.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
-                <div style={{ marginBottom: '14px' }}>
-                  <label style={{ fontSize: '13px', fontWeight: 600, color: '#4a5568', display: 'block', marginBottom: '6px' }}>Subjects * ({selectedSubjectIds.length} selected)</label>
-                  <div style={{ border: '2px solid #e2e8f0', borderRadius: '8px', padding: '10px', maxHeight: '180px', overflowY: 'auto', background: '#fff' }}>
-                    {subjects.length > 0 && <label style={{ display: 'block', paddingBottom: '8px', marginBottom: '6px', borderBottom: '1px solid #e2e8f0', fontWeight: 600 }}>
-                      <input type="checkbox" checked={selectedSubjectIds.length === subjects.length}
-                        onChange={e => setSelectedSubjectIds(e.target.checked ? subjects.map(s => s.subjectId) : [])} /> Select all
-                    </label>}
-                    {subjects.map(s => <label key={s.subjectId} style={{ display: 'block', padding: '6px 0' }}>
-                      <input type="checkbox" checked={selectedSubjectIds.includes(s.subjectId)}
-                        onChange={() => setSelectedSubjectIds(ids => ids.includes(s.subjectId) ? ids.filter(id => id !== s.subjectId) : [...ids, s.subjectId])} /> {s.subjectName}
-                    </label>)}
-                    {!subjects.length && <span style={{ color: '#718096', fontSize: '13px' }}>Select a class and section to load subjects.</span>}
+                <div style={{ marginBottom: "14px" }}>
+                  <label
+                    style={{
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      color: "#4a5568",
+                      display: "block",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    Subjects * ({selectedSubjectIds.length} selected)
+                  </label>
+                  <div
+                    style={{
+                      border: "2px solid #e2e8f0",
+                      borderRadius: "8px",
+                      padding: "10px",
+                      maxHeight: "180px",
+                      overflowY: "auto",
+                      background: "#fff",
+                    }}
+                  >
+                    {subjects.length > 0 && (
+                      <label
+                        style={{
+                          display: "block",
+                          paddingBottom: "8px",
+                          marginBottom: "6px",
+                          borderBottom: "1px solid #e2e8f0",
+                          fontWeight: 600,
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={
+                            selectedSubjectIds.length === subjects.length
+                          }
+                          onChange={(e) =>
+                            setSelectedSubjectIds(
+                              e.target.checked
+                                ? subjects.map((s) => s.subjectId)
+                                : [],
+                            )
+                          }
+                        />{" "}
+                        Select all
+                      </label>
+                    )}
+                    {subjects.map((s) => (
+                      <label
+                        key={s.subjectId}
+                        style={{ display: "block", padding: "6px 0" }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedSubjectIds.includes(s.subjectId)}
+                          onChange={() =>
+                            setSelectedSubjectIds((ids) =>
+                              ids.includes(s.subjectId)
+                                ? ids.filter((id) => id !== s.subjectId)
+                                : [...ids, s.subjectId],
+                            )
+                          }
+                        />{" "}
+                        {s.subjectName}
+                      </label>
+                    ))}
+                    {!subjects.length && (
+                      <span style={{ color: "#718096", fontSize: "13px" }}>
+                        Select a class and section to load subjects.
+                      </span>
+                    )}
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+                <div
+                  style={{ display: "flex", gap: "12px", marginBottom: "20px" }}
+                >
                   <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: '13px', fontWeight: 600, color: '#4a5568', display: 'block', marginBottom: '6px' }}>Total Marks *</label>
-                    <input type="number" min="1" value={subjectForm.maxMarks} onChange={e => setSubjectForm(f => ({ ...f, maxMarks: e.target.value }))} style={{ ...selectStyle, width: '100%', boxSizing: 'border-box' }} placeholder="100" />
+                    <label
+                      style={{
+                        fontSize: "13px",
+                        fontWeight: 600,
+                        color: "#4a5568",
+                        display: "block",
+                        marginBottom: "6px",
+                      }}
+                    >
+                      Total Marks *
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={subjectForm.maxMarks}
+                      onChange={(e) =>
+                        setSubjectForm((f) => ({
+                          ...f,
+                          maxMarks: e.target.value,
+                        }))
+                      }
+                      style={{
+                        ...selectStyle,
+                        width: "100%",
+                        boxSizing: "border-box",
+                      }}
+                      placeholder="100"
+                    />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: '13px', fontWeight: 600, color: '#4a5568', display: 'block', marginBottom: '6px' }}>Passing Marks *</label>
-                    <input type="number" min="0" max={subjectForm.maxMarks ? Number(subjectForm.maxMarks) - 1 : undefined} value={subjectForm.passingMarks} onChange={e => setSubjectForm(f => ({ ...f, passingMarks: e.target.value }))} style={{ ...selectStyle, width: '100%', boxSizing: 'border-box' }} placeholder="35" />
+                    <label
+                      style={{
+                        fontSize: "13px",
+                        fontWeight: 600,
+                        color: "#4a5568",
+                        display: "block",
+                        marginBottom: "6px",
+                      }}
+                    >
+                      Passing Marks *
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max={
+                        subjectForm.maxMarks
+                          ? Number(subjectForm.maxMarks) - 1
+                          : undefined
+                      }
+                      value={subjectForm.passingMarks}
+                      onChange={(e) =>
+                        setSubjectForm((f) => ({
+                          ...f,
+                          passingMarks: e.target.value,
+                        }))
+                      }
+                      style={{
+                        ...selectStyle,
+                        width: "100%",
+                        boxSizing: "border-box",
+                      }}
+                      placeholder="35"
+                    />
                   </div>
                 </div>
                 {subjectMsg && !subjectMsg.ok && (
-                  <div style={{ marginBottom: '12px', padding: '8px 14px', borderRadius: '8px', fontSize: '13px', background: '#fed7d7', color: '#742a2a', fontWeight: 600 }}>⚠️ {subjectMsg.text}</div>
+                  <div
+                    style={{
+                      marginBottom: "12px",
+                      padding: "8px 14px",
+                      borderRadius: "8px",
+                      fontSize: "13px",
+                      background: "#fed7d7",
+                      color: "#742a2a",
+                      fontWeight: 600,
+                    }}
+                  >
+                    ⚠️ {subjectMsg.text}
+                  </div>
                 )}
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <LoadingButton className="btn btn-primary" style={{ flex: 1 }} onClick={handleAddExamSubject} loading={savingSubject} loadingText="Saving..." disabled={!selectedSubjectIds.length}>{`Add ${selectedSubjectIds.length || ''} Subject(s)`}</LoadingButton>
-                  <button className="btn" style={{ flex: 1, border: '1px solid #e2e8f0' }} onClick={() => { setShowAddSubject(false); setSubjectForm({ classId: '', sectionId: '', subjectId: '', maxMarks: '', passingMarks: '' }); setSelectedSubjectIds([]); setSubjectMsg(null); }}><AdminActionIcon action="close" />Cancel</button>
+                <div style={{ display: "flex", gap: "10px" }}>
+                  <LoadingButton
+                    className="btn btn-primary"
+                    style={{ flex: 1 }}
+                    onClick={handleAddExamSubject}
+                    loading={savingSubject}
+                    loadingText="Saving..."
+                    disabled={!selectedSubjectIds.length}
+                  >{`Add ${selectedSubjectIds.length || ""} Subject(s)`}</LoadingButton>
+                  <button
+                    className="btn"
+                    style={{ flex: 1, border: "1px solid #e2e8f0" }}
+                    onClick={() => {
+                      setShowAddSubject(false);
+                      setSubjectForm({
+                        classId: "",
+                        sectionId: "",
+                        subjectId: "",
+                        maxMarks: "",
+                        passingMarks: "",
+                      });
+                      setSelectedSubjectIds([]);
+                      setSubjectMsg(null);
+                    }}
+                  >
+                    <AdminActionIcon action="close" />
+                    Cancel
+                  </button>
                 </div>
               </div>
             </div>
@@ -614,146 +1508,368 @@ const ExamManagement: React.FC<{ selectedSchoolId: number | null }> = ({ selecte
       )}
 
       {/* ── EXAM SCHEDULE ── */}
-      {view === 'schedule' && (
+      {view === "schedule" && (
         <CreateExamSchedule selectedSchoolId={selectedSchoolId} exams={exams} />
       )}
 
       {/* ── TIMETABLE ── */}
-      {view === 'timetable' && (
+      {view === "timetable" && (
         <>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap' }}>
-            <select style={selectStyle} value={timetableExamId} onChange={e => { setTimetableExamId(e.target.value); fetchTimetable(e.target.value); }}>
+          <div
+            style={{
+              display: "flex",
+              gap: "10px",
+              alignItems: "center",
+              marginBottom: "20px",
+              flexWrap: "wrap",
+            }}
+          >
+            <select
+              style={selectStyle}
+              value={timetableExamId}
+              onChange={(e) => {
+                setTimetableExamId(e.target.value);
+                fetchTimetable(e.target.value);
+              }}
+            >
               <option value="">Select Exam</option>
-              {exams.filter(ex => ex.isPublished).map(ex => <option key={ex.id} value={ex.id}>{ex.name}</option>)}
+              {exams
+                .filter((ex) => ex.isPublished)
+                .map((ex) => (
+                  <option key={ex.id} value={ex.id}>
+                    {ex.name}
+                  </option>
+                ))}
             </select>
           </div>
 
           {timetableLoading && <PageLoader label="Loading exam data..." />}
 
           {!timetableLoading && timetableExamId && timetable.length === 0 && (
-            <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>No schedule found for this exam.</p>
+            <p
+              style={{ color: "#718096", textAlign: "center", padding: "40px" }}
+            >
+              No schedule found for this exam.
+            </p>
           )}
 
-          {timetable.length > 0 && (() => {
-            const selectedExam = exams.find(e => String(e.id) === timetableExamId);
-            // Group by className + sectionName
-            const groups: Record<string, any[]> = {};
-            timetable.forEach(t => {
-              const key = `${t.className} - Section ${t.sectionName}`;
-              if (!groups[key]) groups[key] = [];
-              groups[key].push(t);
-            });
-            return (
-              <>
-                {selectedExam && (
-                  <div style={{ display: 'flex', gap: '24px', marginBottom: '20px', background: '#f7fafc', padding: '14px 16px', borderRadius: '10px', fontSize: '14px', color: '#4a5568' }}>
-                    <div><strong>Exam:</strong> {selectedExam.name}</div>
-                    <div><strong>Start:</strong> {fmt(selectedExam.startDate)}</div>
-                    <div><strong>End:</strong> {fmt(selectedExam.endDate)}</div>
-                    <div><span style={badgeStyle(selectedExam.isPublished)}>{selectedExam.isPublished ? 'Published' : 'Draft'}</span></div>
-                  </div>
-                )}
-                {Object.entries(groups).map(([groupKey, items]) => (
-                  <div key={groupKey} style={{ marginBottom: '24px' }}>
-                    <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#1e2a3a', marginBottom: '10px' }}>{groupKey}</h3>
-                    <div className="staff-table-wrapper">
-                      <table className="staff-table">
-                        <thead>
-                          <tr><th>S. No.</th><th>Subject</th><th>Exam Date</th><th>Start Time</th><th>End Time</th><th>Total Marks</th><th>Passing Marks</th></tr>
-                        </thead>
-                        <tbody>
-                          {items.map((t, i) => (
-                            <tr key={i}>
-                              <td>{i + 1}</td>
-                              <td style={{ fontWeight: 600 }}>{t.subjectName}</td>
-                              <td>{t.examDate ? fmt(t.examDate) : 'Not Scheduled'}</td>
-                              <td>{t.startTime ? t.startTime.substring(0, 5) : 'Not Scheduled'}</td>
-                              <td>{t.endTime ? t.endTime.substring(0, 5) : 'Not Scheduled'}</td>
-                              <td>{t.maxMarks ?? '-'}</td>
-                              <td>{t.passingMarks ?? '-'}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+          {timetable.length > 0 &&
+            (() => {
+              const selectedExam = exams.find(
+                (e) => String(e.id) === timetableExamId,
+              );
+              // Group by className + sectionName
+              const groups: Record<string, any[]> = {};
+              timetable.forEach((t) => {
+                const key = `${t.className} - Section ${t.sectionName}`;
+                if (!groups[key]) groups[key] = [];
+                groups[key].push(t);
+              });
+              return (
+                <>
+                  {selectedExam && (
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "24px",
+                        marginBottom: "20px",
+                        background: "#f7fafc",
+                        padding: "14px 16px",
+                        borderRadius: "10px",
+                        fontSize: "14px",
+                        color: "#4a5568",
+                      }}
+                    >
+                      <div>
+                        <strong>Exam:</strong> {selectedExam.name}
+                      </div>
+                      <div>
+                        <strong>Start:</strong> {fmt(selectedExam.startDate)}
+                      </div>
+                      <div>
+                        <strong>End:</strong> {fmt(selectedExam.endDate)}
+                      </div>
+                      <div>
+                        <span style={badgeStyle(selectedExam.isPublished)}>
+                          {selectedExam.isPublished ? "Published" : "Draft"}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </>
-            );
-          })()}
+                  )}
+                  {Object.entries(groups).map(([groupKey, items]) => (
+                    <div key={groupKey} style={{ marginBottom: "24px" }}>
+                      <h3
+                        style={{
+                          fontSize: "15px",
+                          fontWeight: 700,
+                          color: "#1e2a3a",
+                          marginBottom: "10px",
+                        }}
+                      >
+                        {groupKey}
+                      </h3>
+                      <div className="staff-table-wrapper">
+                        <table className="staff-table">
+                          <thead>
+                            <tr>
+                              <th>S. No.</th>
+                              <th>Subject</th>
+                              <th>Exam Date</th>
+                              <th>Start Time</th>
+                              <th>End Time</th>
+                              <th>Total Marks</th>
+                              <th>Passing Marks</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {items.map((t, i) => (
+                              <tr key={i}>
+                                <td>{i + 1}</td>
+                                <td style={{ fontWeight: 600 }}>
+                                  {t.subjectName}
+                                </td>
+                                <td>
+                                  {t.examDate
+                                    ? fmt(t.examDate)
+                                    : "Not Scheduled"}
+                                </td>
+                                <td>
+                                  {t.startTime
+                                    ? t.startTime.substring(0, 5)
+                                    : "Not Scheduled"}
+                                </td>
+                                <td>
+                                  {t.endTime
+                                    ? t.endTime.substring(0, 5)
+                                    : "Not Scheduled"}
+                                </td>
+                                <td>{t.maxMarks ?? "-"}</td>
+                                <td>{t.passingMarks ?? "-"}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              );
+            })()}
 
           {!timetableExamId && (
-            <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>Select a published exam to view its timetable.</p>
+            <p
+              style={{ color: "#718096", textAlign: "center", padding: "40px" }}
+            >
+              Select a published exam to view its timetable.
+            </p>
           )}
         </>
       )}
 
       {/* ── RESULTS ── */}
-      {view === 'results' && (
+      {view === "results" && (
         <>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap' }}>
-            <select style={selectStyle} value={resultsExamId} onChange={e => { setResultsExamId(e.target.value); setResults([]); setResultsMsg(null); }}>
+          <div
+            style={{
+              display: "flex",
+              gap: "10px",
+              alignItems: "center",
+              marginBottom: "16px",
+              flexWrap: "wrap",
+            }}
+          >
+            <select
+              style={selectStyle}
+              value={resultsExamId}
+              onChange={(e) => {
+                setResultsExamId(e.target.value);
+                setResults([]);
+                setResultsMsg(null);
+              }}
+            >
               <option value="">Select Exam</option>
-              {exams.map(ex => <option key={ex.id} value={ex.id}>{ex.name}</option>)}
+              {exams.map((ex) => (
+                <option key={ex.id} value={ex.id}>
+                  {ex.name}
+                </option>
+              ))}
             </select>
-            <LoadingButton className="btn btn-primary" onClick={fetchResults} disabled={!resultsExamId} loading={resultsLoading} loadingText="Loading...">View Results</LoadingButton>
-            <LoadingButton className="btn" style={{ border: '1px solid #e2e8f0' }} onClick={handleGenerateResults} disabled={!resultsExamId} loading={generatingResults} loadingText="Generating...">⚙️ Generate Results</LoadingButton>
-            <LoadingButton className="btn" style={{ border: '1px solid #22543d', color: '#22543d' }} onClick={handlePublishResults} disabled={!resultsExamId} loading={publishingResults} loadingText="Publishing...">📢 Publish Results</LoadingButton>
+            <LoadingButton
+              className="btn btn-primary"
+              onClick={fetchResults}
+              disabled={!resultsExamId}
+              loading={resultsLoading}
+              loadingText="Loading..."
+            >
+              View Results
+            </LoadingButton>
+            <LoadingButton
+              className="btn"
+              style={{ border: "1px solid #e2e8f0" }}
+              onClick={handleGenerateResults}
+              disabled={!resultsExamId}
+              loading={generatingResults}
+              loadingText="Generating..."
+            >
+              ⚙️ Generate Results
+            </LoadingButton>
+            <LoadingButton
+              className="btn"
+              style={{ border: "1px solid #22543d", color: "#22543d" }}
+              onClick={handlePublishResults}
+              disabled={!resultsExamId}
+              loading={publishingResults}
+              loadingText="Publishing..."
+            >
+              📢 Publish Results
+            </LoadingButton>
           </div>
           {msgBanner(resultsMsg)}
 
           {results.length > 0 ? (
             <div className="staff-table-wrapper">
               <table className="staff-table">
-                <thead><tr><th>Rank</th><th>Student</th><th>Total</th><th>Obtained</th><th>%</th><th>Grade</th><th>Status</th></tr></thead>
+                <thead>
+                  <tr>
+                    <th>Rank</th>
+                    <th>Student</th>
+                    <th>Total</th>
+                    <th>Obtained</th>
+                    <th>%</th>
+                    <th>Grade</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
                 <tbody>
                   {results.map((r, idx) => (
                     <tr key={idx}>
                       <td style={{ fontWeight: 700 }}>#{r.rank}</td>
                       <td>
-                        <button type="button" className="staff-name-link" onClick={() => fetchStudentDetail(r.studentId)}>
+                        <button
+                          type="button"
+                          className="staff-name-link"
+                          onClick={() => fetchStudentDetail(r.studentId)}
+                        >
                           {r.studentName}
                         </button>
                       </td>
                       <td>{r.totalMarks}</td>
                       <td>{r.obtainedMarks}</td>
                       <td>{r.percentage?.toFixed(1)}%</td>
-                      <td><span style={{ fontWeight: 700, color: '#553c9a' }}>{r.grade}</span></td>
-                      <td><span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 600, background: r.resultStatus === 'PASS' ? '#c6f6d5' : '#fed7d7', color: r.resultStatus === 'PASS' ? '#22543d' : '#742a2a' }}>{r.resultStatus}</span></td>
+                      <td>
+                        <span style={{ fontWeight: 700, color: "#553c9a" }}>
+                          {r.grade}
+                        </span>
+                      </td>
+                      <td>
+                        <span
+                          style={{
+                            display: "inline-block",
+                            padding: "3px 10px",
+                            borderRadius: "12px",
+                            fontSize: "12px",
+                            fontWeight: 600,
+                            background:
+                              r.resultStatus === "PASS" ? "#c6f6d5" : "#fed7d7",
+                            color:
+                              r.resultStatus === "PASS" ? "#22543d" : "#742a2a",
+                          }}
+                        >
+                          {r.resultStatus}
+                        </span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           ) : (
-            !resultsLoading && <p style={{ color: '#718096', textAlign: 'center', padding: '40px' }}>Select an exam and click "View Results" or "Generate Results".</p>
+            !resultsLoading && (
+              <p
+                style={{
+                  color: "#718096",
+                  textAlign: "center",
+                  padding: "40px",
+                }}
+              >
+                Select an exam and click "View Results" or "Generate Results".
+              </p>
+            )
           )}
         </>
       )}
 
       {/* ── STUDENT RESULT DETAIL MODAL ── */}
       {(detailLoading || studentDetail) && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'white', borderRadius: '16px', padding: '32px', width: '100%', maxWidth: '900px', boxShadow: '0 8px 32px rgba(0,0,0,0.18)', maxHeight: '90vh', overflowY: 'auto' }}>
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.45)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            style={{
+              background: "white",
+              borderRadius: "16px",
+              padding: "32px",
+              width: "100%",
+              maxWidth: "900px",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+              maxHeight: "90vh",
+              overflowY: "auto",
+            }}
+          >
             {detailLoading ? (
               <PageLoader label="Loading exam data..." />
-            ) : studentDetail && (
-              <>
-                <button type="button" className="btn" style={{ marginBottom: 14 }} onClick={() => setStudentDetail(null)}><AdminActionIcon action="close" />Close result</button>
-                <StudentReportCards
-                  showList={false}
-                  profile={{ studentName: studentDetail.studentName, schoolName: studentDetail.schoolName,
-                    schoolAddress: studentDetail.schoolAddress, schoolLogoUrl: studentDetail.schoolLogoUrl,
-                    rollNumber: studentDetail.rollNumber, className: studentDetail.className, sectionName: studentDetail.sectionName }}
-                  parent={{ name: studentDetail.parentName }}
-                  results={[{ examId: Number(resultsExamId), examName: studentDetail.examName,
-                    totalMarks: studentDetail.totalMarks, obtainedMarks: studentDetail.obtainedMarks,
-                    percentage: studentDetail.percentage, grade: studentDetail.grade,
-                    resultStatus: studentDetail.resultStatus, expectedSubjectCount: studentDetail.expectedSubjectCount,
-                    recordedSubjectCount: studentDetail.recordedSubjectCount, isComplete: studentDetail.isComplete }]}
-                  gradeHistory={studentDetail.subjects ?? []}
-                />
-              </>
+            ) : (
+              studentDetail && (
+                <>
+                  <button
+                    type="button"
+                    className="btn"
+                    style={{ marginBottom: 14 }}
+                    onClick={() => setStudentDetail(null)}
+                  >
+                    <AdminActionIcon action="close" />
+                    Close result
+                  </button>
+                  <StudentReportCards
+                    showList={false}
+                    profile={{
+                      studentName: studentDetail.studentName,
+                      schoolName: studentDetail.schoolName,
+                      schoolAddress: studentDetail.schoolAddress,
+                      schoolLogoUrl: studentDetail.schoolLogoUrl,
+                      rollNumber: studentDetail.rollNumber,
+                      className: studentDetail.className,
+                      sectionName: studentDetail.sectionName,
+                    }}
+                    parent={{ name: studentDetail.parentName }}
+                    results={[
+                      {
+                        examId: Number(resultsExamId),
+                        examName: studentDetail.examName,
+                        totalMarks: studentDetail.totalMarks,
+                        obtainedMarks: studentDetail.obtainedMarks,
+                        percentage: studentDetail.percentage,
+                        grade: studentDetail.grade,
+                        resultStatus: studentDetail.resultStatus,
+                        expectedSubjectCount:
+                          studentDetail.expectedSubjectCount,
+                        recordedSubjectCount:
+                          studentDetail.recordedSubjectCount,
+                        isComplete: studentDetail.isComplete,
+                      },
+                    ]}
+                    gradeHistory={studentDetail.subjects ?? []}
+                  />
+                </>
+              )
             )}
           </div>
         </div>

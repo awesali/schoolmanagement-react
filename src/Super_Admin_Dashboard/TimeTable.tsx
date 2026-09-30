@@ -1,11 +1,13 @@
-import AdminActionIcon from './AdminActionIcon';
-import React, { useState, useEffect } from 'react';
-import { API_BASE_URL } from '../config';
-import { useToastMessageState } from '../components/Toast/Toast';
-import Modal from './Modal';
-import './AddStaff.css';
-import './TimeTable.css';
+// Time Table: imports and dependencies
+import AdminActionIcon from "./AdminActionIcon";
+import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../config";
+import { useToastMessageState } from "../components/Toast/Toast";
+import Modal from "./Modal";
+import "./AddStaff.css";
+import "./TimeTable.css";
 
+// Data types and contracts
 interface TimeTableProps {
   isOpen: boolean;
   onClose: () => void;
@@ -60,22 +62,32 @@ interface TimeTableData {
   slots: TimeSlot[];
 }
 
-const TimeTable: React.FC<TimeTableProps> = ({ 
-  isOpen, 
-  onClose, 
-  classData, 
-  schoolId, 
-  onSuccess 
+// Main component and state
+const TimeTable: React.FC<TimeTableProps> = ({
+  isOpen,
+  onClose,
+  classData,
+  schoolId,
+  onSuccess,
 }) => {
   const [periods, setPeriods] = useState<Period[]>([]);
   const [days, setDays] = useState<Day[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [selectedSectionId, setSelectedSectionId] = useState<number | null>(null);
-  const [error, setError] = useToastMessageState('error');
+  const [selectedSectionId, setSelectedSectionId] = useState<number | null>(
+    null,
+  );
+  const [error, setError] = useToastMessageState("error");
   const [loading, setLoading] = useState(false);
   const [isExistingTimetable, setIsExistingTimetable] = useState(false);
 
-  const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const dayNames = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
 
   useEffect(() => {
     if (isOpen && schoolId) {
@@ -99,29 +111,35 @@ const TimeTable: React.FC<TimeTableProps> = ({
   const fetchSubjects = async (sectionId: number) => {
     setSubjects([]);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/Subject/GetSubjectsBySection?sectionId=${sectionId}&schoolId=${schoolId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `${API_BASE_URL}/api/Subject/GetSubjectsBySection?sectionId=${sectionId}&schoolId=${schoolId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
       if (response.ok) {
         const data = await response.json();
         setSubjects(data);
       }
       // 404 = no subjects found, subjects stays []
     } catch (err) {
-      console.error('Failed to fetch subjects');
+      console.error("Failed to fetch subjects");
     }
   };
 
   const fetchExistingTimeTable = async () => {
     if (!selectedSectionId) return;
-    
+
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/Timetable/get-timetable?sectionId=${selectedSectionId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `${API_BASE_URL}/api/Timetable/get-timetable?sectionId=${selectedSectionId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data && result.data.periods.length > 0) {
@@ -136,7 +154,7 @@ const TimeTable: React.FC<TimeTableProps> = ({
         initializeDefaultTimeTable();
       }
     } catch (err) {
-      console.error('Failed to fetch existing timetable');
+      console.error("Failed to fetch existing timetable");
       initializeDefaultTimeTable();
     }
   };
@@ -144,18 +162,18 @@ const TimeTable: React.FC<TimeTableProps> = ({
   const initializeDefaultTimeTable = () => {
     // Initialize with at least 3 periods
     const defaultPeriods: Period[] = [
-      { periodNumber: 1, startTime: '09:00', endTime: '09:45', isBreak: false },
-      { periodNumber: 2, startTime: '09:45', endTime: '10:30', isBreak: false },
-      { periodNumber: 3, startTime: '10:30', endTime: '11:15', isBreak: false }
+      { periodNumber: 1, startTime: "09:00", endTime: "09:45", isBreak: false },
+      { periodNumber: 2, startTime: "09:45", endTime: "10:30", isBreak: false },
+      { periodNumber: 3, startTime: "10:30", endTime: "11:15", isBreak: false },
     ];
     setPeriods(defaultPeriods);
 
     // Initialize days with empty periods
     const initialDays: Day[] = [];
     for (let day = 1; day <= 6; day++) {
-      const dayPeriods: DayPeriod[] = defaultPeriods.map(period => ({
+      const dayPeriods: DayPeriod[] = defaultPeriods.map((period) => ({
         periodId: period.periodNumber,
-        subjectId: 0
+        subjectId: 0,
       }));
       initialDays.push({ dayOfWeek: day, periods: dayPeriods });
     }
@@ -164,23 +182,23 @@ const TimeTable: React.FC<TimeTableProps> = ({
 
   const loadExistingData = (data: TimeTableData) => {
     // Load periods
-    const existingPeriods = data.periods.map(p => ({
+    const existingPeriods = data.periods.map((p) => ({
       periodNumber: p.periodNumber,
       startTime: p.startTime.substring(0, 5), // Remove seconds
       endTime: p.endTime.substring(0, 5), // Remove seconds
-      isBreak: p.isBreak
+      isBreak: p.isBreak,
     }));
     setPeriods(existingPeriods);
 
     // Load days with slots
     const daysData: Day[] = [];
     for (let day = 1; day <= 6; day++) {
-      const daySlots = data.slots.filter(slot => slot.dayOfWeek === day);
-      const dayPeriods: DayPeriod[] = existingPeriods.map(period => {
-        const slot = daySlots.find(s => s.periodId === period.periodNumber);
+      const daySlots = data.slots.filter((slot) => slot.dayOfWeek === day);
+      const dayPeriods: DayPeriod[] = existingPeriods.map((period) => {
+        const slot = daySlots.find((s) => s.periodId === period.periodNumber);
         return {
           periodId: period.periodNumber,
-          subjectId: slot ? slot.subjectId : 0
+          subjectId: slot ? slot.subjectId : 0,
         };
       });
       daysData.push({ dayOfWeek: day, periods: dayPeriods });
@@ -191,145 +209,172 @@ const TimeTable: React.FC<TimeTableProps> = ({
   const initializeTimeTable = () => {
     // Initialize default periods
     const defaultPeriods: Period[] = [
-      { periodNumber: 1, startTime: '09:00', endTime: '09:45', isBreak: false },
-      { periodNumber: 2, startTime: '09:45', endTime: '10:30', isBreak: false },
-      { periodNumber: 3, startTime: '10:30', endTime: '10:45', isBreak: true },
-      { periodNumber: 4, startTime: '10:45', endTime: '11:30', isBreak: false }
+      { periodNumber: 1, startTime: "09:00", endTime: "09:45", isBreak: false },
+      { periodNumber: 2, startTime: "09:45", endTime: "10:30", isBreak: false },
+      { periodNumber: 3, startTime: "10:30", endTime: "10:45", isBreak: true },
+      { periodNumber: 4, startTime: "10:45", endTime: "11:30", isBreak: false },
     ];
     setPeriods(defaultPeriods);
 
     // Initialize days with empty periods
     const initialDays: Day[] = [];
     for (let day = 1; day <= 6; day++) {
-      const dayPeriods: DayPeriod[] = defaultPeriods.map(period => ({
+      const dayPeriods: DayPeriod[] = defaultPeriods.map((period) => ({
         periodId: period.periodNumber,
-        subjectId: 0
+        subjectId: 0,
       }));
       initialDays.push({ dayOfWeek: day, periods: dayPeriods });
     }
     setDays(initialDays);
   };
 
-  const updatePeriod = (field: keyof Period, periodNumber: number, value: string | boolean) => {
-    setPeriods(prev => prev.map(period => 
-      period.periodNumber === periodNumber 
-        ? { ...period, [field]: value }
-        : period
-    ));
+  const updatePeriod = (
+    field: keyof Period,
+    periodNumber: number,
+    value: string | boolean,
+  ) => {
+    setPeriods((prev) =>
+      prev.map((period) =>
+        period.periodNumber === periodNumber
+          ? { ...period, [field]: value }
+          : period,
+      ),
+    );
   };
 
-  const updateDayPeriod = (dayOfWeek: number, periodId: number, subjectId: number) => {
-    setDays(prev => prev.map(day => 
-      day.dayOfWeek === dayOfWeek 
-        ? {
-            ...day,
-            periods: day.periods.map(period =>
-              period.periodId === periodId
-                ? { ...period, subjectId }
-                : period
-            )
-          }
-        : day
-    ));
+  const updateDayPeriod = (
+    dayOfWeek: number,
+    periodId: number,
+    subjectId: number,
+  ) => {
+    setDays((prev) =>
+      prev.map((day) =>
+        day.dayOfWeek === dayOfWeek
+          ? {
+              ...day,
+              periods: day.periods.map((period) =>
+                period.periodId === periodId
+                  ? { ...period, subjectId }
+                  : period,
+              ),
+            }
+          : day,
+      ),
+    );
   };
 
   const addPeriod = () => {
     const newPeriodNumber = periods.length + 1;
     const newPeriod: Period = {
       periodNumber: newPeriodNumber,
-      startTime: '14:00',
-      endTime: '14:45',
-      isBreak: false
+      startTime: "14:00",
+      endTime: "14:45",
+      isBreak: false,
     };
-    setPeriods(prev => [...prev, newPeriod]);
+    setPeriods((prev) => [...prev, newPeriod]);
 
     // Add this period to all days
-    setDays(prev => prev.map(day => ({
-      ...day,
-      periods: [...day.periods, { periodId: newPeriodNumber, subjectId: 0 }]
-    })));
+    setDays((prev) =>
+      prev.map((day) => ({
+        ...day,
+        periods: [...day.periods, { periodId: newPeriodNumber, subjectId: 0 }],
+      })),
+    );
   };
 
   const removePeriod = (periodNumber: number) => {
-    setPeriods(prev => prev.filter(p => p.periodNumber !== periodNumber));
-    setDays(prev => prev.map(day => ({
-      ...day,
-      periods: day.periods.filter(p => p.periodId !== periodNumber)
-    })));
+    setPeriods((prev) => prev.filter((p) => p.periodNumber !== periodNumber));
+    setDays((prev) =>
+      prev.map((day) => ({
+        ...day,
+        periods: day.periods.filter((p) => p.periodId !== periodNumber),
+      })),
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedSectionId || !schoolId) return;
-    
-    setError('');
-    setLoading(true);
-    
-    try {
-      const token = localStorage.getItem('token');
-      
-      // For update API, use direct field structure
-      const requestData = isExistingTimetable ? {
-        sectionId: selectedSectionId,
-        schoolId,
-        periods: periods.map(p => ({
-          sectionId: selectedSectionId,
-          periodNumber: p.periodNumber,
-          startTime: p.startTime + ':00',
-          endTime: p.endTime + ':00',
-          isBreak: p.isBreak
-        })),
-        days
-      } : {
-        sectionId: selectedSectionId,
-        schoolId,
-        periods: periods.map(p => ({
-          ...p,
-          startTime: p.startTime + ':00',
-          endTime: p.endTime + ':00'
-        })),
-        days
-      };
 
-      const apiUrl = isExistingTimetable 
+    setError("");
+    setLoading(true);
+
+    try {
+      const token = localStorage.getItem("token");
+
+      // For update API, use direct field structure
+      const requestData = isExistingTimetable
+        ? {
+            sectionId: selectedSectionId,
+            schoolId,
+            periods: periods.map((p) => ({
+              sectionId: selectedSectionId,
+              periodNumber: p.periodNumber,
+              startTime: p.startTime + ":00",
+              endTime: p.endTime + ":00",
+              isBreak: p.isBreak,
+            })),
+            days,
+          }
+        : {
+            sectionId: selectedSectionId,
+            schoolId,
+            periods: periods.map((p) => ({
+              ...p,
+              startTime: p.startTime + ":00",
+              endTime: p.endTime + ":00",
+            })),
+            days,
+          };
+
+      const apiUrl = isExistingTimetable
         ? `${API_BASE_URL}/api/Timetable/update-timetable`
         : `${API_BASE_URL}/api/Timetable/save-timetable`;
-      
-      const method = isExistingTimetable ? 'PUT' : 'POST';
+
+      const method = isExistingTimetable ? "PUT" : "POST";
 
       const response = await fetch(apiUrl, {
         method,
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(requestData),
       });
-      
+
       const result = await response.json();
-      
+
       if (response.ok && result.success) {
         onSuccess();
         onClose();
       } else {
-        setError(result.message || `Failed to ${isExistingTimetable ? 'update' : 'create'} timetable`);
+        setError(
+          result.message ||
+            `Failed to ${isExistingTimetable ? "update" : "create"} timetable`,
+        );
       }
     } catch (err) {
-      setError('Network error. Please try again.');
+      setError("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const selectedSection = classData?.sections.find(s => s.id === selectedSectionId);
-  const sectionName = selectedSection ? `${classData?.className}-${selectedSection.sectionName}` : 'No Section Selected';
+  const selectedSection = classData?.sections.find(
+    (s) => s.id === selectedSectionId,
+  );
+  const sectionName = selectedSection
+    ? `${classData?.className}-${selectedSection.sectionName}`
+    : "No Section Selected";
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
       title={`Time Table - ${sectionName}`}
-      submitLabel={isExistingTimetable ? "Update Time Table" : "Create Time Table"}
+      submitLabel={
+        isExistingTimetable ? "Update Time Table" : "Create Time Table"
+      }
       submitLoading={loading}
       loadingText={isExistingTimetable ? "Updating..." : "Creating..."}
       onCancel={() => {}}
@@ -337,16 +382,16 @@ const TimeTable: React.FC<TimeTableProps> = ({
       size="large"
     >
       {error && <div className="error-message">{error}</div>}
-      
+
       <form id="timetable-form" onSubmit={handleSubmit}>
         {/* Section Picker */}
         <div className="form-group">
           <label>Select Section *</label>
           <select
-            value={selectedSectionId || ''}
+            value={selectedSectionId || ""}
             onChange={(e) => setSelectedSectionId(Number(e.target.value))}
             className="form-control"
-            style={{ marginBottom: '20px' }}
+            style={{ marginBottom: "20px" }}
           >
             <option value="">Select Section</option>
             {classData?.sections.map((section) => (
@@ -360,103 +405,145 @@ const TimeTable: React.FC<TimeTableProps> = ({
         {/* Timetable Grid */}
         {selectedSectionId && (
           <div className="timetable-container">
-          <table className="timetable">
-            <thead>
-              <tr>
-                <th>Day</th>
-                {periods.map(period => (
-                  <th key={period.periodNumber}>
-                    <div className="period-header">
-                      <div className="period-title">
-                        {period.isBreak ? 'Break' : `Period ${period.periodNumber}`}
-                        <button 
-                          type="button" 
-                          className="remove-period-btn"
-                          onClick={() => removePeriod(period.periodNumber)}
-                          title="Remove Period"
-                         aria-label="Remove period"><AdminActionIcon action="delete" /></button>
+            <table className="timetable">
+              <thead>
+                <tr>
+                  <th>Day</th>
+                  {periods.map((period) => (
+                    <th key={period.periodNumber}>
+                      <div className="period-header">
+                        <div className="period-title">
+                          {period.isBreak
+                            ? "Break"
+                            : `Period ${period.periodNumber}`}
+                          <button
+                            type="button"
+                            className="remove-period-btn"
+                            onClick={() => removePeriod(period.periodNumber)}
+                            title="Remove Period"
+                            aria-label="Remove period"
+                          >
+                            <AdminActionIcon action="delete" />
+                          </button>
+                        </div>
+                        <label className="break-checkbox">
+                          <input
+                            type="checkbox"
+                            checked={period.isBreak}
+                            onChange={(e) =>
+                              updatePeriod(
+                                "isBreak",
+                                period.periodNumber,
+                                e.target.checked,
+                              )
+                            }
+                          />
+                          Break
+                        </label>
                       </div>
-                      <label className="break-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={period.isBreak}
-                          onChange={(e) => updatePeriod('isBreak', period.periodNumber, e.target.checked)}
-                        />
-                        Break
-                      </label>
-                    </div>
+                    </th>
+                  ))}
+                  <th>
+                    <button
+                      type="button"
+                      onClick={addPeriod}
+                      className="add-period-btn"
+                      title="Add Period"
+                    >
+                      <AdminActionIcon action="add" />
+                      Add Period
+                    </button>
                   </th>
-                ))}
-                <th>
-                  <button 
-                    type="button" 
-                    onClick={addPeriod} 
-                    className="add-period-btn"
-                    title="Add Period"
-                  ><AdminActionIcon action="add" />Add Period
-                  </button>
-                </th>
-              </tr>
-              <tr className="time-row">
-                <th className="time-label">Time</th>
-                {periods.map(period => (
-                  <th key={`time-${period.periodNumber}`} className="time-config">
-                    <div className="time-inputs">
-                      <input
-                        type="time"
-                        value={period.startTime}
-                        onChange={(e) => updatePeriod('startTime', period.periodNumber, e.target.value)}
-                        title="Start Time"
-                      />
-                      <span>-</span>
-                      <input
-                        type="time"
-                        value={period.endTime}
-                        onChange={(e) => updatePeriod('endTime', period.periodNumber, e.target.value)}
-                        title="End Time"
-                      />
-                    </div>
-                  </th>
-                ))}
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {days.map((day, dayIndex) => (
-                <tr key={day.dayOfWeek}>
-                  <td className="day-name">{dayNames[dayIndex]}</td>
-                  {day.periods.map((dayPeriod) => {
-                    const period = periods.find(p => p.periodNumber === dayPeriod.periodId);
-                    return (
-                      <td key={dayPeriod.periodId}>
-                        {period?.isBreak ? (
-                          <span className="break-cell">BREAK</span>
-                        ) : (
-                          <div className="period-cell">
-                            <select
-                              value={dayPeriod.subjectId}
-                              onChange={(e) => updateDayPeriod(day.dayOfWeek, dayPeriod.periodId, Number(e.target.value))}
-                            >
-                              {subjects.length === 0
-                                ? <option value={0}>No subjects found for this section</option>
-                                : <option value={0}>Select Subject</option>
-                              }
-                              {subjects.map(subject => (
-                                <option key={subject.subjectId} value={subject.subjectId}>
-                                  {subject.subjectName}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        )}
-                      </td>
-                    );
-                  })}
-                  <td></td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+                <tr className="time-row">
+                  <th className="time-label">Time</th>
+                  {periods.map((period) => (
+                    <th
+                      key={`time-${period.periodNumber}`}
+                      className="time-config"
+                    >
+                      <div className="time-inputs">
+                        <input
+                          type="time"
+                          value={period.startTime}
+                          onChange={(e) =>
+                            updatePeriod(
+                              "startTime",
+                              period.periodNumber,
+                              e.target.value,
+                            )
+                          }
+                          title="Start Time"
+                        />
+                        <span>-</span>
+                        <input
+                          type="time"
+                          value={period.endTime}
+                          onChange={(e) =>
+                            updatePeriod(
+                              "endTime",
+                              period.periodNumber,
+                              e.target.value,
+                            )
+                          }
+                          title="End Time"
+                        />
+                      </div>
+                    </th>
+                  ))}
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {days.map((day, dayIndex) => (
+                  <tr key={day.dayOfWeek}>
+                    <td className="day-name">{dayNames[dayIndex]}</td>
+                    {day.periods.map((dayPeriod) => {
+                      const period = periods.find(
+                        (p) => p.periodNumber === dayPeriod.periodId,
+                      );
+                      return (
+                        <td key={dayPeriod.periodId}>
+                          {period?.isBreak ? (
+                            <span className="break-cell">BREAK</span>
+                          ) : (
+                            <div className="period-cell">
+                              <select
+                                value={dayPeriod.subjectId}
+                                onChange={(e) =>
+                                  updateDayPeriod(
+                                    day.dayOfWeek,
+                                    dayPeriod.periodId,
+                                    Number(e.target.value),
+                                  )
+                                }
+                              >
+                                {subjects.length === 0 ? (
+                                  <option value={0}>
+                                    No subjects found for this section
+                                  </option>
+                                ) : (
+                                  <option value={0}>Select Subject</option>
+                                )}
+                                {subjects.map((subject) => (
+                                  <option
+                                    key={subject.subjectId}
+                                    value={subject.subjectId}
+                                  >
+                                    {subject.subjectName}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
+                        </td>
+                      );
+                    })}
+                    <td></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </form>

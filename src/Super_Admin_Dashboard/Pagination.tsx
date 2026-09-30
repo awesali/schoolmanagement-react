@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
-import './Pagination.css';
+// Pagination: imports and dependencies
+import React, { useState } from "react";
+import "./Pagination.css";
 
+// Data types and contracts
 interface PaginationProps {
   currentPage: number;
   totalPages: number;
@@ -11,6 +13,7 @@ interface PaginationProps {
   pageSizeOptions?: number[];
 }
 
+// Main component and state
 const Pagination: React.FC<PaginationProps> = ({
   currentPage,
   totalPages,
@@ -18,9 +21,9 @@ const Pagination: React.FC<PaginationProps> = ({
   pageSize,
   onPageChange,
   onPageSizeChange,
-  pageSizeOptions = [5, 10, 20, 50]
+  pageSizeOptions = [5, 10, 20, 50],
 }) => {
-  const [pageInput, setPageInput] = useState('');
+  const [pageInput, setPageInput] = useState("");
 
   const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPageInput(e.target.value);
@@ -31,7 +34,7 @@ const Pagination: React.FC<PaginationProps> = ({
     const page = parseInt(pageInput);
     if (!isNaN(page) && page >= 1 && page <= totalPages) {
       onPageChange(page);
-      setPageInput('');
+      setPageInput("");
     }
   };
 
@@ -40,7 +43,7 @@ const Pagination: React.FC<PaginationProps> = ({
     if (!isNaN(page) && page >= 1 && page <= totalPages) {
       onPageChange(page);
     }
-    setPageInput('');
+    setPageInput("");
   };
 
   if (totalRecords === 0) return null;
@@ -93,8 +96,10 @@ const Pagination: React.FC<PaginationProps> = ({
         value={pageSize}
         onChange={(e) => onPageSizeChange(parseInt(e.target.value))}
       >
-        {pageSizeOptions.map(size => (
-          <option key={size} value={size}>{size}</option>
+        {pageSizeOptions.map((size) => (
+          <option key={size} value={size}>
+            {size}
+          </option>
         ))}
       </select>
 

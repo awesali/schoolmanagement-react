@@ -1,3 +1,4 @@
+/* Layout and component styles for School List. */
 .school-list-container {
   padding: 20px;
 }
@@ -21,9 +22,15 @@
   gap: 20px;
 }
 
+/* Responsive layouts and screen-size adjustments. */
 @media (max-width: 640px) {
-  .school-list-container { padding: 10px; }
-  .school-cards { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .school-list-container {
+    padding: 10px;
+  }
+  .school-cards {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
 }
 
 .school-card {
@@ -31,7 +38,9 @@
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .school-card:hover {
@@ -64,8 +73,14 @@
   cursor: pointer;
 }
 
-.school-edit-button:hover, .school-edit-button:active { background: transparent; }
-.school-edit-button:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.school-edit-button:hover,
+.school-edit-button:active {
+  background: transparent;
+}
+.school-edit-button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
 
 .school-card-header h3 {
   margin: 0;
@@ -94,8 +109,25 @@
 .info-value {
   color: #718096;
 }
-.school-card-title { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.school-card-title img, .school-card-title > span {
-  width: 42px; height: 42px; border-radius: 50%; flex: 0 0 42px; object-fit: cover;
+.school-card-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
 }
-.school-card-title > span { display: inline-flex; align-items: center; justify-content: center; background: #e8f5f3; color: #087f83; font-weight: 700; }
+.school-card-title img,
+.school-card-title > span {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  flex: 0 0 42px;
+  object-fit: cover;
+}
+.school-card-title > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #e8f5f3;
+  color: #087f83;
+  font-weight: 700;
+}

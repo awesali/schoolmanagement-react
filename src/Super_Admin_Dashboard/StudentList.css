@@ -1,3 +1,4 @@
+/* Layout and component styles for Student List. */
 /* Reuses staff-list styles — no additional overrides needed */
 /* Keep the wide student grid usable when zoom reduces the CSS viewport. */
 .student-list-container {
@@ -36,6 +37,7 @@
   white-space: normal;
 }
 
+/* Responsive layouts and screen-size adjustments. */
 @media (max-width: 768px) {
   .student-list-header > div {
     width: 100%;

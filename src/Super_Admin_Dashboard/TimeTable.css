@@ -1,3 +1,4 @@
+/* Layout and component styles for Time Table. */
 .periods-config {
   display: flex;
   flex-direction: column;
@@ -265,6 +266,7 @@
   overflow-y: auto;
 }
 
+/* Responsive layouts and screen-size adjustments. */
 @media (max-width: 768px) {
   .timetable-container {
     overflow-x: auto;

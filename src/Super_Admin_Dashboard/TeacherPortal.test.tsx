@@ -1,3 +1,4 @@
+// Test setup and fixtures
 import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import TeacherPortal from "./TeacherPortal";
@@ -5,6 +6,7 @@ import TeacherPortal from "./TeacherPortal";
 beforeEach(() => {
   localStorage.setItem("token", "teacher-token");
   global.fetch = jest.fn(async (input, init) => {
+    // Constants and helper functions
     const url = String(input);
     if (url.includes("teaching-options")) {
       return {
@@ -38,10 +40,7 @@ beforeEach(() => {
 
 test("publishes homework only against one of the teacher's assigned class subjects", async () => {
   render(
-    <TeacherPortal
-      page="Homework & Assignments"
-      onNavigate={jest.fn()}
-    />,
+    <TeacherPortal page="Homework & Assignments" onNavigate={jest.fn()} />,
   );
 
   const createButton = await screen.findByRole("button", {
@@ -76,43 +75,76 @@ test("publishes homework only against one of the teacher's assigned class subjec
   });
 });
 
-
-test('shares an uploaded PDF with the assigned class', async () => {
+test("shares an uploaded PDF with the assigned class", async () => {
   render(<TeacherPortal page="Study Material" onNavigate={jest.fn()} />);
-  const create = await screen.findByRole('button', { name: '+ Share material' });
+  const create = await screen.findByRole("button", {
+    name: "+ Share material",
+  });
   await waitFor(() => expect(create).toBeEnabled());
   fireEvent.click(create);
-  fireEvent.change(screen.getByLabelText('Class and subject'), { target: { value: '0' } });
-  fireEvent.change(screen.getByLabelText('Resource type'), { target: { value: 'PDF' } });
-  fireEvent.click(screen.getByLabelText('Upload file'));
-  fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Chapter 1' } });
-  const pdf = new File(['%PDF-1.4'], 'chapter.pdf', { type: 'application/pdf' });
-  fireEvent.change(screen.getByLabelText(/PDF file/), { target: { files: [pdf] } });
-  fireEvent.click(screen.getByRole('button', { name: 'Share with class' }));
+  fireEvent.change(screen.getByLabelText("Class and subject"), {
+    target: { value: "0" },
+  });
+  fireEvent.change(screen.getByLabelText("Resource type"), {
+    target: { value: "PDF" },
+  });
+  fireEvent.click(screen.getByLabelText("Upload file"));
+  fireEvent.change(screen.getByLabelText("Title"), {
+    target: { value: "Chapter 1" },
+  });
+  const pdf = new File(["%PDF-1.4"], "chapter.pdf", {
+    type: "application/pdf",
+  });
+  fireEvent.change(screen.getByLabelText(/PDF file/), {
+    target: { files: [pdf] },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Share with class" }));
   await waitFor(() => {
-    const call = (global.fetch as jest.Mock).mock.calls.find(([url, init]) => String(url).endsWith('/api/Teacher/study-materials/upload') && init?.method === 'POST');
+    const call = (global.fetch as jest.Mock).mock.calls.find(
+      ([url, init]) =>
+        String(url).endsWith("/api/Teacher/study-materials/upload") &&
+        init?.method === "POST",
+    );
     expect(call).toBeTruthy();
     expect(call[1].body).toBeInstanceOf(FormData);
-    expect(call[1].body.get('resourceType')).toBe('PDF');
-    expect(call[1].body.get('file')).toBe(pdf);
-    expect(call[1].headers['Content-Type']).toBeUndefined();
+    expect(call[1].body.get("resourceType")).toBe("PDF");
+    expect(call[1].body.get("file")).toBe(pdf);
+    expect(call[1].headers["Content-Type"]).toBeUndefined();
   });
 });
 
-
-test('link material remains available without a video option', async () => {
+test("link material remains available without a video option", async () => {
   render(<TeacherPortal page="Study Material" onNavigate={jest.fn()} />);
-  const create = await screen.findByRole('button', { name: '+ Share material' });
+  const create = await screen.findByRole("button", {
+    name: "+ Share material",
+  });
   await waitFor(() => expect(create).toBeEnabled());
   fireEvent.click(create);
-  fireEvent.change(screen.getByLabelText('Class and subject'), { target: { value: '0' } });
-  expect(screen.queryByRole('option', { name: 'Video' })).not.toBeInTheDocument();
-  fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Reference link' } });
-  fireEvent.change(screen.getByLabelText('Resource link'), { target: { value: 'https://example.com/lesson' } });
-  fireEvent.click(screen.getByRole('button', { name: 'Share with class' }));
+  fireEvent.change(screen.getByLabelText("Class and subject"), {
+    target: { value: "0" },
+  });
+  expect(
+    screen.queryByRole("option", { name: "Video" }),
+  ).not.toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText("Title"), {
+    target: { value: "Reference link" },
+  });
+  fireEvent.change(screen.getByLabelText("Resource link"), {
+    target: { value: "https://example.com/lesson" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Share with class" }));
   await waitFor(() => {
-    const call = (global.fetch as jest.Mock).mock.calls.find(([url, init]) => String(url).endsWith('/api/Teacher/study-materials') && init?.method === 'POST');
+    const call = (global.fetch as jest.Mock).mock.calls.find(
+      ([url, init]) =>
+        String(url).endsWith("/api/Teacher/study-materials") &&
+        init?.method === "POST",
+    );
     expect(call).toBeTruthy();
-    expect(JSON.parse(call[1].body)).toEqual(expect.objectContaining({ resourceType: 'Link', resourceUrl: 'https://example.com/lesson' }));
+    expect(JSON.parse(call[1].body)).toEqual(
+      expect.objectContaining({
+        resourceType: "Link",
+        resourceUrl: "https://example.com/lesson",
+      }),
+    );
   });
 });

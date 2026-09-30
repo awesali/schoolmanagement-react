@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { API_BASE_URL } from '../config';
-import { useToastMessageState } from '../components/Toast/Toast';
-import Modal from './Modal';
-import './AddStaff.css';
+// Edit Subject: imports and dependencies
+import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../config";
+import { useToastMessageState } from "../components/Toast/Toast";
+import Modal from "./Modal";
+import "./AddStaff.css";
 
+// Data types and contracts
 interface EditSubjectProps {
   isOpen: boolean;
   onClose: () => void;
@@ -27,13 +29,19 @@ interface Staff {
   name: string;
 }
 
-const EditSubject: React.FC<EditSubjectProps> = ({ isOpen, onClose, subject, onSuccess }) => {
+// Main component and state
+const EditSubject: React.FC<EditSubjectProps> = ({
+  isOpen,
+  onClose,
+  subject,
+  onSuccess,
+}) => {
   const [formData, setFormData] = useState({
-    subjectName: '',
+    subjectName: "",
     staffId: 0,
   });
   const [staff, setStaff] = useState<Staff[]>([]);
-  const [error, setError] = useToastMessageState('error');
+  const [error, setError] = useToastMessageState("error");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -43,21 +51,24 @@ const EditSubject: React.FC<EditSubjectProps> = ({ isOpen, onClose, subject, onS
         staffId: subject.teacherId || 0,
       });
       fetchStaff();
-      setError('');
+      setError("");
     }
   }, [isOpen, subject]);
 
   const fetchStaff = async () => {
     if (!subject) return;
-    
+
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/Common/by-school/${subject.schoolId}`, {
-        headers: {
-          'accept': '*/*',
-          'Authorization': `Bearer ${token}`,
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `${API_BASE_URL}/api/Common/by-school/${subject.schoolId}`,
+        {
+          headers: {
+            accept: "*/*",
+            Authorization: `Bearer ${token}`,
+          },
         },
-      });
+      );
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data) {
@@ -65,46 +76,49 @@ const EditSubject: React.FC<EditSubjectProps> = ({ isOpen, onClose, subject, onS
         }
       }
     } catch (err) {
-      console.error('Failed to fetch staff');
+      console.error("Failed to fetch staff");
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!subject) return;
-    
-    setError('');
+
+    setError("");
     setLoading(true);
-    
+
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const requestData = {
         id: subject.id,
         subjectName: formData.subjectName,
-        staffId: formData.staffId
+        staffId: formData.staffId,
       };
 
-      const response = await fetch(`${API_BASE_URL}/api/Subject/update-subject`, {
-        method: 'PUT',
-        headers: {
-          'accept': '*/*',
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+      const response = await fetch(
+        `${API_BASE_URL}/api/Subject/update-subject`,
+        {
+          method: "PUT",
+          headers: {
+            accept: "*/*",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(requestData),
         },
-        body: JSON.stringify(requestData),
-      });
-      
+      );
+
       const result = await response.json();
-      
+
       if (response.ok && result.success) {
         onSuccess();
         onClose();
       } else {
-        setError(result.message || 'Failed to update subject');
+        setError(result.message || "Failed to update subject");
       }
     } catch (err) {
-      console.error('Failed to update subject:', err);
-      setError('Network error. Please try again.');
+      console.error("Failed to update subject:", err);
+      setError("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -117,7 +131,7 @@ const EditSubject: React.FC<EditSubjectProps> = ({ isOpen, onClose, subject, onS
         staffId: subject.teacherId || 0,
       });
     }
-    setError('');
+    setError("");
   };
 
   if (!subject) return null;
@@ -133,11 +147,7 @@ const EditSubject: React.FC<EditSubjectProps> = ({ isOpen, onClose, subject, onS
       onCancel={handleClear}
       formId="edit-subject-form"
     >
-      {error && (
-        <div className="error-message">
-          {error}
-        </div>
-      )}
+      {error && <div className="error-message">{error}</div>}
       <form id="edit-subject-form" onSubmit={handleSubmit}>
         <div className="form-grid">
           <div className="form-group">
@@ -147,7 +157,9 @@ const EditSubject: React.FC<EditSubjectProps> = ({ isOpen, onClose, subject, onS
               required
               placeholder="e.g., Mathematics, English, Science"
               value={formData.subjectName}
-              onChange={(e) => setFormData({...formData, subjectName: e.target.value})}
+              onChange={(e) =>
+                setFormData({ ...formData, subjectName: e.target.value })
+              }
             />
           </div>
           <div className="form-group">
@@ -155,7 +167,9 @@ const EditSubject: React.FC<EditSubjectProps> = ({ isOpen, onClose, subject, onS
             <select
               required
               value={formData.staffId}
-              onChange={(e) => setFormData({...formData, staffId: Number(e.target.value)})}
+              onChange={(e) =>
+                setFormData({ ...formData, staffId: Number(e.target.value) })
+              }
               className="form-select"
             >
               <option value="">Select Teacher</option>

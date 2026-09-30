@@ -1,12 +1,14 @@
-import AdminActionIcon from './AdminActionIcon';
-import React, { useState, useEffect } from 'react';
-import { API_BASE_URL } from '../config';
-import Pagination from './Pagination';
-import { useToast } from '../components/Toast/Toast';
-import { TOAST_MESSAGES } from '../constants/toastMessages';
-import { LoadingButton, PageLoader } from '../components/Loader/Loader';
-import './StaffList.css';
+// Student Attendance: imports and dependencies
+import AdminActionIcon from "./AdminActionIcon";
+import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../config";
+import Pagination from "./Pagination";
+import { useToast } from "../components/Toast/Toast";
+import { TOAST_MESSAGES } from "../constants/toastMessages";
+import { LoadingButton, PageLoader } from "../components/Loader/Loader";
+import "./StaffList.css";
 
+// Data types and contracts
 interface Student {
   id: number;
   enrollmentId: number;
@@ -17,24 +19,36 @@ interface Student {
   academicSession: string;
 }
 
-type AttendanceStatus = 'Present' | 'Absent' | null;
-type View = 'select' | 'mark' | 'history';
+type AttendanceStatus = "Present" | "Absent" | null;
+type View = "select" | "mark" | "history";
 
+// Main component and state
 const StudentAttendance: React.FC = () => {
   const toast = useToast();
-  const [view, setView] = useState<View>('select');
+  const [view, setView] = useState<View>("select");
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const [pageSize, setPageSize] = useState(10);
-  const [attendance, setAttendance] = useState<Record<number, AttendanceStatus>>({});
+  const [attendance, setAttendance] = useState<
+    Record<number, AttendanceStatus>
+  >({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [alreadyMarked, setAlreadyMarked] = useState(false);
-  const [historyDate, setHistoryDate] = useState('');
-  const [history, setHistory] = useState<{ studentId: number; studentName: string; sectionName: string; attendanceDate: string; status: string }[] | null>(null);
+  const [historyDate, setHistoryDate] = useState("");
+  const [history, setHistory] = useState<
+    | {
+        studentId: number;
+        studentName: string;
+        sectionName: string;
+        attendanceDate: string;
+        status: string;
+      }[]
+    | null
+  >(null);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyCurrentPage, setHistoryCurrentPage] = useState(1);
   const [historyTotalPages, setHistoryTotalPages] = useState(1);
@@ -43,15 +57,15 @@ const StudentAttendance: React.FC = () => {
   const [userRole, setUserRole] = useState<number | null>(null);
 
   const extractRoleFromToken = () => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (!token) return null;
-    
+
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const role = payload['RoleId'];
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      const role = payload["RoleId"];
       return role ? parseInt(role) : null;
     } catch (err) {
-      console.error('Failed to extract role from token');
+      console.error("Failed to extract role from token");
       return null;
     }
   };
@@ -62,14 +76,14 @@ const StudentAttendance: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (view === 'mark') {
+    if (view === "mark") {
       setCurrentPage(1);
       fetchStudents(1, pageSize);
     }
-    if (view === 'history') {
+    if (view === "history") {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
-      const formattedDate = yesterday.toISOString().split('T')[0];
+      const formattedDate = yesterday.toISOString().split("T")[0];
       setHistoryDate(formattedDate);
       setHistoryCurrentPage(1);
       fetchHistoryForDate(formattedDate, 1, historyPageSize);
@@ -79,10 +93,13 @@ const StudentAttendance: React.FC = () => {
   const fetchStudents = async (page: number = 1, size: number = pageSize) => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/Student/GetStudentsBySection?page=${page}&pageSize=${size}`, {
-        headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
-      });
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `${API_BASE_URL}/api/Student/GetStudentsBySection?page=${page}&pageSize=${size}`,
+        {
+          headers: { accept: "*/*", Authorization: `Bearer ${token}` },
+        },
+      );
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data) {
@@ -91,12 +108,14 @@ const StudentAttendance: React.FC = () => {
           setTotalPages(result.totalPages);
           setTotalRecords(result.totalRecords);
           const initial: Record<number, AttendanceStatus> = {};
-          result.data.forEach((s: Student) => { initial[s.id] = null; });
+          result.data.forEach((s: Student) => {
+            initial[s.id] = null;
+          });
           setAttendance(initial);
         }
       }
     } catch (err) {
-      console.error('Failed to fetch students');
+      console.error("Failed to fetch students");
       setStudents([]);
     } finally {
       setLoading(false);
@@ -104,55 +123,77 @@ const StudentAttendance: React.FC = () => {
   };
 
   const handleMark = (studentId: number, status: AttendanceStatus) => {
-    setAttendance(prev => ({ ...prev, [studentId]: status }));
+    setAttendance((prev) => ({ ...prev, [studentId]: status }));
   };
 
   const handleSubmit = async () => {
-    const unmarked = students.filter(s => attendance[s.id] === null);
+    const unmarked = students.filter((s) => attendance[s.id] === null);
     if (unmarked.length > 0) {
-      toast.warning(TOAST_MESSAGES.attendance.studentsRequired(unmarked.length));
+      toast.warning(
+        TOAST_MESSAGES.attendance.studentsRequired(unmarked.length),
+      );
       return;
     }
     try {
       setSubmitting(true);
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const payload = {
         sectionId: students[0]?.sectionId,
-        attendanceDate: new Date().toISOString().split('T')[0],
-        students: students.map(s => ({ studentId: s.id, enrollmentId: s.enrollmentId, status: attendance[s.id] })),
+        attendanceDate: new Date().toISOString().split("T")[0],
+        students: students.map((s) => ({
+          studentId: s.id,
+          enrollmentId: s.enrollmentId,
+          status: attendance[s.id],
+        })),
       };
-      const response = await fetch(`${API_BASE_URL}/api/Student/StudentsAttendance`, {
-        method: 'POST',
-        headers: { 'accept': '*/*', 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/api/Student/StudentsAttendance`,
+        {
+          method: "POST",
+          headers: {
+            accept: "*/*",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        },
+      );
       const result = await response.json();
       if (response.ok) {
         setSubmitted(true);
-        toast.success(TOAST_MESSAGES.attendance.saved(new Date().toLocaleDateString()));
+        toast.success(
+          TOAST_MESSAGES.attendance.saved(new Date().toLocaleDateString()),
+        );
       } else {
-        if (result?.message?.toLowerCase().includes('already')) {
+        if (result?.message?.toLowerCase().includes("already")) {
           setAlreadyMarked(true);
         }
         toast.error(result?.message || TOAST_MESSAGES.attendance.saveFailed);
       }
     } catch (err) {
-      console.error('Failed to submit attendance');
+      console.error("Failed to submit attendance");
       toast.error(TOAST_MESSAGES.attendance.saveError);
     } finally {
       setSubmitting(false);
     }
   };
 
-  const fetchHistoryForDate = async (date: string, page: number = 1, size: number = historyPageSize) => {
+  const fetchHistoryForDate = async (
+    date: string,
+    page: number = 1,
+    size: number = historyPageSize,
+  ) => {
     try {
       setHistoryLoading(true);
       setHistory(null);
-      const token = localStorage.getItem('token');
-      const formatted = date.split('-').reverse().join('-');
-      const response = await fetch(`${API_BASE_URL}/api/Student/Student-attendance-history?date=${formatted}&page=${page}&pageSize=${size}`, {
-        headers: { 'accept': '*/*', 'Authorization': `Bearer ${token}` },
-      });
+      const token = localStorage.getItem("token");
+      const formatted = date.split("-").reverse().join("-");
+      const response = await fetch(
+        `${API_BASE_URL}/api/Student/Student-attendance-history?date=${formatted}&page=${page}&pageSize=${size}`,
+        {
+          headers: { accept: "*/*", Authorization: `Bearer ${token}` },
+        },
+      );
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data) {
@@ -163,7 +204,7 @@ const StudentAttendance: React.FC = () => {
         }
       }
     } catch (err) {
-      console.error('Failed to fetch attendance history');
+      console.error("Failed to fetch attendance history");
       setHistory([]);
     } finally {
       setHistoryLoading(false);
@@ -199,161 +240,427 @@ const StudentAttendance: React.FC = () => {
   };
 
   // --- Selection Screen ---
-  if (view === 'select') return (
-    <div className="staff-list-container">
-      <div className="staff-list-header"><h2>Student Attendance</h2></div>
+  if (view === "select")
+    return (
+      <div className="staff-list-container">
+        <div className="staff-list-header">
+          <h2>Student Attendance</h2>
+        </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '12px' }}>
-        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '8px', letterSpacing: '0.5px', textTransform: 'uppercase', fontWeight: 600 }}>
-          What would you like to do today?
-        </p>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: "60vh",
+            gap: "12px",
+          }}
+        >
+          <p
+            style={{
+              fontSize: "14px",
+              color: "var(--text-secondary)",
+              marginBottom: "8px",
+              letterSpacing: "0.5px",
+              textTransform: "uppercase",
+              fontWeight: 600,
+            }}
+          >
+            What would you like to do today?
+          </p>
 
-        <div style={{ display: 'flex', gap: '24px' }}>
-          {/* Mark Attendance Card - Hidden for Role 1 */}
-          {userRole !== 1 && (
-            <div
-              onClick={() => setView('mark')}
-              style={{ cursor: 'pointer', width: '260px', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 16px rgba(74,144,226,0.15)', border: '1px solid var(--border)', background: 'var(--surface)', transition: 'transform 0.2s, box-shadow 0.2s' }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(74,144,226,0.25)'; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(74,144,226,0.15)'; }}
-            >
-              <div style={{ background: 'linear-gradient(135deg, var(--primary-color) 0%, #357abd 100%)', padding: '32px 24px', textAlign: 'center' }}>
-                <div style={{ fontSize: '52px', marginBottom: '8px' }}>📋</div>
-                <div style={{ color: 'white', fontWeight: 700, fontSize: '18px' }}>Mark Attendance</div>
-              </div>
-              <div style={{ padding: '16px 24px', textAlign: 'center' }}>
-                <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Today</div>
-                <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                  {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+          <div style={{ display: "flex", gap: "24px" }}>
+            {/* Mark Attendance Card - Hidden for Role 1 */}
+            {userRole !== 1 && (
+              <div
+                onClick={() => setView("mark")}
+                style={{
+                  cursor: "pointer",
+                  width: "260px",
+                  borderRadius: "16px",
+                  overflow: "hidden",
+                  boxShadow: "0 4px 16px rgba(74,144,226,0.15)",
+                  border: "1px solid var(--border)",
+                  background: "var(--surface)",
+                  transition: "transform 0.2s, box-shadow 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-4px)";
+                  e.currentTarget.style.boxShadow =
+                    "0 8px 24px rgba(74,144,226,0.25)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow =
+                    "0 4px 16px rgba(74,144,226,0.15)";
+                }}
+              >
+                <div
+                  style={{
+                    background:
+                      "linear-gradient(135deg, var(--primary-color) 0%, #357abd 100%)",
+                    padding: "32px 24px",
+                    textAlign: "center",
+                  }}
+                >
+                  <div style={{ fontSize: "52px", marginBottom: "8px" }}>
+                    📋
+                  </div>
+                  <div
+                    style={{
+                      color: "white",
+                      fontWeight: 700,
+                      fontSize: "18px",
+                    }}
+                  >
+                    Mark Attendance
+                  </div>
+                </div>
+                <div style={{ padding: "16px 24px", textAlign: "center" }}>
+                  <div
+                    style={{
+                      fontSize: "13px",
+                      color: "var(--text-secondary)",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    Today
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "15px",
+                      fontWeight: 700,
+                      color: "var(--text-primary)",
+                    }}
+                  >
+                    {new Date().toLocaleDateString("en-GB", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* History Card */}
-          <div
-            onClick={() => setView('history')}
-            style={{ cursor: 'pointer', width: '260px', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 16px rgba(80,200,120,0.15)', border: '1px solid var(--border)', background: 'var(--surface)', transition: 'transform 0.2s, box-shadow 0.2s' }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(80,200,120,0.25)'; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(80,200,120,0.15)'; }}
-          >
-            <div style={{ background: 'linear-gradient(135deg, var(--secondary-color) 0%, #3aaa6a 100%)', padding: '32px 24px', textAlign: 'center' }}>
-              <div style={{ fontSize: '52px', marginBottom: '8px' }}>📅</div>
-              <div style={{ color: 'white', fontWeight: 700, fontSize: '18px' }}>Previous Attendance</div>
-            </div>
-            <div style={{ padding: '16px 24px', textAlign: 'center' }}>
-              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>View by date</div>
-              <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>Check History</div>
+            {/* History Card */}
+            <div
+              onClick={() => setView("history")}
+              style={{
+                cursor: "pointer",
+                width: "260px",
+                borderRadius: "16px",
+                overflow: "hidden",
+                boxShadow: "0 4px 16px rgba(80,200,120,0.15)",
+                border: "1px solid var(--border)",
+                background: "var(--surface)",
+                transition: "transform 0.2s, box-shadow 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-4px)";
+                e.currentTarget.style.boxShadow =
+                  "0 8px 24px rgba(80,200,120,0.25)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow =
+                  "0 4px 16px rgba(80,200,120,0.15)";
+              }}
+            >
+              <div
+                style={{
+                  background:
+                    "linear-gradient(135deg, var(--secondary-color) 0%, #3aaa6a 100%)",
+                  padding: "32px 24px",
+                  textAlign: "center",
+                }}
+              >
+                <div style={{ fontSize: "52px", marginBottom: "8px" }}>📅</div>
+                <div
+                  style={{ color: "white", fontWeight: 700, fontSize: "18px" }}
+                >
+                  Previous Attendance
+                </div>
+              </div>
+              <div style={{ padding: "16px 24px", textAlign: "center" }}>
+                <div
+                  style={{
+                    fontSize: "13px",
+                    color: "var(--text-secondary)",
+                    marginBottom: "4px",
+                  }}
+                >
+                  View by date
+                </div>
+                <div
+                  style={{
+                    fontSize: "15px",
+                    fontWeight: 700,
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  Check History
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
 
   // --- Mark Attendance ---
-  if (view === 'mark') return (
-    <div className="staff-list-container">
-      <div className="staff-list-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={() => setView('select')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px' }} aria-label="Back"><AdminActionIcon action="back" /></button>
-          <h2>Mark Attendance</h2>
+  if (view === "mark")
+    return (
+      <div className="staff-list-container">
+        <div className="staff-list-header">
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <button
+              onClick={() => setView("select")}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "20px",
+              }}
+              aria-label="Back"
+            >
+              <AdminActionIcon action="back" />
+            </button>
+            <h2>Mark Attendance</h2>
+          </div>
+          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            <span
+              style={{ fontSize: "14px", color: "#4a5568", fontWeight: 600 }}
+            >
+              📅{" "}
+              {new Date().toLocaleDateString("en-GB", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })}
+            </span>
+            <LoadingButton
+              className="btn btn-primary"
+              onClick={handleSubmit}
+              loading={submitting}
+              loadingText="Submitting..."
+              disabled={submitted}
+            >
+              {submitted ? "✓ Submitted" : "Submit Attendance"}
+            </LoadingButton>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <span style={{ fontSize: '14px', color: '#4a5568', fontWeight: 600 }}>
-            📅 {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-          </span>
-          <LoadingButton className="btn btn-primary" onClick={handleSubmit} loading={submitting}
-            loadingText="Submitting..." disabled={submitted}>
-            {submitted ? '✓ Submitted' : 'Submit Attendance'}
-          </LoadingButton>
-        </div>
-      </div>
 
-      {alreadyMarked && (
-        <div style={{ background: '#fef3c7', color: '#78350f', padding: '12px 20px', borderRadius: '8px', marginBottom: '16px', fontWeight: 600 }}>
-          ⚠️ Attendance has already been marked for today ({new Date().toLocaleDateString()}).
-        </div>
-      )}
+        {alreadyMarked && (
+          <div
+            style={{
+              background: "#fef3c7",
+              color: "#78350f",
+              padding: "12px 20px",
+              borderRadius: "8px",
+              marginBottom: "16px",
+              fontWeight: 600,
+            }}
+          >
+            ⚠️ Attendance has already been marked for today (
+            {new Date().toLocaleDateString()}).
+          </div>
+        )}
 
-      {loading ? <PageLoader label="Loading students..." /> : (
-        <div className="staff-table-wrapper">
-          <table className="staff-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Student Name</th>
-                <th>Class</th>
-                <th>Section</th>
-                <th>Session</th>
-                <th>Attendance</th>
-              </tr>
-            </thead>
-            <tbody>
-              {students.map((student, index) => (
-                <tr key={student.id}>
-                  <td>{index + 1}</td>
-                  <td>{student.studentName}</td>
-                  <td><span className="role-badge teacher">{student.className}</span></td>
-                  <td><span className="role-badge principal">{student.sectionName}</span></td>
-                  <td>{student.academicSession.split('-')[0]}</td>
-                  <td>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button onClick={() => handleMark(student.id, 'Present')} style={{ padding: '6px 16px', borderRadius: '8px', border: '2px solid', cursor: 'pointer', fontWeight: 600, fontSize: '13px', borderColor: attendance[student.id] === 'Present' ? '#22543d' : '#e2e8f0', background: attendance[student.id] === 'Present' ? '#c6f6d5' : 'white', color: attendance[student.id] === 'Present' ? '#22543d' : '#718096' }}><AdminActionIcon action="present" />Present</button>
-                      <button onClick={() => handleMark(student.id, 'Absent')} style={{ padding: '6px 16px', borderRadius: '8px', border: '2px solid', cursor: 'pointer', fontWeight: 600, fontSize: '13px', borderColor: attendance[student.id] === 'Absent' ? '#742a2a' : '#e2e8f0', background: attendance[student.id] === 'Absent' ? '#fed7d7' : 'white', color: attendance[student.id] === 'Absent' ? '#742a2a' : '#718096' }}><AdminActionIcon action="absent" />Absent</button>
-                    </div>
-                  </td>
+        {loading ? (
+          <PageLoader label="Loading students..." />
+        ) : (
+          <div className="staff-table-wrapper">
+            <table className="staff-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Student Name</th>
+                  <th>Class</th>
+                  <th>Section</th>
+                  <th>Session</th>
+                  <th>Attendance</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-      
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalRecords={totalRecords}
-        pageSize={pageSize}
-        onPageChange={handlePageChange}
-        onPageSizeChange={handlePageSizeChange}
-        pageSizeOptions={[5, 10, 20, 50]}
-      />
-    </div>
-  );
+              </thead>
+              <tbody>
+                {students.map((student, index) => (
+                  <tr key={student.id}>
+                    <td>{index + 1}</td>
+                    <td>{student.studentName}</td>
+                    <td>
+                      <span className="role-badge teacher">
+                        {student.className}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="role-badge principal">
+                        {student.sectionName}
+                      </span>
+                    </td>
+                    <td>{student.academicSession.split("-")[0]}</td>
+                    <td>
+                      <div style={{ display: "flex", gap: "8px" }}>
+                        <button
+                          onClick={() => handleMark(student.id, "Present")}
+                          style={{
+                            padding: "6px 16px",
+                            borderRadius: "8px",
+                            border: "2px solid",
+                            cursor: "pointer",
+                            fontWeight: 600,
+                            fontSize: "13px",
+                            borderColor:
+                              attendance[student.id] === "Present"
+                                ? "#22543d"
+                                : "#e2e8f0",
+                            background:
+                              attendance[student.id] === "Present"
+                                ? "#c6f6d5"
+                                : "white",
+                            color:
+                              attendance[student.id] === "Present"
+                                ? "#22543d"
+                                : "#718096",
+                          }}
+                        >
+                          <AdminActionIcon action="present" />
+                          Present
+                        </button>
+                        <button
+                          onClick={() => handleMark(student.id, "Absent")}
+                          style={{
+                            padding: "6px 16px",
+                            borderRadius: "8px",
+                            border: "2px solid",
+                            cursor: "pointer",
+                            fontWeight: 600,
+                            fontSize: "13px",
+                            borderColor:
+                              attendance[student.id] === "Absent"
+                                ? "#742a2a"
+                                : "#e2e8f0",
+                            background:
+                              attendance[student.id] === "Absent"
+                                ? "#fed7d7"
+                                : "white",
+                            color:
+                              attendance[student.id] === "Absent"
+                                ? "#742a2a"
+                                : "#718096",
+                          }}
+                        >
+                          <AdminActionIcon action="absent" />
+                          Absent
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalRecords={totalRecords}
+          pageSize={pageSize}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+          pageSizeOptions={[5, 10, 20, 50]}
+        />
+      </div>
+    );
 
   // --- History ---
   return (
     <div className="staff-list-container">
       <div className="staff-list-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={() => setView('select')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px' }} aria-label="Back"><AdminActionIcon action="back" /></button>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <button
+            onClick={() => setView("select")}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "20px",
+            }}
+            aria-label="Back"
+          >
+            <AdminActionIcon action="back" />
+          </button>
           <h2>Attendance History</h2>
         </div>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <input type="date" value={historyDate} max={new Date().toISOString().split('T')[0]} onChange={(e) => setHistoryDate(e.target.value)} style={{ padding: '8px 12px', borderRadius: '8px', border: '2px solid #e2e8f0', fontSize: '14px' }} />
-          <LoadingButton className="btn btn-primary" onClick={fetchHistory} loading={historyLoading}
-            loadingText="Loading..." disabled={!historyDate}>View</LoadingButton>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <input
+            type="date"
+            value={historyDate}
+            max={new Date().toISOString().split("T")[0]}
+            onChange={(e) => setHistoryDate(e.target.value)}
+            style={{
+              padding: "8px 12px",
+              borderRadius: "8px",
+              border: "2px solid #e2e8f0",
+              fontSize: "14px",
+            }}
+          />
+          <LoadingButton
+            className="btn btn-primary"
+            onClick={fetchHistory}
+            loading={historyLoading}
+            loadingText="Loading..."
+            disabled={!historyDate}
+          >
+            View
+          </LoadingButton>
         </div>
       </div>
 
       {history !== null && (
-        <div className="staff-table-wrapper" style={{ marginTop: '12px' }}>
+        <div className="staff-table-wrapper" style={{ marginTop: "12px" }}>
           {history.length === 0 ? (
-            <p style={{ padding: '20px', textAlign: 'center', color: '#718096' }}>No attendance records found for this date.</p>
+            <p
+              style={{ padding: "20px", textAlign: "center", color: "#718096" }}
+            >
+              No attendance records found for this date.
+            </p>
           ) : (
             <table className="staff-table">
               <thead>
-                <tr><th>#</th><th>Student Name</th><th>Section</th><th>Date</th><th>Status</th></tr>
+                <tr>
+                  <th>#</th>
+                  <th>Student Name</th>
+                  <th>Section</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                </tr>
               </thead>
               <tbody>
                 {history.map((record, index) => (
                   <tr key={record.studentId}>
                     <td>{index + 1}</td>
                     <td>{record.studentName}</td>
-                    <td><span className="role-badge principal">{record.sectionName}</span></td>
-                    <td>{record.attendanceDate.split('T')[0].split('-').reverse().join('/')}</td>
-                    <td><span className={`status-badge ${record.status === 'Present' ? 'active' : 'inactive'}`}>{record.status}</span></td>
+                    <td>
+                      <span className="role-badge principal">
+                        {record.sectionName}
+                      </span>
+                    </td>
+                    <td>
+                      {record.attendanceDate
+                        .split("T")[0]
+                        .split("-")
+                        .reverse()
+                        .join("/")}
+                    </td>
+                    <td>
+                      <span
+                        className={`status-badge ${record.status === "Present" ? "active" : "inactive"}`}
+                      >
+                        {record.status}
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -361,7 +668,7 @@ const StudentAttendance: React.FC = () => {
           )}
         </div>
       )}
-      
+
       {history !== null && history.length > 0 && (
         <Pagination
           currentPage={historyCurrentPage}

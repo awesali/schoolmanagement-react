@@ -1,3 +1,18 @@
-.admin-action-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; margin-inline-end: 6px; vertical-align: -3px; flex: none; }
-.admin-action-icon svg { width: 16px; height: 16px; }
-button > .admin-action-icon:only-child { margin-inline-end: 0; }
+/* Layout and component styles for Admin Action Icon. */
+.admin-action-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-inline-end: 6px;
+  vertical-align: -3px;
+  flex: none;
+}
+.admin-action-icon svg {
+  width: 16px;
+  height: 16px;
+}
+button > .admin-action-icon:only-child {
+  margin-inline-end: 0;
+}

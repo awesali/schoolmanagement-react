@@ -1,6 +1,38 @@
-﻿.staff-attendance-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 24px; }
-.staff-attendance-metric { min-width: 0; padding: 20px; background: #fff; border: 1px solid #dce7eb; border-top: 3px solid #278e8b; border-radius: 12px; color: #173449; }
-.staff-attendance-metric span { display: block; color: #647a86; font-size: 12px; }
-.staff-attendance-metric strong { display: block; margin-top: 10px; font-size: 23px; overflow-wrap: anywhere; }
-@media (max-width: 900px) { .staff-attendance-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 480px) { .staff-attendance-metrics { grid-template-columns: 1fr; } }
+/* Layout and component styles for Staff Attendance. */
+﻿.staff-attendance-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.staff-attendance-metric {
+  min-width: 0;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #dce7eb;
+  border-top: 3px solid #278e8b;
+  border-radius: 12px;
+  color: #173449;
+}
+.staff-attendance-metric span {
+  display: block;
+  color: #647a86;
+  font-size: 12px;
+}
+.staff-attendance-metric strong {
+  display: block;
+  margin-top: 10px;
+  font-size: 23px;
+  overflow-wrap: anywhere;
+}
+/* Responsive layouts and screen-size adjustments. */
+@media (max-width: 900px) {
+  .staff-attendance-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 480px) {
+  .staff-attendance-metrics {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,3 +1,4 @@
+/* Layout and component styles for Modal. */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -62,7 +63,7 @@
 }
 
 .modal-header::before {
-  content: '';
+  content: "";
   position: absolute;
   top: -50%;
   right: -10%;
@@ -173,6 +174,7 @@
 }
 
 /* ── Mobile ── */
+/* Responsive layouts and screen-size adjustments. */
 @media (max-width: 640px) {
   .modal-content {
     width: 96%;
