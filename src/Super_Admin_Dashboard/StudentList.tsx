@@ -59,6 +59,8 @@ interface Student {
   sectionName: string;
   academicSession: string;
   isActive: boolean;
+  pendingEmailVerification?: boolean;
+  parentEmailVerificationPending?: boolean;
   profilePictureUrl?: string | null;
   documents: Document[];
 }
@@ -661,7 +663,7 @@ const StudentList: React.FC<StudentListProps> = ({
                     <span
                       className={`status-badge ${student.isActive ? "active" : "inactive"}`}
                     >
-                      {student.isActive ? "Active" : "Inactive"}
+                      {student.pendingEmailVerification ? "Pending email verification" : student.parentEmailVerificationPending ? "Parent email pending" : student.isActive ? "Active" : "Inactive"}
                     </span>
                   </td>
                   <td>
@@ -707,7 +709,7 @@ const StudentList: React.FC<StudentListProps> = ({
         onClose={() => setIsAddModalOpen(false)}
         schoolId={selectedSchoolId}
         onSuccess={() => {
-          toast.success("Student added successfully.");
+          toast.success("Student saved. Student and new parent must verify email before sign-in.");
           fetchStudents(currentPage, pageSize);
         }}
       />

@@ -3,6 +3,7 @@ import AdminActionIcon from "./AdminActionIcon";
 import { useToastMessageState } from "../components/Toast/Toast";
 import React, { useState, useEffect } from "react";
 import { API_BASE_URL } from "../config";
+import { isValidEmail } from "../utils/email";
 import Modal from "./Modal";
 import ProfilePictureInput from "./ProfilePictureInput";
 import "./AddStaff.css";
@@ -120,6 +121,7 @@ const EditStaff: React.FC<EditStaffProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const detailError = validateStaffDetails(formData);
+    if (!isValidEmail(formData.email)) { setSaveError("Enter a valid staff email address."); return; }
     if (detailError) {
       setSaveError(detailError);
       return;

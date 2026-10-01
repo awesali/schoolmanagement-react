@@ -3,6 +3,7 @@ import AdminActionIcon from "./AdminActionIcon";
 import { useToastMessageState } from "../components/Toast/Toast";
 import React, { useState, useEffect } from "react";
 import { API_BASE_URL } from "../config";
+import { isValidEmail } from "../utils/email";
 import Modal from "./Modal";
 import RelationshipSelect from "./RelationshipSelect";
 import ProfilePictureInput from "./ProfilePictureInput";
@@ -219,6 +220,7 @@ const EditStudent: React.FC<EditStudentProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!student || saving) return;
+    if (!isValidEmail(formData.email)) { setSaveError("Enter a valid student email address."); return; }
     setSaving(true);
     setSaveError("");
 

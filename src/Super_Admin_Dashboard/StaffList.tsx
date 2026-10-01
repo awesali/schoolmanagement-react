@@ -68,6 +68,7 @@ interface Staff extends StaffDetailRecord {
   schoolName: string;
   address: string;
   isActive: boolean;
+  pendingEmailVerification?: boolean;
   profilePictureUrl?: string | null;
   documents: Document[];
 }
@@ -615,7 +616,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
                     <span
                       className={`status-badge ${member.isActive ? "active" : "inactive"}`}
                     >
-                      {member.isActive ? "Active" : "Inactive"}
+                      {member.pendingEmailVerification ? "Pending email verification" : member.isActive ? "Active" : "Inactive"}
                     </span>
                   </td>
                   <td>
@@ -661,7 +662,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
         onClose={() => setIsAddModalOpen(false)}
         schoolId={selectedSchoolId}
         onSuccess={() => {
-          toast.success("Staff added successfully.");
+          toast.success("Staff saved. Email verification is required before sign-in.");
           fetchStaff(currentPage, pageSize);
         }}
       />

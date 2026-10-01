@@ -2,6 +2,7 @@
 import AdminActionIcon from "./AdminActionIcon";
 import React, { useState, useEffect, useCallback } from "react";
 import { API_BASE_URL } from "../config";
+import { isValidEmail } from "../utils/email";
 import { importDateError, formatImportDate } from "../utils/importDate";
 import { useToast } from "../components/Toast/Toast";
 import { TOAST_MESSAGES } from "../constants/toastMessages";
@@ -165,6 +166,8 @@ const AddStudent: React.FC<AddStudentProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (submitting) return;
+    if (!isValidEmail(formData.email) || !isValidEmail(formData.parentEmail)) { toast.error("Enter valid student and parent email addresses."); return; }
+    if (formData.email.trim().toLowerCase() === formData.parentEmail.trim().toLowerCase()) { toast.error("Student and parent email addresses must differ."); return; }
     const dateError = importDateError(
       "Date of Birth",
       formatImportDate(formData.dob),
