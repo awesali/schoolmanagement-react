@@ -37,6 +37,13 @@ Use a test school and real inboxes controlled by your team. The updated backend 
 | Teacher > Messages | Send a message to the student | Student and parent receive the new-message email and the chat record appears. |
 | Student > Messages | Select a staff recipient and send a message | Only that staff member receives the new-message email; the conversation appears in their dashboard. |
 
+## Per-school verification setting
+
+1. Open **School List** and use the **Email verification** switch on one test school. Each school has its own setting; existing schools start **On**.
+2. With **On**, add staff and a student with a new parent. Both creation APIs require SMTP acceptance and save pending accounts. Staff, student and new parent can sign in only after opening their own verification links.
+3. Turn **Off** for that school and add another staff member or student. Only credential emails are sent. The accounts are active after the SMTP send succeeds, and the UI shows usernames and passwords in a one-time popup. Closing it clears the passwords from the UI. Bulk import shows a one-time list of credentials after the job completes.
+4. Turn **Off** after creating a pending account in step 2. That earlier account must still require its verification link. Turning the setting back **On** affects new accounts only.
+5. Check a different school: its toggle and new-account behavior must stay unchanged.
 ## Mailbox verification check
 
 1. Add one staff member using a controlled inbox. The admin list should show **Pending email verification**. Sign-in should fail until the recipient opens the verification link; then the list should show **Active** and sign-in should work.

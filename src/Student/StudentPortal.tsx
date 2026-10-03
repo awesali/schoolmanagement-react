@@ -3,6 +3,7 @@ import StudentIcon from "./StudentIcon";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../config";
+import { SchoolHolidayBanner, useSchoolHoliday } from "../components/SchoolHoliday";
 import {
   BellIcon,
   LogoutIcon,
@@ -353,6 +354,7 @@ export default function StudentPortal() {
   const navigate = useNavigate();
   const [data, setData] = useState<Overview | null>(null);
   const [page, setPage] = useState<Page>("Today");
+  const holiday = useSchoolHoliday();
   const [selectedRecentResult, setSelectedRecentResult] = useState<
     string | null
   >(null);
@@ -1128,7 +1130,8 @@ export default function StudentPortal() {
         )}
         {page === "Today" && (
           <>
-            {(currentClass || nextClass) && (
+            <SchoolHolidayBanner holiday={holiday} />
+            {!holiday?.isHoliday && (currentClass || nextClass) && (
               <div className="sp-now">
                 <div>
                   <small>{currentClass ? "NOW" : "NEXT"}</small>
@@ -1151,7 +1154,7 @@ export default function StudentPortal() {
               {[
                 [
                   "Classes today",
-                  todayClasses.filter((x) => !x.isBreak).length,
+                  holiday?.isHoliday ? 0 : todayClasses.filter((x) => !x.isBreak).length,
                 ],
                 ["Homework upcoming", due.length],
                 [
@@ -1176,7 +1179,7 @@ export default function StudentPortal() {
             <div className="sp-grid">
               {panel(
                 "Today's classes",
-                todayClasses.length
+                !holiday?.isHoliday && todayClasses.length
                   ? todayClasses.map((x) => (
                       <div className="sp-line" key={x.periodNumber}>
                         <span className="sp-line-date">

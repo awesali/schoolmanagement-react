@@ -16,6 +16,7 @@ interface School extends SchoolDetails {
   phone: string;
   superAdminId: number;
   created_Date: string;
+  emailVerificationRequired: boolean;
 }
 
 interface SchoolListProps {
@@ -27,6 +28,8 @@ const SchoolList: React.FC<SchoolListProps> = ({ onSchoolsChanged }) => {
   const [schools, setSchools] = useState<School[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingSchool, setEditingSchool] = useState<School | null>(null);
+  const [savingVerificationFor, setSavingVerificationFor] = useState<number | null>(null);
+  const [settingError, setSettingError] = useState("");
 
   useEffect(() => {
     fetchSchools();
@@ -58,6 +61,35 @@ const SchoolList: React.FC<SchoolListProps> = ({ onSchoolsChanged }) => {
     }
   };
 
+  const setVerification = async (school: School, required: boolean) => {
+    setSavingVerificationFor(school.id);
+    setSettingError("");
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/Admin/schools/${school.id}/email-verification`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({ required }),
+        },
+      );
+      if (!response.ok) throw new Error("Could not save the school setting.");
+      setSchools((current) =>
+        current.map((item) =>
+          item.id === school.id
+            ? { ...item, emailVerificationRequired: required }
+            : item,
+        ),
+      );
+    } catch (error) {
+      setSettingError(error instanceof Error ? error.message : "Could not save the school setting.");
+    } finally {
+      setSavingVerificationFor(null);
+    }
+  };
   if (loading) {
     return <PageLoader label="Loading schools..." />;
   }
@@ -65,6 +97,7 @@ const SchoolList: React.FC<SchoolListProps> = ({ onSchoolsChanged }) => {
   return (
     <div className="school-list-container">
       <h2>School List</h2>
+      {settingError && <p role="alert" className="school-setting-error">{settingError}</p>}
       {schools.length === 0 ? (
         <div
           className="school-list-loading"
@@ -112,6 +145,28 @@ const SchoolList: React.FC<SchoolListProps> = ({ onSchoolsChanged }) => {
                 <div className="school-info">
                   <span className="info-label">Email:</span>
                   <span className="info-value">{school.email || "N/A"}</span>
+                </div>
+                <div className="school-email-setting">
+                  <div>
+                    <strong>Email verification</strong>
+                    <p>When on, new staff, students and parents must verify their inbox before signing in. Existing pending accounts keep this requirement.</p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={school.emailVerificationRequired !== false}
+                    aria-label={`Require email verification for ${school.schoolName}`}
+                    className={`school-setting-switch ${school.emailVerificationRequired !== false ? "is-on" : "is-off"}`}
+                    disabled={savingVerificationFor === school.id}
+                    onClick={() => setVerification(school, school.emailVerificationRequired === false)}
+                  >
+                    <span className="school-setting-switch-track" aria-hidden="true">
+                      <span className="school-setting-switch-thumb" />
+                    </span>
+                    <span className="school-setting-switch-label">
+                      {school.emailVerificationRequired !== false ? "On" : "Off"}
+                    </span>
+                  </button>
                 </div>
                 <div className="school-info">
                   <span className="info-label">Created:</span>

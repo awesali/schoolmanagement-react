@@ -212,6 +212,10 @@ const AddExam: React.FC<AddExamProps> = ({
           section.subjects.forEach((sub) => {
             const schedule = examSchedule.get(`${section.id}-${sub.subjectId}`);
             if (schedule?.selected && schedule.examDate) {
+              if (new Date(`${schedule.examDate}T12:00:00`).getDay() === 0) {
+                setError(`Subject "${sub.subjectName}" cannot be scheduled on Sunday.`);
+                throw new Error("invalid_date");
+              }
               if (
                 schedule.examDate < startDate ||
                 schedule.examDate > endDate

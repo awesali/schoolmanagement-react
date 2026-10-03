@@ -155,6 +155,11 @@ const CreateExamSchedule: React.FC<CreateExamScheduleProps> = ({
       });
       return;
     }
+    const sunday = rows.find((r) => new Date(`${r.examDate}T12:00:00`).getDay() === 0);
+    if (sunday) {
+      setMsg({ text: `"${sunday.subjectName}" cannot be scheduled on Sunday. Choose another date.`, ok: false });
+      return;
+    }
     const outsideDuration = rows.find(
       (r) => r.examDate < examStartDate || r.examDate > examEndDate,
     );

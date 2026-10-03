@@ -6,6 +6,7 @@ import { isValidEmail } from "../utils/email";
 import { importDateError, formatImportDate } from "../utils/importDate";
 import { useToastMessageState } from "../components/Toast/Toast";
 import Modal from "./Modal";
+import OneTimeCredentialsDialog, { OneTimeCredentials } from "./OneTimeCredentialsDialog";
 import "./AddStaff.css";
 import StaffDetailSections, {
   staffDetailValues,
@@ -35,6 +36,7 @@ const AddStaff: React.FC<AddStaffProps> = ({
   schoolId,
   onSuccess,
 }) => {
+  const [oneTimeCredentials, setOneTimeCredentials] = useState<OneTimeCredentials | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     dob: "",
@@ -152,12 +154,12 @@ const AddStaff: React.FC<AddStaffProps> = ({
       });
 
       const result = await response.json();
-      console.log("API Response:", result);
 
       if (response.ok && result.success) {
         handleClear();
         onSuccess();
         onClose();
+        setOneTimeCredentials(result.oneTimeCredentials || null);
       } else {
         // Show error message from API
         console.error("API Error:", result);
@@ -212,6 +214,7 @@ const AddStaff: React.FC<AddStaffProps> = ({
   };
 
   return (
+    <>
     <Modal
       isOpen={isOpen}
       onClose={() => {
@@ -453,6 +456,8 @@ const AddStaff: React.FC<AddStaffProps> = ({
         </div>
       </form>
     </Modal>
+    <OneTimeCredentialsDialog credentials={oneTimeCredentials} onClose={() => setOneTimeCredentials(null)} />
+    </>
   );
 };
 

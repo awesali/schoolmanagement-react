@@ -8,6 +8,8 @@ import { PageLoader } from "../components/Loader/Loader";
 import AddStudent from "./AddStudent";
 import EditStudent from "./EditStudent";
 import Modal from "./Modal";
+import BulkCredentialsDialog from "./BulkCredentialsDialog";
+import { OneTimeCredentials } from "./OneTimeCredentialsDialog";
 import Pagination from "./Pagination";
 import { downloadCsv, parseCsv } from "../utils/csv";
 import {
@@ -95,6 +97,7 @@ const StudentList: React.FC<StudentListProps> = ({
   const [transferring, setTransferring] = useState(false);
   const [importPreview, setImportPreview] = useState<ImportPreviewRow[]>([]);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [importCredentials, setImportCredentials] = useState<Array<{ rowNumber: number; credentials: OneTimeCredentials }>>([]);
 
   useEffect(() => {
     if (selectedSchoolId) {
@@ -121,6 +124,7 @@ const StudentList: React.FC<StudentListProps> = ({
     setTotalPages(Math.max(1, Math.ceil(allStudents.length / size)));
     setStudents(allStudents.slice(0, size));
   };
+
 
   const fetchStudents = async (page: number = 1, size: number = pageSize) => {
     const request = ++studentRequest.current;
@@ -463,6 +467,7 @@ const StudentList: React.FC<StudentListProps> = ({
     setTransferring(false);
     void (async () => {
       const errors: ImportFailure[] = [];
+      const credentialsToShow: Array<{ rowNumber: number; credentials: OneTimeCredentials }> = [];
       setImportResult(null);
       let imported = 0;
       try {
@@ -485,6 +490,7 @@ const StudentList: React.FC<StudentListProps> = ({
                   previewRow,
                   ok: response.ok && result.success,
                   message: result.message,
+                  credentials: result.oneTimeCredentials as OneTimeCredentials | undefined,
                 };
               } catch (error: any) {
                 return {
@@ -496,6 +502,7 @@ const StudentList: React.FC<StudentListProps> = ({
             }),
           );
           imported += results.filter((result) => result.ok).length;
+          credentialsToShow.push(...results.filter((result) => result.ok && result.credentials).map((result) => ({ rowNumber: result.previewRow.rowNumber, credentials: result.credentials! })));
           errors.push(
             ...results
               .filter((result) => !result.ok)
@@ -517,6 +524,7 @@ const StudentList: React.FC<StudentListProps> = ({
         } else {
           toast.success(importMessage);
         }
+        setImportCredentials(credentialsToShow);
         updateBulkImportJob(jobId, imported, errors, validRows.length, true);
       } catch (error: any) {
         errors.push({
@@ -525,6 +533,7 @@ const StudentList: React.FC<StudentListProps> = ({
           email: "",
           message: error.message || "Unable to import students.",
         });
+        setImportCredentials(credentialsToShow);
         updateBulkImportJob(jobId, imported, errors, validRows.length, true);
       }
     })();
@@ -871,6 +880,7 @@ const StudentList: React.FC<StudentListProps> = ({
             </div>
           ))}
       </Modal>
+      <BulkCredentialsDialog entries={importCredentials} onClose={() => setImportCredentials([])} />
     </div>
   );
 };

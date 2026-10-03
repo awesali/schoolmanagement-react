@@ -133,6 +133,10 @@ const TeacherUnitTest: React.FC = () => {
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (form.testDate && new Date(`${form.testDate}T12:00:00`).getDay() === 0) {
+      setMessage({ text: "Unit tests cannot be scheduled on Sunday. Choose another date.", ok: false });
+      return;
+    }
     if (
       !subjects.some((subject) => String(subject.subjectId) === form.subjectId)
     ) {

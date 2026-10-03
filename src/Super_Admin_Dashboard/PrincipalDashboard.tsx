@@ -2,6 +2,7 @@
 import OfficeMenuIcon from "./OfficeMenuIcon";
 import React, { useEffect, useRef, useState } from "react";
 import { API_BASE_URL } from "../config";
+import { SchoolHolidayBanner, useSchoolHoliday } from "../components/SchoolHoliday";
 import { LogoutIcon, ProfileIcon } from "../components/Icons/Icons";
 import { profilePictureUrl } from "./ProfilePictureInput";
 import "./PrincipalDashboard.css";
@@ -145,6 +146,7 @@ export default function PrincipalDashboard({
 }) {
   const [data, setData] = useState<PrincipalData | null>(null);
   const [page, setPage] = useState<Page>("Dashboard");
+  const holiday = useSchoolHoliday();
   const [date, setDate] = useState(today);
   const [refresh, setRefresh] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -1200,6 +1202,7 @@ export default function PrincipalDashboard({
         </header>
         <div className="principal-scroll-area" ref={contentRef}>
           <div className="principal-content">
+            {page === "Dashboard" && <SchoolHolidayBanner holiday={holiday} />}
             <div className="principal-heading">
               <div>
                 <span className="principal-eyebrow">

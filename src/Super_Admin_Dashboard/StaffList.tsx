@@ -12,6 +12,8 @@ import AddStaff from "./AddStaff";
 import { PageLoader } from "../components/Loader/Loader";
 import EditStaff from "./EditStaff";
 import Modal from "./Modal";
+import BulkCredentialsDialog from "./BulkCredentialsDialog";
+import { OneTimeCredentials } from "./OneTimeCredentialsDialog";
 import Pagination from "./Pagination";
 import { downloadCsv, parseCsv } from "../utils/csv";
 import {
@@ -97,6 +99,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
   const [transferring, setTransferring] = useState(false);
   const [importPreview, setImportPreview] = useState<ImportPreviewRow[]>([]);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [importCredentials, setImportCredentials] = useState<Array<{ rowNumber: number; credentials: OneTimeCredentials }>>([]);
 
   const readApiResponse = async (response: Response, operation: string) => {
     const responseText = await response.text();
@@ -408,6 +411,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
     setTransferring(false);
     void (async () => {
       const errors: ImportFailure[] = [];
+      const credentialsToShow: Array<{ rowNumber: number; credentials: OneTimeCredentials }> = [];
       setImportResult(null);
       let imported = 0;
       try {
@@ -440,6 +444,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
                   previewRow,
                   ok: response.ok && result.success,
                   message: result.message,
+                  credentials: result.oneTimeCredentials as OneTimeCredentials | undefined,
                 };
               } catch (error: any) {
                 return {
@@ -451,6 +456,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
             }),
           );
           imported += results.filter((result) => result.ok).length;
+          credentialsToShow.push(...results.filter((result) => result.ok && result.credentials).map((result) => ({ rowNumber: result.previewRow.rowNumber, credentials: result.credentials! })));
           errors.push(
             ...results
               .filter((result) => !result.ok)
@@ -472,6 +478,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
         } else {
           toast.success(importMessage);
         }
+        setImportCredentials(credentialsToShow);
         updateBulkImportJob(jobId, imported, errors, validRows.length, true);
       } catch (error: any) {
         errors.push({
@@ -480,6 +487,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
           email: "",
           message: error.message || "Unable to import staff.",
         });
+        setImportCredentials(credentialsToShow);
         updateBulkImportJob(jobId, imported, errors, validRows.length, true);
       }
     })();
@@ -807,6 +815,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
             </div>
           ))}
       </Modal>
+      <BulkCredentialsDialog entries={importCredentials} onClose={() => setImportCredentials([])} />
     </div>
   );
 };

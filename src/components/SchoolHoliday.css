@@ -1,0 +1,15 @@
+.school-holiday-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+  margin: 0 0 20px;
+  padding: 16px 20px;
+  border: 1px solid #bfdbfe;
+  border-left: 4px solid #397ec5;
+  border-radius: 12px;
+  background: #eff6ff;
+  color: #1d3553;
+}
+.school-holiday-banner strong { font-size: 16px; }
+.school-holiday-banner span { color: #46617c; }

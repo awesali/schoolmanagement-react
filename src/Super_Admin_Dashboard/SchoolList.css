@@ -131,3 +131,43 @@
   color: #087f83;
   font-weight: 700;
 }
+.school-email-setting { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding-top: 14px; border-top: 1px solid #e2e8f0; }
+.school-email-setting strong { color: #203047; }
+.school-email-setting p { margin: 5px 0 0; color: #64748b; font-size: 13px; line-height: 1.4; }
+.school-setting-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  flex-shrink: 0;
+  border: 0;
+  padding: 2px;
+  background: transparent;
+  color: #203047;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.school-setting-switch:disabled { cursor: wait; opacity: .65; }
+.school-setting-switch:focus-visible { outline: 2px solid #2474bd; outline-offset: 4px; border-radius: 6px; }
+.school-setting-switch-track {
+  display: inline-flex;
+  align-items: center;
+  width: 44px;
+  height: 25px;
+  padding: 3px;
+  border-radius: 999px;
+  background: #9aa9bb;
+  transition: background .18s ease;
+}
+.school-setting-switch.is-on .school-setting-switch-track { background: #087f83; }
+.school-setting-switch-thumb {
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 3px #0003;
+  transition: transform .18s ease;
+}
+.school-setting-switch.is-on .school-setting-switch-thumb { transform: translateX(19px); }
+.school-setting-switch-label { min-width: 24px; text-align: left; }
+.school-setting-error { color: #b42318; margin: 0 0 14px; }

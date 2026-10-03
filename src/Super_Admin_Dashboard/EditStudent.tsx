@@ -34,6 +34,7 @@ interface Student {
   sectionName: string;
   academicSession: string;
   isActive: boolean;
+  pendingEmailVerification?: boolean;
   profilePictureUrl?: string | null;
   parentRelationship?: string;
   documents: Document[];
@@ -413,6 +414,28 @@ const EditStudent: React.FC<EditStudentProps> = ({
             />
           </div>
           <div className="form-group">
+            <label>Status</label>
+            <div className="toggle-container">
+              <label className="toggle-switch">
+                <input
+                  type="checkbox"
+                  checked={formData.isActive}
+                  disabled={student?.pendingEmailVerification && !formData.isActive}
+                  onChange={(e) =>
+                    setFormData({ ...formData, isActive: e.target.checked })
+                  }
+                />
+                <span className="toggle-slider"></span>
+              </label>
+              <span
+                className={`toggle-label ${formData.isActive ? "active" : "inactive"}`}
+              >
+                {formData.isActive ? "Active" : "Inactive"}
+              </span>
+            </div>
+            {student?.pendingEmailVerification && <small>Activation requires email verification.</small>}
+          </div>
+          <div className="form-group">
             <label>Date of Birth *</label>
             <input
               type="date"
@@ -488,26 +511,6 @@ const EditStudent: React.FC<EditStudentProps> = ({
                 </option>
               ))}
             </select>
-          </div>
-          <div className="form-group">
-            <label>Status</label>
-            <div className="toggle-container">
-              <label className="toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={formData.isActive}
-                  onChange={(e) =>
-                    setFormData({ ...formData, isActive: e.target.checked })
-                  }
-                />
-                <span className="toggle-slider"></span>
-              </label>
-              <span
-                className={`toggle-label ${formData.isActive ? "active" : "inactive"}`}
-              >
-                {formData.isActive ? "Active" : "Inactive"}
-              </span>
-            </div>
           </div>
         </div>
 

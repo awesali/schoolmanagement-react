@@ -7,6 +7,7 @@ import { importDateError, formatImportDate } from "../utils/importDate";
 import { useToast } from "../components/Toast/Toast";
 import { TOAST_MESSAGES } from "../constants/toastMessages";
 import Modal from "./Modal";
+import OneTimeCredentialsDialog, { OneTimeCredentials } from "./OneTimeCredentialsDialog";
 import RelationshipSelect from "./RelationshipSelect";
 import "./AddStaff.css";
 import { GENDER_OPTIONS } from "../utils/gender";
@@ -75,6 +76,7 @@ const AddStudent: React.FC<AddStudentProps> = ({
   onSuccess,
 }) => {
   const toast = useToast();
+  const [oneTimeCredentials, setOneTimeCredentials] = useState<OneTimeCredentials | null>(null);
   const [formData, setFormData] = useState(initialForm);
   const [enrollment, setEnrollment] = useState<EnrollmentData>({
     classes: [],
@@ -241,6 +243,7 @@ const AddStudent: React.FC<AddStudentProps> = ({
         setDocuments([]);
         onSuccess();
         onClose();
+        setOneTimeCredentials(result.oneTimeCredentials || null);
       } else {
         const validationMessage = result.errors
           ? Object.values(result.errors).flat().join(" ")
@@ -283,6 +286,7 @@ const AddStudent: React.FC<AddStudentProps> = ({
   };
 
   return (
+    <>
     <Modal
       isOpen={isOpen}
       onClose={() => {
@@ -602,6 +606,8 @@ const AddStudent: React.FC<AddStudentProps> = ({
         </div>
       </form>
     </Modal>
+    <OneTimeCredentialsDialog credentials={oneTimeCredentials} onClose={() => setOneTimeCredentials(null)} />
+    </>
   );
 };
 

@@ -37,6 +37,7 @@ const Login: React.FC = () => {
         }
         navigate("/dashboard");
       } else {
+        const staffError = await response.text();
         const studentResponse = await fetch(
           `${API_BASE_URL}/api/StudentParentAuth/login`,
           {
@@ -59,7 +60,13 @@ const Login: React.FC = () => {
           localStorage.removeItem("schoolId");
           navigate("/student");
         } else {
-          setError("Invalid email or password.");
+          const studentError = await studentResponse.json().catch(() => null);
+          const blocked = "You are temporarily blocked. Please contact your school.";
+          if (staffError.includes(blocked) || studentError?.message === blocked)
+            setError(blocked);
+          else if (studentError?.message?.includes("verify your email"))
+            setError(studentError.message);
+          else setError("Invalid email or password.");
         }
       }
     } catch (err) {

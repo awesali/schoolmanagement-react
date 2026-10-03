@@ -54,6 +54,7 @@ import PermissionManagement from "./PermissionManagement";
 import StudentPromotion from "./StudentPromotion";
 import Sidebar from "./Sidebar";
 import { API_BASE_URL } from "../config";
+import { SchoolHolidayBanner, useSchoolHoliday } from "../components/SchoolHoliday";
 import { profilePictureUrl } from "./ProfilePictureInput";
 import ImportResults from "./ImportResults";
 import {
@@ -165,6 +166,7 @@ const Dashboard: React.FC = () => {
     return type === "student" || type === "staff" ? type : null;
   });
   const [showAttendancePopup, setShowAttendancePopup] = useState(false);
+  const holiday = useSchoolHoliday(selectedSchoolId);
   const [publishedResults, setPublishedResults] = useState<DashboardExam[]>([]);
   const [upcomingExamEvents, setUpcomingExamEvents] = useState<
     DashboardExamEvent[]
@@ -725,6 +727,7 @@ const Dashboard: React.FC = () => {
         />
 
         <div className="dashboard-content">
+          {activePage === "Dashboard" && <SchoolHolidayBanner holiday={holiday} />}
           {permissionsLoading ? (
             <div className="permission-empty">Loading access...</div>
           ) : (
@@ -900,6 +903,7 @@ const Dashboard: React.FC = () => {
                     <TeacherWorkspace
                       userName={userName}
                       onNavigate={handleNavigate}
+                      holidayToday={!!holiday?.isHoliday}
                     />
                   ) : userRole !== "1" && userRole !== "2" ? (
                     <div

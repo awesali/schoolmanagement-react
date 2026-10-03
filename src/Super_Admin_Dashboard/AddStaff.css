@@ -648,3 +648,6 @@ input:checked + .toggle-slider:before {
   margin-top: 20px;
   padding-bottom: 8px;
 }
+.one-time-credentials { display: grid; grid-template-columns: minmax(130px, auto) 1fr; gap: 10px 16px; margin: 18px 0 24px; }
+.one-time-credentials dt { color: #52657a; }
+.one-time-credentials dd { margin: 0; font-weight: 700; overflow-wrap: anywhere; }

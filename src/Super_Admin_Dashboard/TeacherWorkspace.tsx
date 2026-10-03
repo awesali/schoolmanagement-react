@@ -116,6 +116,7 @@ type Props = {
     sectionId?: number,
   ) => void;
   timetable?: boolean;
+  holidayToday?: boolean;
 };
 
 // Main component and state
@@ -123,6 +124,7 @@ export default function TeacherWorkspace({
   userName,
   onNavigate,
   timetable = false,
+  holidayToday = false,
 }: Props) {
   const { can } = usePermissions();
   const [classes, setClasses] = useState<AssignedClass[]>([]);
@@ -172,7 +174,7 @@ export default function TeacherWorkspace({
     };
   }, [retry, timetable]);
   const today = new Date();
-  const todaySlots = slots.filter((s) => s.day === today.getDay());
+  const todaySlots = holidayToday && !timetable ? [] : slots.filter((s) => s.day === today.getDay());
   const actions: [string, string, string, "student" | "staff" | undefined][] = [
     ["Take attendance", "Attendance", "attendance.students", "student"],
     ["Enter marks", "Marks Entry", "exams.academic-exam", undefined],
@@ -304,7 +306,9 @@ export default function TeacherWorkspace({
               )}
             </div>
           )}
-          {loading ? (
+          {holidayToday && !timetable ? (
+            <p className="tw-empty">School holiday today. No classes scheduled.</p>
+          ) : loading ? (
             <p className="tw-empty" role="status">
               Loading your schedule…
             </p>
