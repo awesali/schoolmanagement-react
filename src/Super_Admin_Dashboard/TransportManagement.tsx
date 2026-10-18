@@ -1,4 +1,4 @@
-// Transport Management: imports and dependencies
+﻿// Transport Management: imports and dependencies
 import React, { useEffect, useMemo, useState } from "react";
 import { API_BASE_URL } from "../config";
 import { PageLoader } from "../components/Loader/Loader";
@@ -25,6 +25,7 @@ import "../components/Icons/CreateIconButton.css";
 
 // Data types and contracts
 type TransportTab =
+  | "setup"
   | "dashboard"
   | "vehicleTypes"
   | "vehicles"
@@ -76,6 +77,7 @@ type AllocationRow = Record<string, string>;
 
 // Constants and helper functions
 const TABS: Record<TransportTab, TabConfig> = {
+  setup: { label: "Transport Setup", fields: [] },
   dashboard: { label: "Dashboard" },
   vehicleTypes: {
     label: "Vehicle Types",
@@ -348,8 +350,9 @@ const TABS: Record<TransportTab, TabConfig> = {
 const pretty = (value: string) =>
   value.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase());
 const EMPTY_MESSAGES: Record<TransportTab, string> = {
+  setup: "Enter all transport details in one place.",
   dashboard:
-    "No vehicles added yet. Start by adding a vehicle and its details in the Vehicle tab, then add drivers and routes to set up school transport.",
+    "No vehicles added yet. Open Transport Setup to add a vehicle, driver, conductor and route together.",
   vehicleTypes:
     "No vehicle types added yet. Add a vehicle type and its seating capacity to get started.",
   vehicles:
@@ -453,6 +456,7 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({
   });
   const config = TABS[tab];
   const ActionIcon = {
+    setup: VehicleIcon,
     dashboard: VehicleIcon,
     vehicleTypes: AddCircleIcon,
     vehicles: VehicleIcon,
@@ -1054,14 +1058,16 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({
         aria-label="Transport sections"
       >
         {(Object.keys(TABS) as TransportTab[])
-          .filter((key) => key !== "vehicleTypes")
+          .filter((key) => !["vehicleTypes", ...SETUP_RECORDS].includes(key))
           .map((key) => (
             <button
               key={key}
               type="button"
               role="tab"
-              aria-selected={tab === key}
-              className={`management-tab ${tab === key ? "active" : ""}`}
+              aria-selected={
+                tab === key || (key === "setup" && SETUP_RECORDS.includes(tab))
+              }
+              className={`management-tab ${tab === key || (key === "setup" && SETUP_RECORDS.includes(tab)) ? "active" : ""}`}
               onClick={() => {
                 setTab(key);
                 closeForm();
@@ -1086,7 +1092,35 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({
         </div>
       )}
 
-      {loading ? (
+      {(tab === "setup" || SETUP_RECORDS.includes(tab)) && (
+        <div className="form-group" style={{ marginBottom: 20 }}>
+          <label htmlFor="transport-view">Transport setup and records</label>
+          <select
+            id="transport-view"
+            value={tab}
+            onChange={(event) => {
+              setTab(event.target.value as TransportTab);
+              closeForm();
+            }}
+          >
+            <option value="setup">Add complete transport setup</option>
+            {SETUP_RECORDS.map((key) => (
+              <option key={key} value={key}>
+                Manage {TABS[key].label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+      <div hidden={tab !== "setup"}>
+        <TransportSetup
+          key={selectedSchoolId}
+          schoolId={selectedSchoolId}
+          lookups={lookups}
+          onSaved={() => setLookupRefresh((value) => value + 1)}
+        />
+      </div>
+      {tab === "setup" ? null : loading ? (
         <PageLoader label={`Loading ${config.label.toLowerCase()}...`} />
       ) : tab === "dashboard" ? (
         <>
@@ -1096,10 +1130,10 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({
               <button
                 type="button"
                 className="create-icon-button"
-                title="Go to Vehicle"
-                aria-label="Go to Vehicle"
+                title="Go to Transport Setup"
+                aria-label="Go to Transport Setup"
                 onClick={() => {
-                  setTab("vehicles");
+                  setTab("setup");
                   closeForm();
                 }}
               >
@@ -1466,3 +1500,238 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({
 };
 
 export default TransportManagement;
+
+const SETUP_RECORDS: TransportTab[] = [
+  "vehicles",
+  "drivers",
+  "conductors",
+  "routes",
+  "assignments",
+];
+const SETUP_ENTITIES = ["vehicles", "drivers", "conductors", "routes"] as const;
+type SetupEntity = (typeof SETUP_ENTITIES)[number];
+
+export const TransportSetup: React.FC<{
+  schoolId: number;
+  lookups: Record<string, LookupOption[]>;
+  onSaved: () => void;
+}> = ({ schoolId, lookups, onSaved }) => {
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [choices, setChoices] = useState<Record<SetupEntity, string>>({
+    vehicles: "new",
+    drivers: "new",
+    conductors: "none",
+    routes: "new",
+  });
+  const [saved, setSaved] = useState<Partial<Record<SetupEntity, number>>>({});
+  const [busy, setBusy] = useState(false);
+  const saving = React.useRef(false);
+  const [notice, setNotice] = useState("");
+  const update = (key: string, value: string) =>
+    setValues((current) => ({ ...current, [key]: value }));
+  const saveSetup = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (saving.current) return;
+    saving.current = true;
+    setBusy(true);
+    setNotice("");
+    const ids = { ...saved };
+    let section = "";
+    const post = async (endpoint: string, body: Record<string, unknown>) => {
+      const response = await fetch(
+        `${API_BASE_URL}/api/Transport/${endpoint}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({ ...body, schoolId, isActive: true }),
+        },
+      );
+      const result = await response.json();
+      if (!response.ok || result.success === false)
+        throw new Error(apiError(result, "Unable to save."));
+      return result.data;
+    };
+    try {
+      for (const entity of SETUP_ENTITIES) {
+        section = TABS[entity].label;
+        if (ids[entity] || choices[entity] === "none") continue;
+        if (choices[entity] !== "new") {
+          ids[entity] = Number(choices[entity]);
+          continue;
+        }
+        const body: Record<string, unknown> = {};
+        TABS[entity].fields!.forEach((field) => {
+          const value = values[`${entity}.${field.key}`];
+          body[field.key] =
+            field.type === "number" ? Number(value || 0) : value || null;
+        });
+        const record = await post(TABS[entity].endpoint!, body);
+        if (!record?.id)
+          throw new Error(
+            "The server did not return the saved record ID. Check the records before retrying.",
+          );
+        ids[entity] = Number(record.id);
+        setSaved((current) => ({ ...current, [entity]: Number(record.id) }));
+      }
+      section = "Vehicle assignment";
+      await post("assignments", {
+        vehicleId: ids.vehicles,
+        driverId: ids.drivers,
+        conductorId: ids.conductors || null,
+        routeId: ids.routes,
+        academicSessionId: Number(values.academicSessionId),
+        startDate: values.startDate,
+      });
+      setSaved({});
+      setValues({});
+      setChoices({
+        vehicles: "new",
+        drivers: "new",
+        conductors: "none",
+        routes: "new",
+      });
+      setNotice(
+        "Transport setup saved. The vehicle, driver and route are assigned and ready for student transport.",
+      );
+      onSaved();
+    } catch (error) {
+      setNotice(
+        `${section}: ${error instanceof Error ? error.message : "Unable to save."} Any completed sections are saved and will be reused when you retry.`,
+      );
+      onSaved();
+    } finally {
+      saving.current = false;
+      setBusy(false);
+    }
+  };
+  const renderField = (field: FieldConfig, prefix = "") => {
+    const key = `${prefix}${field.key}`;
+    return (
+      <div className="form-group" key={key}>
+        <label htmlFor={`setup-${key}`}>
+          {field.label}
+          {field.required ? " *" : ""}
+        </label>
+        {field.type === "select" ? (
+          <select
+            id={`setup-${key}`}
+            required={field.required}
+            value={values[key] || ""}
+            onChange={(event) => update(key, event.target.value)}
+          >
+            <option value="">Select {field.label}</option>
+            {(lookups[field.optionsKey || ""] || []).map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <input
+            id={`setup-${key}`}
+            type={field.type || "text"}
+            required={field.required}
+            min={
+              field.type === "number"
+                ? field.key === "defaultCapacity"
+                  ? 1
+                  : 0
+                : undefined
+            }
+            step={field.key === "distanceKm" ? "any" : undefined}
+            maxLength={field.key === "mobile" ? 10 : undefined}
+            pattern={field.key === "mobile" ? "[0-9]{10}" : undefined}
+            value={values[key] || ""}
+            onChange={(event) =>
+              update(
+                key,
+                field.key === "licenseNumber"
+                  ? event.target.value.toUpperCase()
+                  : event.target.value,
+              )
+            }
+          />
+        )}
+      </div>
+    );
+  };
+  return (
+    <form onSubmit={saveSetup} className="allocation-batch-form">
+      <div>
+        <h3>Complete Transport Setup</h3>
+        <p>
+          Enter the details below or choose existing records, then save
+          everything together.
+        </p>
+      </div>
+      {notice && <p role="status">{notice}</p>}
+      {SETUP_ENTITIES.map((entity) => (
+        <fieldset
+          className="allocation-row"
+          key={entity}
+          disabled={busy || Boolean(saved[entity])}
+        >
+          <legend>
+            {TABS[entity].label}
+            {saved[entity] ? " — Saved" : ""}
+          </legend>
+          <div className="form-group">
+            <label htmlFor={`setup-choice-${entity}`}>
+              {entity === "conductors"
+                ? "Conductor (optional)"
+                : `${TABS[entity].label} details`}
+            </label>
+            <select
+              id={`setup-choice-${entity}`}
+              value={choices[entity]}
+              onChange={(event) =>
+                setChoices((current) => ({
+                  ...current,
+                  [entity]: event.target.value,
+                }))
+              }
+            >
+              <option value="new">Add new</option>
+              {entity === "conductors" && (
+                <option value="none">No conductor</option>
+              )}
+              {(lookups[entity] || []).map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          {choices[entity] === "new" && (
+            <div className="form-grid">
+              {TABS[entity].fields!.map((field) =>
+                renderField(field, `${entity}.`),
+              )}
+            </div>
+          )}
+        </fieldset>
+      ))}
+      <fieldset className="allocation-row" disabled={busy}>
+        <legend>Assignment details</legend>
+        <div className="form-grid">
+          {TABS.assignments
+            .fields!.filter((field) =>
+              ["academicSessionId", "startDate"].includes(field.key),
+            )
+            .map((field) => renderField(field))}
+        </div>
+      </fieldset>
+      <button
+        type="submit"
+        className="btn btn-primary"
+        disabled={busy}
+        style={{ alignSelf: "flex-end", marginBottom: 24 }}
+      >
+        {busy ? "Saving transport setup..." : "Save Transport Setup"}
+      </button>
+    </form>
+  );
+};

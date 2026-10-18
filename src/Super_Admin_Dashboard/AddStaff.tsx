@@ -27,6 +27,9 @@ interface Role {
   roleName: string;
 }
 
+// Temporarily hidden in Add Staff. Remove names here to restore these options.
+const HIDDEN_STAFF_ROLES = new Set(["admin", "accountant", "librarian"]);
+
 // Main component and state
 const AddStaff: React.FC<AddStaffProps> = ({
   isOpen,
@@ -74,7 +77,11 @@ const AddStaff: React.FC<AddStaffProps> = ({
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data) {
-          setRoles(result.data);
+          setRoles(
+            result.data.filter(
+              (role: Role) => !HIDDEN_STAFF_ROLES.has(role.roleName.trim().toLowerCase()),
+            ),
+          );
         }
       }
     } catch (err) {
@@ -175,7 +182,7 @@ const AddStaff: React.FC<AddStaffProps> = ({
       dob: "",
       genderCode: "",
       doj: "",
-      roleId: roles.length > 0 ? roles[0].id : 2,
+      roleId: 0,
       employmentType: "",
       email: "",
       phone: "",
@@ -351,7 +358,7 @@ const AddStaff: React.FC<AddStaffProps> = ({
             <label>Role *</label>
             <select
               required
-              value={formData.roleId}
+              value={formData.roleId || ""}
               onChange={(e) =>
                 setFormData({ ...formData, roleId: Number(e.target.value) })
               }
