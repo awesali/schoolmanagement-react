@@ -1,7 +1,8 @@
-// School List: imports and dependencies
+﻿// School List: imports and dependencies
 import React, { useState, useEffect } from "react";
-import { PageLoader } from "../components/Loader/Loader";
 import { API_BASE_URL } from "../config";
+import { PageLoader } from "../components/Loader/Loader";
+import { loadAdminSchools } from "./loadAdminSchools";
 import CreateSchool, { SchoolDetails } from "./CreateSchool";
 import { EditIcon } from "../components/Icons/Icons";
 import { profilePictureUrl } from "./ProfilePictureInput";
@@ -27,6 +28,7 @@ interface SchoolListProps {
 const SchoolList: React.FC<SchoolListProps> = ({ onSchoolsChanged }) => {
   const [schools, setSchools] = useState<School[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [editingSchool, setEditingSchool] = useState<School | null>(null);
   const [savingVerificationFor, setSavingVerificationFor] = useState<number | null>(null);
   const [settingError, setSettingError] = useState("");
@@ -37,25 +39,15 @@ const SchoolList: React.FC<SchoolListProps> = ({ onSchoolsChanged }) => {
 
   const fetchSchools = async () => {
     setLoading(true);
+    setError("");
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `${API_BASE_URL}/api/Admin/School-by-superadmin`,
-        {
-          headers: {
-            accept: "*/*",
-            Authorization: `Bearer ${token}`,
-          },
-        },
+      setSchools(await loadAdminSchools<School>());
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Unable to connect to the school service. Please retry.",
       );
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data) {
-          setSchools(result.data);
-        }
-      }
-    } catch (err) {
-      console.error("Failed to fetch schools");
     } finally {
       setLoading(false);
     }
@@ -98,12 +90,24 @@ const SchoolList: React.FC<SchoolListProps> = ({ onSchoolsChanged }) => {
     <div className="school-list-container">
       <h2>School List</h2>
       {settingError && <p role="alert" className="school-setting-error">{settingError}</p>}
-      {schools.length === 0 ? (
+      {error ? (
+        <div role="alert">
+          <p>{error}</p>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={fetchSchools}
+          >
+            Retry loading schools
+          </button>
+        </div>
+      ) : schools.length === 0 ? (
         <div
           className="school-list-loading"
           style={{ textAlign: "center", padding: "40px", color: "#666" }}
         >
-          No schools available. Please create a new school.
+          No active schools are linked to this account. Check that you are
+          signed in with the super admin account that created the school.
         </div>
       ) : (
         <div className="school-cards">

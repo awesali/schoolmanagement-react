@@ -1,3 +1,4 @@
+﻿import { loadAdminSchools } from "./loadAdminSchools";
 // Dashboard: imports and dependencies
 import AdminActionIcon from "./AdminActionIcon";
 import React, { useState, useEffect, useRef } from "react";
@@ -131,6 +132,9 @@ const Dashboard: React.FC = () => {
     () => window.innerWidth <= 768,
   );
   const [schools, setSchools] = useState<School[]>([]);
+  const [schoolError, setSchoolError] = useState("");
+  const [schoolsLoading, setSchoolsLoading] = useState(false);
+  const [schoolsLoaded, setSchoolsLoaded] = useState(false);
   const [selectedSchoolId, setSelectedSchoolId] = useState<number | null>(null);
   const [userName, setUserName] = useState("User");
   const [teacherSchool, setTeacherSchool] = useState<{
@@ -303,38 +307,32 @@ const Dashboard: React.FC = () => {
   }, [selectedSchoolId]);
 
   const fetchSchools = async () => {
+    setSchoolsLoading(true);
+    setSchoolError("");
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `${API_BASE_URL}/api/Admin/School-by-superadmin`,
-        {
-          headers: {
-            accept: "*/*",
-            Authorization: `Bearer ${token}`,
-          },
-        },
+      const data = await loadAdminSchools<School>();
+      setSchools(data);
+      setSchoolsLoaded(true);
+      const requestedSchool = Number(
+        new URLSearchParams(window.location.search).get("schoolId"),
       );
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data) {
-          setSchools(result.data);
-          if (result.data.length > 0) {
-            const requestedSchool = Number(
-              new URLSearchParams(window.location.search).get("schoolId"),
-            );
-            setSelectedSchoolId(
-              result.data.find(
-                (school: School) => school.id === requestedSchool,
-              )?.id || result.data[0].id,
-            );
-          }
-        }
-      }
-    } catch (err) {
-      console.error("Failed to fetch schools");
+      setSelectedSchoolId(
+        (current) =>
+          data.find((school) => school.id === current)?.id ??
+          data.find((school) => school.id === requestedSchool)?.id ??
+          data[0]?.id ??
+          null,
+      );
+    } catch (error) {
+      setSchoolError(
+        error instanceof Error
+          ? error.message
+          : "Unable to connect to the school service. Please retry.",
+      );
+    } finally {
+      setSchoolsLoading(false);
     }
   };
-
   const fetchDashboardData = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -728,6 +726,29 @@ const Dashboard: React.FC = () => {
 
         <div className="dashboard-content">
           {activePage === "Dashboard" && <SchoolHolidayBanner holiday={holiday} />}
+          {schoolsLoading && <p role="status">Loading schools...</p>}
+          {schoolError && (
+            <div role="alert" className="permission-empty">
+              <p>{schoolError}</p>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={fetchSchools}
+                disabled={schoolsLoading}
+              >
+                Retry loading schools
+              </button>
+            </div>
+          )}
+          {!schoolsLoading &&
+            !schoolError &&
+            schoolsLoaded &&
+            schools.length === 0 && (
+              <p role="status">
+                No active schools are linked to this account. Check that you are
+                signed in with the super admin account that created the school.
+              </p>
+            )}
           {permissionsLoading ? (
             <div className="permission-empty">Loading access...</div>
           ) : (
