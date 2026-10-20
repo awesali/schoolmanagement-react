@@ -374,50 +374,14 @@ const Dashboard: React.FC = () => {
         accept: "application/json",
         Authorization: `Bearer ${token}`,
       };
-      const examsResponse = await fetch(
-        `${API_BASE_URL}/api/Exam/GetExams?schoolId=${selectedSchoolId}`,
-        {
-          cache: "no-store",
-          headers: requestHeaders,
-        },
+      const response = await fetch(
+        `${API_BASE_URL}/api/Admin/dashboard-exams?schoolId=${selectedSchoolId}`,
+        { headers: requestHeaders },
       );
-      if (!examsResponse.ok) return;
-
-      const examsResult = await examsResponse.json();
-      const exams: DashboardExam[] = examsResult?.data ?? [];
-      setPublishedResults(exams.filter((exam) => exam.resultPublished));
-
-      const schedules = await Promise.all(
-        exams.map(async (exam) => {
-          const response = await fetch(
-            `${API_BASE_URL}/api/Exam/GetExamSubjects?examId=${exam.id}`,
-            {
-              cache: "no-store",
-              headers: requestHeaders,
-            },
-          );
-          if (!response.ok) return [];
-          const result = await response.json();
-          return (result?.data ?? []).map((item: any) => ({
-            id: `${exam.id}-${item.id}-${item.examDate}`,
-            examName: exam.name,
-            subjectName: item.subjectName,
-            className: item.className,
-            sectionName: item.sectionName,
-            examDate: item.examDate,
-            startTime: item.startTime,
-          }));
-        }),
-      );
-
-      setUpcomingExamEvents(
-        schedules
-          .flat()
-          .sort(
-            (a, b) =>
-              new Date(a.examDate).getTime() - new Date(b.examDate).getTime(),
-          ),
-      );
+      if (!response.ok) return;
+      const result = await response.json();
+      setPublishedResults(result.data?.notices ?? []);
+      setUpcomingExamEvents(result.data?.events ?? []);
     } catch (error) {
       console.error("Failed to fetch dashboard exam updates:", error);
     }

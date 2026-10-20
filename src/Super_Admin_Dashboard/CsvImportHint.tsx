@@ -3,7 +3,7 @@ import React, { useId, useState } from "react";
 import "./CsvImportHint.css";
 
 // Main component and state
-const CsvImportHint: React.FC = () => {
+const CsvImportHint: React.FC<{ extra?: string }> = ({ extra }) => {
   const [open, setOpen] = useState(false);
   const tooltipId = useId();
   return (

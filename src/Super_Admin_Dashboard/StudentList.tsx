@@ -1,9 +1,10 @@
 // Student List: imports and dependencies
+import { studentTemplateHeaders, studentTemplateExample, parseStudentDetailColumns } from "./studentImportDetails";
+import NameSearchBar from "./NameSearchBar";
 import AdminActionIcon from "./AdminActionIcon";
 import { Link } from "react-router-dom";
 import React, { useState, useEffect } from "react";
 import { API_BASE_URL } from "../config";
-import { sortStudentsByClass } from "../utils/studentOrder";
 import { PageLoader } from "../components/Loader/Loader";
 import AddStudent from "./AddStudent";
 import EditStudent from "./EditStudent";
@@ -78,10 +79,11 @@ const StudentList: React.FC<StudentListProps> = ({
   onViewParent,
 }) => {
   const importInputRef = React.useRef<HTMLInputElement>(null);
+  const searchName = React.useRef("");
+  const searchAbort = React.useRef<AbortController | null>(null);
   const toast = useToast();
   const { can } = usePermissions();
   const [students, setStudents] = useState<Student[]>([]);
-  const [allStudents, setAllStudents] = useState<Student[]>([]);
   const studentRequest = React.useRef(0);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -109,61 +111,47 @@ const StudentList: React.FC<StudentListProps> = ({
   useEffect(
     () => () => {
       studentRequest.current++;
+      searchAbort.current?.abort();
     },
     [selectedSchoolId],
   );
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    setStudents(allStudents.slice((page - 1) * pageSize, page * pageSize));
+    fetchStudents(page, pageSize);
   };
 
   const handlePageSizeChange = (size: number) => {
     setPageSize(size);
     setCurrentPage(1);
-    setTotalPages(Math.max(1, Math.ceil(allStudents.length / size)));
-    setStudents(allStudents.slice(0, size));
+    fetchStudents(1, size);
   };
 
 
   const fetchStudents = async (page: number = 1, size: number = pageSize) => {
     const request = ++studentRequest.current;
+    searchAbort.current?.abort();
+    const controller = new AbortController();
+    searchAbort.current = controller;
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const records: Student[] = [];
-      let apiPage = 1;
-      let apiPages = 1;
-      do {
-        const response = await fetch(
-          `${API_BASE_URL}/api/Student/students-by-school?schoolId=${selectedSchoolId}&page=${apiPage}&pageSize=500`,
-          {
-            headers: { accept: "*/*", Authorization: `Bearer ${token}` },
-          },
-        );
-        const result = await response.json();
-        if (request !== studentRequest.current) return;
-        if (!response.ok || !result.success || !Array.isArray(result.data))
-          throw new Error("Unable to load students.");
-        records.push(
-          ...result.data.map((s: Student) => ({
-            ...s,
-            documents: s.documents ?? [],
-          })),
-        );
-        apiPages = result.totalPages || 1;
-        apiPage++;
-      } while (apiPage <= apiPages);
-      const ordered = sortStudentsByClass(records);
-      const pages = Math.max(1, Math.ceil(ordered.length / size));
-      const nextPage = Math.min(page, pages);
-      setAllStudents(ordered);
-      setStudents(ordered.slice((nextPage - 1) * size, nextPage * size));
-      setCurrentPage(nextPage);
-      setTotalPages(pages);
-      setTotalRecords(ordered.length);
+      const response = await fetch(
+        `${API_BASE_URL}/api/Student/students-by-school?schoolId=${selectedSchoolId}&page=${page}&pageSize=${size}${searchName.current ? `&search=${encodeURIComponent(searchName.current)}` : ""}`,
+        { headers: { accept: "*/*", Authorization: `Bearer ${token}` }, signal: controller.signal },
+      );
+      const result = await response.json();
+      if (request !== studentRequest.current) return;
+      if (!response.ok || !result.success || !Array.isArray(result.data))
+        throw new Error("Unable to load students.");
+      setStudents(result.data.map((student: Student) => ({
+        ...student, documents: student.documents ?? [],
+      })));
+      setCurrentPage(result.currentPage);
+      setTotalPages(Math.max(1, result.totalPages));
+      setTotalRecords(result.totalRecords);
     } catch (err) {
-      if (request === studentRequest.current)
+      if (request === studentRequest.current && !controller.signal.aborted)
         toast.error("Unable to load students. Please try again.");
     } finally {
       if (request === studentRequest.current) setLoading(false);
@@ -254,41 +242,7 @@ const StudentList: React.FC<StudentListProps> = ({
   };
 
   const downloadStudentTemplate = () =>
-    downloadCsv(
-      "student-import-template.csv",
-      [
-        "StudentName",
-        "RollNumber",
-        "DOB",
-        "Gender",
-        "Email",
-        "PhoneNumber",
-        "Class",
-        "Section",
-        "ParentName",
-        "ParentEmail",
-        "ParentPhone",
-        "ParentAddress",
-        "ParentRelationship",
-      ],
-      [
-        [
-          "Example Student",
-          "1",
-          "01-31-2015",
-          "Female",
-          "student@example.com",
-          "9876543210",
-          "1",
-          "A",
-          "Parent Name",
-          "parent@example.com",
-          "9876543211",
-          "Address",
-          "Father",
-        ],
-      ],
-    );
+    downloadCsv("student-import-template-v2.csv", studentTemplateHeaders, [studentTemplateExample]);
 
   const prepareStudentImport = async (file: File) => {
     if (!selectedSchoolId) return;
@@ -352,13 +306,15 @@ const StudentList: React.FC<StudentListProps> = ({
           "ParentName",
           "ParentEmail",
           "ParentPhone",
-          "ParentAddress",
           "ParentRelationship",
         ];
         required.forEach((field) => {
           if (field !== "DOB" && !row[field]?.trim())
             errors.push(`${field} is required.`);
         });
+        const details = parseStudentDetailColumns(row);
+        errors.push(...details.errors);
+        warnings.push(...details.warnings);
         const studentEmail = row.Email?.trim().toLowerCase();
         const parentEmail = row.ParentEmail?.trim().toLowerCase();
         const genderCode = parseGenderCode(row.Gender);
@@ -443,10 +399,11 @@ const StudentList: React.FC<StudentListProps> = ({
           "Parent.PhoneNumber": row.ParentPhone,
           "Parent.Address": row.ParentAddress,
           "Parent.Relationship": row.ParentRelationship,
+          ...details.payload,
         };
         return {
           rowNumber: index + 2,
-          values: row,
+          values: { ...row, ...details.values },
           errors,
           warnings,
           payload: values,
@@ -513,8 +470,8 @@ const StudentList: React.FC<StudentListProps> = ({
                 message: result.message || "Import failed. Please try again.",
               })),
           );
+          updateBulkImportJob(jobId, imported, errors, imported + errors.length);
         }
-        updateBulkImportJob(jobId, imported, errors, imported + errors.length);
         await fetchStudents(1, pageSize);
         setImportPreview([]);
         const importMessage = `${imported} students imported${errors.length ? `, ${errors.length} failed` : " successfully"}.`;
@@ -541,7 +498,6 @@ const StudentList: React.FC<StudentListProps> = ({
 
   if (!selectedSchoolId)
     return <div className="staff-list-loading">Please select a school</div>;
-  if (loading) return <PageLoader label="Loading students..." />;
 
   return (
     <div className="staff-list-container student-list-container">
@@ -607,13 +563,18 @@ const StudentList: React.FC<StudentListProps> = ({
           )}
         </div>
       </div>
-      <CsvImportHint />
-      {students.length === 0 ? (
+      <NameSearchBar label="Search students by name" loading={loading} onSearch={(name) => {
+        searchName.current = name;
+        setCurrentPage(1);
+        void fetchStudents(1, pageSize);
+      }} />
+      <CsvImportHint extra="Use the latest student template. AdmissionType defaults to New Admission. City, State, Country and a valid 6-digit PinCode are required. Blank parent address fields reuse the student address; review these defaults in the preview." />
+      {loading ? <PageLoader label="Loading students..." /> : students.length === 0 ? (
         <div
           className="staff-list-loading"
           style={{ textAlign: "center", padding: "40px", color: "#666" }}
         >
-          No students available. Please add a new student.
+          {searchName.current ? "No students match that name." : "No students available. Please add a new student."}
         </div>
       ) : (
         <div className="staff-table-wrapper student-table-wrapper">
@@ -667,7 +628,7 @@ const StudentList: React.FC<StudentListProps> = ({
                       {student.sectionName}
                     </span>
                   </td>
-                  <td>{student.academicSession.split("-")[0]}</td>
+                  <td>{student.academicSession?.split("-")[0] || "?"}</td>
                   <td>
                     <span
                       className={`status-badge ${student.isActive ? "active" : "inactive"}`}
@@ -821,18 +782,7 @@ const StudentList: React.FC<StudentListProps> = ({
 
       <BulkImportPreview
         title="Preview Student Import"
-        columns={[
-          "StudentName",
-          "RollNumber",
-          "DOB",
-          "Gender",
-          "Email",
-          "PhoneNumber",
-          "Class",
-          "Section",
-          "ParentName",
-          "ParentEmail",
-        ]}
+        columns={studentTemplateHeaders}
         rows={importPreview}
         importing={transferring}
         onClose={() => setImportPreview([])}

@@ -1,6 +1,7 @@
 ﻿import React from "react";
+import { ToastProvider } from "../components/Toast/Toast";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { TransportSetup } from "./TransportManagement";
+import TransportManagement, { TransportSetup } from "./TransportManagement";
 
 const lookups = {
   sessions: [{ value: 7, label: "2026-27" }],
@@ -77,4 +78,28 @@ test("keeps a completed new vehicle when assignment fails and retries without re
     "assignments",
   ]);
   expect(JSON.parse(request.mock.calls[2][1].body).vehicleId).toBe(31);
+});
+
+
+test("transport lists load bounded pages without fetching hidden form lookups", async () => {
+  global.fetch = jest.fn(async (input: RequestInfo | URL) => {
+    const url = String(input);
+    const data = url.includes("/dashboard?") ? { totalVehicles: 1 }
+      : url.includes("/payments?") ? Array.from({ length: 50 }, (_, i) => ({ id: i + 1, receiptNumber: "Receipt " + i, amount: 10 }))
+      : [];
+    return { ok: true, headers: { get: () => "application/json" }, json: async () => ({ success: true, data }) } as unknown as Response;
+  });
+  render(<ToastProvider><TransportManagement selectedSchoolId={2} /></ToastProvider>);
+  await screen.findByText("Available Seats");
+  expect(global.fetch).toHaveBeenCalledTimes(1);
+  fireEvent.click(screen.getByRole("tab", { name: "Fee Collection" }));
+  await screen.findByRole("navigation", { name: "Transport pages" });
+  expect(global.fetch).toHaveBeenCalledTimes(2);
+  expect(String((global.fetch as jest.Mock).mock.calls[1][0])).toContain("page=1&pageSize=50");
+  fireEvent.click(screen.getByRole("button", { name: "Next" }));
+  await waitFor(() => expect(String((global.fetch as jest.Mock).mock.calls[2][0])).toContain("page=2&pageSize=50"));
+  await screen.findByText("Page 2");
+  fireEvent.click(screen.getByRole("tab", { name: "Transport Setup" }));
+  await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(8));
+  expect((global.fetch as jest.Mock).mock.calls.some(([url]) => String(url).includes("/eligible-students?"))).toBe(false);
 });

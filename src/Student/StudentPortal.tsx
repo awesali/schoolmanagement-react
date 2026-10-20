@@ -348,6 +348,19 @@ const todayKey = () => {
   ].join("-");
 };
 
+const notificationSections = "timetable,homework,materials,diary,announcements,exams,results,messages,requests,achievements,events";
+const sectionsForPage: Record<Page, string> = {
+  Today: notificationSections, Timetable: "timetable", "Class Diary": "diary",
+  Homework: "homework", "Study Materials": "materials", Announcements: "announcements",
+  Attendance: "attendance", Exams: "exams", Results: "results", Events: "events",
+  Teachers: "teachers", Messages: "messages", Requests: "requests", Achievements: "achievements",
+  Fees: "fees", Transport: "transport", Documents: "documents", "My Profile": "profile",
+};
+const emptyOverview = { timetable: [], homework: [], materials: [], attendance: [], exams: [],
+  results: [], teachers: [], documents: [], fees: [], payments: [], transportFees: [],
+  transportPayments: [], diary: [], submissions: [], announcements: [], requests: [], messages: [],
+  achievements: [], schoolEvents: [], gradeHistory: [], examResources: [], hallTickets: [] };
+
 // Main component and state
 export default function StudentPortal() {
   // Constants and helper functions
@@ -404,7 +417,9 @@ export default function StudentPortal() {
   const [savingAction, setSavingAction] = useState(false);
   const [receipt, setReceipt] = useState<Row | null>(null);
   const [transportReceipt, setTransportReceipt] = useState<Row | null>(null);
+  const loadSequence = useRef(0);
   const load = useCallback(async () => {
+    const sequence = ++loadSequence.current;
     const token = localStorage.getItem("token");
     if (!token) {
       navigate("/login", { replace: true });
@@ -414,7 +429,7 @@ export default function StudentPortal() {
     setError("");
     try {
       const response = await fetch(
-        `${API_BASE_URL}/api/StudentPortal/overview`,
+        `${API_BASE_URL}/api/StudentPortal/overview?sections=${sectionsForPage[page]}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -441,17 +456,19 @@ export default function StudentPortal() {
           {},
         ),
       );
-      setData(body.data);
+      if (sequence !== loadSequence.current) return;
+      setData((current) => ({ ...emptyOverview, ...current, ...body.data }));
       setOffline(false);
       localStorage.setItem("studentPortalEmail", body.data.profile.email);
+      const savedOffline = readJson<any>("student-offline:" + body.data.profile.email, {});
       localStorage.setItem(
         "student-offline:" + body.data.profile.email,
         JSON.stringify({
           profile: body.data.profile,
-          timetable: body.data.timetable,
-          homework: body.data.homework,
-          materials: body.data.materials,
-          diary: body.data.diary,
+          timetable: body.data.timetable ?? savedOffline.timetable ?? [],
+          homework: body.data.homework ?? savedOffline.homework ?? [],
+          materials: body.data.materials ?? savedOffline.materials ?? [],
+          diary: body.data.diary ?? savedOffline.diary ?? [],
           attendance: [],
           exams: [],
           results: [],
@@ -494,9 +511,9 @@ export default function StudentPortal() {
             : "Could not load your school data.",
         );
     } finally {
-      setLoading(false);
+      if (sequence === loadSequence.current) setLoading(false);
     }
-  }, [navigate]);
+  }, [navigate, page]);
   useEffect(() => {
     void load();
   }, [load]);
@@ -505,7 +522,7 @@ export default function StudentPortal() {
       if (document.hidden || !localStorage.getItem("token")) return;
       try {
         const response = await fetch(
-          API_BASE_URL + "/api/StudentPortal/overview",
+          API_BASE_URL + "/api/StudentPortal/overview?sections=" + notificationSections,
           {
             headers: {
               Authorization: "Bearer " + localStorage.getItem("token"),
@@ -520,7 +537,7 @@ export default function StudentPortal() {
               {},
             ),
           );
-          setData(body.data);
+          setData((current) => ({ ...emptyOverview, ...current, ...body.data }));
         }
       } catch {
         /* keep the last available data */

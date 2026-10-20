@@ -1,5 +1,6 @@
 // Principal Dashboard: imports and dependencies
 import OfficeMenuIcon from "./OfficeMenuIcon";
+import PrincipalStudentDirectory from "./PrincipalStudentDirectory";
 import React, { useEffect, useRef, useState } from "react";
 import { API_BASE_URL } from "../config";
 import { SchoolHolidayBanner, useSchoolHoliday } from "../components/SchoolHoliday";
@@ -347,6 +348,7 @@ export default function PrincipalDashboard({
             </p>
           </div>
         </div>
+        <PrincipalStudentDirectory />
         <div className="principal-summary">
           <div>
             <span>Attendance rate</span>
