@@ -455,7 +455,7 @@ export default function StudentProfile() {
       setReceiptBusy(false);
     }
   };
-  if (!localStorage.getItem("token")) return <Navigate to="/login" replace />;
+  if (!localStorage.getItem("token")) return <Navigate to="/" replace />;
   if (permissionsLoading) return <PageLoader />;
   if (!allowed)
     return (

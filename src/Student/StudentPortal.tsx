@@ -407,7 +407,7 @@ export default function StudentPortal() {
   const load = useCallback(async () => {
     const token = localStorage.getItem("token");
     if (!token) {
-      navigate("/login", { replace: true });
+      navigate("/", { replace: true });
       return;
     }
     setLoading(true);
@@ -421,7 +421,7 @@ export default function StudentPortal() {
       );
       if (response.status === 401 || response.status === 403) {
         localStorage.removeItem("token");
-        navigate("/login", { replace: true });
+        navigate("/", { replace: true });
         return;
       }
       const raw = await response.text();
@@ -660,7 +660,7 @@ export default function StudentPortal() {
     localStorage.removeItem("studentPortalEmail");
     localStorage.removeItem("token");
     localStorage.removeItem("schoolId");
-    navigate("/login", { replace: true });
+    navigate("/", { replace: true });
   };
   const switchPage = (next: Page) => {
     setNotificationsOpen(false);

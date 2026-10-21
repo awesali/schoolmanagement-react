@@ -155,7 +155,7 @@ const AccountProfile: React.FC = () => {
     }
   };
 
-  if (!localStorage.getItem("token")) return <Navigate to="/login" replace />;
+  if (!localStorage.getItem("token")) return <Navigate to="/" replace />;
   if (loading) return <PageLoader label="Loading profile..." />;
   return (
     <main className="account-profile-page">

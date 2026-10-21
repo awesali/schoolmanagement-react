@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useToastMessageState } from "../components/Toast/Toast";
 import { LoadingButton } from "../components/Loader/Loader";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../config";
 import "./Login.css";
 
@@ -10,6 +10,7 @@ import "./Login.css";
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useToastMessageState("error");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -35,7 +36,7 @@ const Login: React.FC = () => {
         if (data.schoolId) {
           localStorage.setItem("schoolId", data.schoolId.toString());
         }
-        navigate("/dashboard");
+        navigate("/dashboard", { replace: true });
       } else {
         const staffError = await response.text();
         const studentResponse = await fetch(
@@ -58,7 +59,7 @@ const Login: React.FC = () => {
             throw new Error("This portal is for students only.");
           localStorage.setItem("token", token);
           localStorage.removeItem("schoolId");
-          navigate("/student");
+          navigate("/student", { replace: true });
         } else {
           const studentError = await studentResponse.json().catch(() => null);
           const blocked = "You are temporarily blocked. Please contact your school.";
@@ -79,40 +80,52 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="login-container">
-      <div className="card login-card">
-        <h1>Login</h1>
-        <form onSubmit={handleLogin}>
-          <div className="form-group">
-            <label>Email</label>
-            <input
-              type="email"
-              className="input"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+    <div className="login-page">
+      <div className="login-shell">
+        <aside className="login-story" aria-label="School Management introduction">
+          <img src="/landing/login-school.webp" alt="Students and teacher on a school campus" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = "/landing/school-day.webp"; }} />
+          <div className="login-story-shade" />
+          <Link className="login-brand login-brand-on-image" to="/" aria-label="School Management home">
+            <span className="login-brand-mark" aria-hidden="true"><span /></span>
+            <span>School<span>Management</span></span>
+          </Link>
+          <div className="login-story-content">
+            <span className="login-story-kicker">ONE CONNECTED SCHOOL WORKSPACE</span>
+            <h2>Make room for what matters most.</h2>
+            <p>One welcoming place for your school day, from classroom moments to the bigger picture.</p>
+            <div className="login-story-pills"><span>School teams</span><span>Teachers</span><span>Students</span></div>
           </div>
-          <div className="form-group">
-            <label>Password</label>
-            <input
-              type="password"
-              className="input"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+          <span className="login-story-corner" aria-hidden="true">✦</span>
+        </aside>
+
+        <main className="login-main">
+          <div className="login-main-top">
+            <Link className="login-back" to="/"><span aria-hidden="true">←</span> Back to home</Link>
+            <span className="login-top-note">Your school, in one place.</span>
           </div>
-          {error && <div className="error">{error}</div>}
-          <LoadingButton
-            type="submit"
-            className="btn btn-primary"
-            loading={loading}
-            loadingText="Logging in..."
-          >
-            Login
-          </LoadingButton>
-        </form>
+          <div className="login-content">
+            <span className="login-eyebrow"><span /> WELCOME BACK</span>
+            <h1>Good to see you again.</h1>
+            <p className="login-intro">Sign in with the credentials provided by your school.</p>
+            <form className="login-form" onSubmit={handleLogin}>
+              <div className="login-form-group">
+                <label htmlFor="login-email">Email address</label>
+                <input id="login-email" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@school.com" required />
+              </div>
+              <div className="login-form-group">
+                <label htmlFor="login-password">Password</label>
+                <div className="login-password-field">
+                  <input id="login-password" type={showPassword ? "text" : "password"} autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter your password" required />
+                  <button type="button" className="login-password-toggle" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "Hide password" : "Show password"}>{showPassword ? "Hide" : "Show"}</button>
+                </div>
+              </div>
+              {error && <div className="login-error" role="alert">{error}</div>}
+              <LoadingButton type="submit" className="btn btn-primary login-submit" loading={loading} loadingText="Signing in...">Sign in <span aria-hidden="true">→</span></LoadingButton>
+            </form>
+            <div className="login-help"><span className="login-help-symbol" aria-hidden="true">?</span><p>Need access or having trouble signing in?<br /><strong>Contact your school administrator.</strong></p></div>
+          </div>
+          <div className="login-main-bottom">Part of <a href="https://cognerasystems.com/" target="_blank" rel="noopener noreferrer">Cognera Systems</a></div>
+        </main>
       </div>
     </div>
   );

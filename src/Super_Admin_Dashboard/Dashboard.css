@@ -303,6 +303,21 @@
   border-bottom: 2px solid var(--border);
 }
 
+.fee-chart-note {
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin: 0 0 12px;
+}
+
+.fee-chart-totals {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px 20px;
+  margin-top: 18px;
+  font-size: 14px;
+}
+
 .bar-group {
   display: flex;
   flex-direction: column;

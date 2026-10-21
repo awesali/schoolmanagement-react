@@ -282,7 +282,7 @@ export default function StaffProfile() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [schoolId, staffId, tab, month, revision, permissionsLoading, allowed]);
 
-  if (!localStorage.getItem("token")) return <Navigate to="/login" replace />;
+  if (!localStorage.getItem("token")) return <Navigate to="/" replace />;
   if (permissionsLoading) return <PageLoader />;
   if (!allowed)
     return (

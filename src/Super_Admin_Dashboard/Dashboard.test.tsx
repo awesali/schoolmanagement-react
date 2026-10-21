@@ -9,7 +9,11 @@ import {
 
 // Constants and helper functions
 const mockNavigate = jest.fn();
-jest.mock("react-router-dom", () => ({ useNavigate: () => mockNavigate }), {
+jest.mock("react-router-dom", () => ({
+  useNavigate: () => mockNavigate,
+  Link: ({ children, to, ...props }: any) =>
+    require("react").createElement("a", { href: to, ...props }, children),
+}), {
   virtual: true,
 });
 import { PermissionProvider } from "../security/Permissions";
@@ -158,7 +162,7 @@ test.each(["2", 2])(
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("menuitem", { name: "Logout" }));
     expect(localStorage.getItem("token")).toBeNull();
-    expect(mockNavigate).toHaveBeenCalledWith("/login");
+    expect(mockNavigate).toHaveBeenCalledWith("/", { replace: true });
   },
 );
 
@@ -220,9 +224,9 @@ test.each(["1", "2"])(
     fireEvent.change(container.querySelector('input[type="password"]')!, {
       target: { value: "test-password" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Login" }));
+    fireEvent.click(screen.getByRole("button", { name: /Sign in/ }));
     await waitFor(() =>
-      expect(mockNavigate).toHaveBeenCalledWith("/dashboard"),
+      expect(mockNavigate).toHaveBeenCalledWith("/dashboard", { replace: true }),
     );
     const call = (global.fetch as jest.Mock).mock.calls.find(([url]) =>
       String(url).includes("/auth/login"),
@@ -297,7 +301,7 @@ test("principal login opens the dedicated school overview without requesting adm
     screen.getByRole("button", { name: "Principal User profile menu" }),
   );
   fireEvent.click(screen.getByRole("menuitem", { name: "Logout" }));
-  expect(mockNavigate).toHaveBeenCalledWith("/login");
+  expect(mockNavigate).toHaveBeenCalledWith("/", { replace: true });
 });
 
 test("librarian login opens the library desk without requesting admin schools", async () => {
@@ -329,8 +333,8 @@ test("librarian login opens the library desk without requesting admin schools", 
   fireEvent.change(container.querySelector('input[type="password"]')!, {
     target: { value: "test-password" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "Login" }));
-  await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/dashboard"));
+  fireEvent.click(screen.getByRole("button", { name: /Sign in/ }));
+  await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/dashboard", { replace: true }));
   rerender(wrap(<Dashboard />));
   expect(await screen.findByText("Library Desk")).toBeInTheDocument();
   expect(
@@ -343,5 +347,5 @@ test("librarian login opens the library desk without requesting admin schools", 
   ).toBe(false);
   fireEvent.click(screen.getByRole("button", { name: "Logout" }));
   expect(localStorage.getItem("token")).toBeNull();
-  expect(mockNavigate).toHaveBeenCalledWith("/login");
+  expect(mockNavigate).toHaveBeenCalledWith("/", { replace: true });
 });

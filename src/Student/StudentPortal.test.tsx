@@ -406,7 +406,7 @@ test("documents open backend-relative files and profile actions live in the head
   expect(screen.getByText("My profile")).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Student profile menu" }));
   fireEvent.click(screen.getByRole("menuitem", { name: "Logout" }));
-  expect(mockNavigate).toHaveBeenCalledWith("/login", { replace: true });
+  expect(mockNavigate).toHaveBeenCalledWith("/", { replace: true });
 });
 test("Recent results opens the selected report card without showing marks on Today", async () => {
   const data = {

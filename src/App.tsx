@@ -5,6 +5,7 @@ import DashboardDetailLayout from "./Super_Admin_Dashboard/DashboardDetailLayout
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./Login/Login";
+import LandingPage from "./Landing/LandingPage";
 import StudentPortal from "./Student/StudentPortal";
 import Dashboard from "./Super_Admin_Dashboard/Dashboard";
 import AccountProfile from "./Super_Admin_Dashboard/AccountProfile";
@@ -13,6 +14,10 @@ import { PermissionProvider } from "./security/Permissions";
 import "./theme.css";
 
 // Main component and state
+function RequireLogin({ children }: { children: React.ReactElement }) {
+  return localStorage.getItem("token") ? children : <Navigate to="/" replace />;
+}
+
 function App() {
   return (
     <ToastProvider>
@@ -20,26 +25,26 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
-            <Route path="/student" element={<StudentPortal />} />
+            <Route path="/student" element={<RequireLogin><StudentPortal /></RequireLogin>} />
             <Route
               path="/dashboard/schools/:schoolId/students/:studentId"
               element={
-                <DashboardDetailLayout kind="student">
+                <RequireLogin><DashboardDetailLayout kind="student">
                   <StudentProfile />
-                </DashboardDetailLayout>
+                </DashboardDetailLayout></RequireLogin>
               }
             />
             <Route
               path="/dashboard/schools/:schoolId/staff/:staffId"
               element={
-                <DashboardDetailLayout kind="staff">
+                <RequireLogin><DashboardDetailLayout kind="staff">
                   <StaffProfile />
-                </DashboardDetailLayout>
+                </DashboardDetailLayout></RequireLogin>
               }
             />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/profile" element={<AccountProfile />} />
-            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/dashboard" element={<RequireLogin><Dashboard /></RequireLogin>} />
+            <Route path="/profile" element={<RequireLogin><AccountProfile /></RequireLogin>} />
+            <Route path="/" element={<LandingPage />} />
           </Routes>
         </BrowserRouter>
       </PermissionProvider>

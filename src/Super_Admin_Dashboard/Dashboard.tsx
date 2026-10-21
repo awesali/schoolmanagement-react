@@ -94,6 +94,12 @@ interface DashboardExamEvent {
   startTime?: string;
 }
 
+interface FeeChartMonth {
+  month: number;
+  collected: number;
+  pending: number;
+}
+
 // Constants and helper functions
 const NOTICE_LIFETIME_MS = 2 * 24 * 60 * 60 * 1000;
 
@@ -159,6 +165,10 @@ const Dashboard: React.FC = () => {
     totalEmployees: 0,
     employeesOnLeave: 0,
   });
+  const [feeChartYear, setFeeChartYear] = useState(new Date().getFullYear());
+  const [feeChart, setFeeChart] = useState<FeeChartMonth[]>([]);
+  const [feeChartLoading, setFeeChartLoading] = useState(false);
+  const [feeChartError, setFeeChartError] = useState("");
   const [teacherAttendanceDirty, setTeacherAttendanceDirty] = useState(false);
   const [teacherSection, setTeacherSection] = useState<number | undefined>();
   const [attendanceType, setAttendanceType] = useState<
@@ -306,6 +316,36 @@ const Dashboard: React.FC = () => {
     }
   }, [selectedSchoolId]);
 
+  useEffect(() => {
+    if (!selectedSchoolId) return;
+    const controller = new AbortController();
+    setFeeChart([]);
+    setFeeChartError("");
+    setFeeChartLoading(true);
+    fetch(`${API_BASE_URL}/api/Admin/fee-chart?schoolId=${selectedSchoolId}&year=${feeChartYear}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Fee chart could not be loaded.");
+        return response.json();
+      })
+      .then((result) => {
+        if (!controller.signal.aborted) setFeeChart(result.data || []);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setFeeChartError("Fee chart could not be loaded.");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setFeeChartLoading(false);
+      });
+    return () => controller.abort();
+  }, [selectedSchoolId, feeChartYear]);
+
+  const feeChartMax = Math.max(1, ...feeChart.flatMap((x) => [x.collected, x.pending]));
+  const formatFeeAmount = (amount: number) =>
+    `₹${amount.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+
   const fetchSchools = async () => {
     setSchoolsLoading(true);
     setSchoolError("");
@@ -449,7 +489,7 @@ const Dashboard: React.FC = () => {
       return;
     setProfileMenuOpen(false);
     localStorage.removeItem("token");
-    navigate("/login");
+    navigate("/", { replace: true });
   };
 
   const handleNavigate = (
@@ -1001,60 +1041,61 @@ const Dashboard: React.FC = () => {
                       <div className="main-grid">
                         <div className="chart-section">
                           <div className="section-header">
-                            <h2>Fee Collection and Expenses</h2>
+                            <h2>Fee collection and pending</h2>
                             <div className="filters">
-                              <select className="filter-select">
-                                <option>Session: 2024-25</option>
-                              </select>
-                              <select className="filter-select">
-                                <option>All Months</option>
+                              <select
+                                className="filter-select"
+                                aria-label="Fee chart year"
+                                value={feeChartYear}
+                                onChange={(event) => setFeeChartYear(Number(event.target.value))}
+                              >
+                                {Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                                  <option key={year} value={year}>{year}</option>
+                                ))}
                               </select>
                             </div>
                           </div>
                           <div className="chart-placeholder">
                             <div className="chart-legend">
                               <span>
-                                <span className="legend-dot green"></span>Fee
-                                Collection
+                                <span className="legend-dot green"></span>Collected
                               </span>
                               <span>
-                                <span className="legend-dot red"></span>Expenses
+                                <span className="legend-dot red"></span>Pending
                               </span>
                             </div>
+                            <p className="fee-chart-note">All assigned fees, including admission and transport. Pending shows outstanding fees at each month end.</p>
+                            {feeChartLoading && <p role="status">Loading fee data...</p>}
+                            {feeChartError && <p role="alert">{feeChartError}</p>}
                             <div className="bar-chart">
-                              {[
-                                "Jan",
-                                "Feb",
-                                "Mar",
-                                "Apr",
-                                "May",
-                                "Jun",
-                                "Jul",
-                                "Aug",
-                                "Sep",
-                                "Oct",
-                                "Nov",
-                                "Dec",
-                              ].map((month) => (
-                                <div key={month} className="bar-group">
+                              {feeChart.map((row) => (
+                                <div key={row.month} className="bar-group">
                                   <div className="bars">
                                     <div
                                       className="bar green"
                                       style={{
-                                        height: `${Math.random() * 100 + 50}px`,
+                                        height: `${(row.collected / feeChartMax) * 150}px`,
                                       }}
-                                    ></div>
+                                      title={`${new Date(feeChartYear, row.month - 1).toLocaleString("en-IN", { month: "short" })} collected: ${formatFeeAmount(row.collected)}`}
+                                    />
                                     <div
                                       className="bar red"
                                       style={{
-                                        height: `${Math.random() * 80 + 40}px`,
+                                        height: `${(row.pending / feeChartMax) * 150}px`,
                                       }}
-                                    ></div>
+                                      title={`${new Date(feeChartYear, row.month - 1).toLocaleString("en-IN", { month: "short" })} pending: ${formatFeeAmount(row.pending)}`}
+                                    />
                                   </div>
-                                  <span className="bar-label">{month}</span>
+                                  <span className="bar-label">{new Date(feeChartYear, row.month - 1).toLocaleString("en-IN", { month: "short" })}</span>
                                 </div>
                               ))}
                             </div>
+                            {!!feeChart.length && (
+                              <div className="fee-chart-totals">
+                                <strong>Collected in {feeChartYear}: {formatFeeAmount(feeChart.reduce((sum, row) => sum + row.collected, 0))}</strong>
+                                <strong>Pending at {feeChartYear === new Date().getFullYear() ? new Date().toLocaleString("en-IN", { month: "short" }) : "Dec"} end: {formatFeeAmount(feeChart[feeChartYear === new Date().getFullYear() ? new Date().getMonth() : 11].pending)}</strong>
+                              </div>
+                            )}
                           </div>
                         </div>
 
