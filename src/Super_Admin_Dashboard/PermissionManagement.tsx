@@ -78,6 +78,8 @@ export default function PermissionManagement({
     [overrides, setOverrides] = useState<Map<number, boolean>>(new Map()),
     [employeeSearch, setEmployeeSearch] = useState(""),
     [showCustomAccess, setShowCustomAccess] = useState(false);
+  const [employeePage, setEmployeePage] = useState(1);
+  const [employeesLoading, setEmployeesLoading] = useState(false);
   const [message, setMessage] = useToastMessageState();
 
   // Constants and helper functions
@@ -85,13 +87,14 @@ export default function PermissionManagement({
   const load = async () => {
     setLoading(true);
     try {
-      const [r, c, d, e] = await Promise.all(
-        ["roles", "catalog", "dashboard", `employees${employeeQuery}`].map(api),
+      const [r, c, d] = await Promise.all(
+        ["roles", "catalog", "dashboard"].map((path) => api(path)),
       );
       setRoles(r);
       setCatalog(c);
       setStats(d);
-      setEmployees(e);
+      setEmployees([]);
+      setEmployeePage(1);
       setEmployeeId(undefined);
       setExpanded(new Set(c.map((x: Module) => x.id)));
       setSelected((v) => v || r[0]?.id);
@@ -112,15 +115,24 @@ export default function PermissionManagement({
         .catch((e) => setMessage(e.message));
   }, [selected]);
   useEffect(() => {
-    if (tab === "employees") {
-      const params = new URLSearchParams();
+    if (tab !== "employees") return;
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      setEmployeesLoading(true);
+      const params = new URLSearchParams({ page: String(employeePage), pageSize: "50" });
       if (selectedSchoolId) params.set("schoolId", String(selectedSchoolId));
       if (employeeSearch.trim()) params.set("search", employeeSearch.trim());
-      api(`employees?${params}`)
-        .then(setEmployees)
-        .catch((e) => setMessage(e.message));
-    }
-  }, [tab, employeeSearch, selectedSchoolId]);
+      try {
+        const result = await api(`employees?${params}`, { signal: controller.signal });
+        if (!controller.signal.aborted) setEmployees(result);
+      } catch (error) {
+        if (!controller.signal.aborted) setMessage(error instanceof Error ? error.message : "Unable to load employees.");
+      } finally {
+        if (!controller.signal.aborted) setEmployeesLoading(false);
+      }
+    }, 250);
+    return () => { window.clearTimeout(timer); controller.abort(); };
+  }, [tab, employeeSearch, selectedSchoolId, employeePage]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (employeeId)
       api(`employees/${employeeId}${employeeQuery}`)
@@ -416,7 +428,7 @@ export default function PermissionManagement({
             <input
               placeholder="Search by name, email or role"
               value={employeeSearch}
-              onChange={(e) => setEmployeeSearch(e.target.value)}
+              onChange={(e) => { setEmployeeSearch(e.target.value); setEmployeePage(1); }}
             />
             {shownEmployees.map((e) => (
               <button
@@ -430,6 +442,13 @@ export default function PermissionManagement({
                 </small>
               </button>
             ))}
+            {(employeePage > 1 || employees.length === 50) && (
+              <nav aria-label="Employee pages">
+                <button disabled={employeesLoading || employeePage === 1} onClick={() => setEmployeePage((page) => page - 1)}>Previous</button>
+                <span> Page {employeePage} </span>
+                <button disabled={employeesLoading || employees.length < 50} onClick={() => setEmployeePage((page) => page + 1)}>Next</button>
+              </nav>
+            )}
             {!shownEmployees.length && (
               <p>
                 <small>No employee found.</small>

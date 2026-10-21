@@ -655,3 +655,20 @@ test("unit test notification opens the Unit tests tab", async () => {
   );
   expect(screen.getByText("English quiz")).toBeInTheDocument();
 });
+
+
+test("loads selected portal sections and merges them with previously loaded data", async () => {
+  global.fetch = jest.fn(async (input: RequestInfo | URL) => {
+    const url = String(input);
+    const data = url.includes("sections=fees") ? { profile: overview.profile, fees: [], payments: [] }
+      : { ...overview, homework: [{ id: 900, title: "Keep this homework", subjectName: "Math", dueDate: "2030-01-01" }] };
+    return { ok: true, status: 200, text: async () => JSON.stringify({ success: true, data }) } as Response;
+  });
+  render(<StudentPortal />);
+  await screen.findByText(/Good .*Test/);
+  fireEvent.click(screen.getByRole("button", { name: "Fees" }));
+  await waitFor(() => expect((global.fetch as jest.Mock).mock.calls.some(([url]) => String(url).endsWith("overview?sections=fees"))).toBe(true));
+  await act(async () => {});
+  const saved = JSON.parse(localStorage.getItem("student-offline:" + overview.profile.email)!);
+  expect(saved.homework[0].title).toBe("Keep this homework");
+});

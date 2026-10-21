@@ -1,4 +1,5 @@
 // Staff List: imports and dependencies
+import NameSearchBar from "./NameSearchBar";
 import AdminActionIcon from "./AdminActionIcon";
 import { Link } from "react-router-dom";
 import {
@@ -82,9 +83,12 @@ interface StaffListProps {
 // Main component and state
 const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
   const importInputRef = React.useRef<HTMLInputElement>(null);
+  const searchName = React.useRef("");
+  const searchAbort = React.useRef<AbortController | null>(null);
   const toast = useToast();
   const { can } = usePermissions();
   const [staff, setStaff] = useState<Staff[]>([]);
+  const staffRequest = React.useRef(0);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -165,6 +169,8 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
     }
   }, [selectedSchoolId]);
 
+  useEffect(() => () => { staffRequest.current++; searchAbort.current?.abort(); }, [selectedSchoolId]);
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     fetchStaff(page, pageSize);
@@ -177,12 +183,17 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
   };
 
   const fetchStaff = async (page: number = 1, size: number = pageSize) => {
+    const request = ++staffRequest.current;
+    searchAbort.current?.abort();
+    const controller = new AbortController();
+    searchAbort.current = controller;
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `${API_BASE_URL}/api/Admin/Staff-by-school?schoolId=${selectedSchoolId}&page=${page}&pageSize=${size}`,
+        `${API_BASE_URL}/api/Admin/Staff-by-school?schoolId=${selectedSchoolId}&page=${page}&pageSize=${size}${searchName.current ? `&search=${encodeURIComponent(searchName.current)}` : ""}`,
         {
+          signal: controller.signal,
           headers: {
             accept: "*/*",
             Authorization: `Bearer ${token}`,
@@ -191,6 +202,7 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
       );
       if (response.ok) {
         const result = await response.json();
+        if (request !== staffRequest.current) return;
         if (result.success && result.data) {
           setStaff(result.data);
           setCurrentPage(result.currentPage);
@@ -199,9 +211,10 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
         }
       }
     } catch (err) {
-      console.error("Failed to fetch staff");
+      if (request === staffRequest.current && !controller.signal.aborted)
+        console.error("Failed to fetch staff");
     } finally {
-      setLoading(false);
+      if (request === staffRequest.current) setLoading(false);
     }
   };
 
@@ -415,60 +428,60 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
       setImportResult(null);
       let imported = 0;
       try {
-        // Staff creation opens a transaction and sends credentials, so keep a
-        // small concurrency limit to avoid exhausting database/SMTP resources.
-        const concurrency = 2;
-        for (let offset = 0; offset < validRows.length; offset += concurrency) {
-          const batch = validRows.slice(offset, offset + concurrency);
-          const results = await Promise.all(
-            batch.map(async (previewRow) => {
-              const body = new FormData();
-              Object.entries(
-                previewRow.payload as Record<string, string>,
-              ).forEach(([key, value]) => body.append(key, value || ""));
-              try {
-                const response = await fetch(
-                  `${API_BASE_URL}/api/Admin/add-staff`,
-                  { method: "POST", headers: authHeaders(), body },
-                );
-                const responseText = await response.text();
-                let result: any;
+        // SMTP is queued by the API; keep database concurrency bounded.
+        const concurrency = 5;
+        let nextRow = 0;
+        await Promise.all(Array.from({ length: Math.min(concurrency, validRows.length) }, async () => {
+          while (nextRow < validRows.length) {
+            const previewRow = validRows[nextRow++];
+            const results = [await (async () => {
+                const body = new FormData();
+                Object.entries(
+                  previewRow.payload as Record<string, string>,
+                ).forEach(([key, value]) => body.append(key, value || ""));
                 try {
-                  result = responseText ? JSON.parse(responseText) : {};
-                } catch {
-                  result = {
-                    message: `Server returned an invalid response (HTTP ${response.status}).`,
+                  const response = await fetch(
+                    `${API_BASE_URL}/api/Admin/add-staff`,
+                    { method: "POST", headers: authHeaders(), body },
+                  );
+                  const responseText = await response.text();
+                  let result: any;
+                  try {
+                    result = responseText ? JSON.parse(responseText) : {};
+                  } catch {
+                    result = {
+                      message: `Server returned an invalid response (HTTP ${response.status}).`,
+                    };
+                  }
+                  return {
+                    previewRow,
+                    ok: response.ok && result.success,
+                    message: result.message,
+                    credentials: result.oneTimeCredentials as OneTimeCredentials | undefined,
+                  };
+                } catch (error: any) {
+                  return {
+                    previewRow,
+                    ok: false,
+                    message: error.message || "Import failed",
                   };
                 }
-                return {
-                  previewRow,
-                  ok: response.ok && result.success,
-                  message: result.message,
-                  credentials: result.oneTimeCredentials as OneTimeCredentials | undefined,
-                };
-              } catch (error: any) {
-                return {
-                  previewRow,
-                  ok: false,
-                  message: error.message || "Import failed",
-                };
-              }
-            }),
-          );
-          imported += results.filter((result) => result.ok).length;
-          credentialsToShow.push(...results.filter((result) => result.ok && result.credentials).map((result) => ({ rowNumber: result.previewRow.rowNumber, credentials: result.credentials! })));
-          errors.push(
-            ...results
-              .filter((result) => !result.ok)
-              .map((result) => ({
-                rowNumber: result.previewRow.rowNumber,
-                name: result.previewRow.values.Name || "",
-                email: result.previewRow.values.Email || "",
-                message: result.message || "Import failed. Please try again.",
-              })),
-          );
-        }
-        updateBulkImportJob(jobId, imported, errors, imported + errors.length);
+              })()];
+            imported += results.filter((result) => result.ok).length;
+            credentialsToShow.push(...results.filter((result) => result.ok && result.credentials).map((result) => ({ rowNumber: result.previewRow.rowNumber, credentials: result.credentials! })));
+            errors.push(
+              ...results
+                .filter((result) => !result.ok)
+                .map((result) => ({
+                  rowNumber: result.previewRow.rowNumber,
+                  name: result.previewRow.values.Name || "",
+                  email: result.previewRow.values.Email || "",
+                  message: result.message || "Import failed. Please try again.",
+                })),
+            );
+            updateBulkImportJob(jobId, imported, errors, imported + errors.length);
+          }
+        }));
         await fetchStaff(1, pageSize);
         setImportPreview([]);
         const importMessage = `${imported} staff members imported${errors.length ? `, ${errors.length} failed` : " successfully"}.`;
@@ -493,9 +506,6 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
     })();
   };
 
-  if (loading) {
-    return <PageLoader label="Loading staff..." />;
-  }
 
   if (!selectedSchoolId) {
     return <div className="staff-list-loading">Please select a school</div>;
@@ -565,13 +575,18 @@ const StaffList: React.FC<StaffListProps> = ({ selectedSchoolId }) => {
           )}
         </div>
       </div>
+      <NameSearchBar label="Search staff by name" loading={loading} onSearch={(name) => {
+        searchName.current = name;
+        setCurrentPage(1);
+        void fetchStaff(1, pageSize);
+      }} />
       <CsvImportHint />
-      {staff.length === 0 ? (
+      {loading ? <PageLoader label="Loading staff..." /> : staff.length === 0 ? (
         <div
           className="staff-list-loading"
           style={{ textAlign: "center", padding: "40px", color: "#666" }}
         >
-          No staff members available. Please add a new staff member.
+          {searchName.current ? "No staff match that name." : "No staff members available. Please add a new staff member."}
         </div>
       ) : (
         <div className="staff-table-wrapper">

@@ -12,6 +12,8 @@ jest.mock("../security/Permissions", () => ({
 }));
 
 // Constants and helper functions
+jest.mock("react-router-dom", () => ({ Link: ({ children }: any) => <span>{children}</span> }), { virtual: true });
+
 const permissions = usePermissions as jest.Mock;
 const roster = [
   {

@@ -412,6 +412,9 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({
 }) => {
   const [tab, setTab] = useState<TransportTab>("dashboard");
   const [rows, setRows] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 50;
+  const loadRequest = React.useRef(0);
   const [dashboard, setDashboard] = useState<any>({});
   const [form, setForm] = useState<Record<string, string>>({});
   const [showForm, setShowForm] = useState(false);
@@ -471,11 +474,16 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({
   }[tab];
 
   useEffect(() => {
-    if (selectedSchoolId) load();
+    setCurrentPage(1);
+    if (selectedSchoolId) void load(1);
   }, [selectedSchoolId, tab]); // eslint-disable-line
   useEffect(() => {
-    if (!selectedSchoolId || !config.fields) return;
-    const get = (path: string) =>
+    if (!selectedSchoolId || !config.fields || (tab !== "setup" && !showForm)) return;
+    const required = new Set(config.fields.map((field) => field.optionsKey));
+    if (tab === "allocations") required.add("allocations");
+    if (tab === "setup") ["sessions", "vehicles", "drivers", "conductors", "routes"].forEach((key) => required.add(key));
+    const get = (path: string, key: string) =>
+      !required.has(key) ? Promise.resolve([]) :
       fetch(`${API_BASE_URL}${path}`, {
         cache: "no-store",
         headers: headers(),
@@ -486,17 +494,17 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({
         return json.data ?? [];
       });
     Promise.all([
-      get(`/api/Transport/vehicle-types?schoolId=${selectedSchoolId}`),
-      get(`/api/Transport/vehicles?schoolId=${selectedSchoolId}`),
-      get(`/api/Transport/drivers?schoolId=${selectedSchoolId}`),
-      get(`/api/Transport/conductors?schoolId=${selectedSchoolId}`),
-      get(`/api/Transport/routes?schoolId=${selectedSchoolId}`),
-      get(`/api/Transport/assignments?schoolId=${selectedSchoolId}`),
-      get(`/api/Transport/allocations?schoolId=${selectedSchoolId}`),
-      get(`/api/Transport/fees?schoolId=${selectedSchoolId}`),
-      get(`/api/Transport/fee-students?schoolId=${selectedSchoolId}`),
-      get(`/api/Admin/academic-sessions?schoolId=${selectedSchoolId}`),
-      get(`/api/Transport/eligible-students?schoolId=${selectedSchoolId}`),
+      get(`/api/Transport/vehicle-types?schoolId=${selectedSchoolId}`, "vehicleTypes"),
+      get(`/api/Transport/vehicles?schoolId=${selectedSchoolId}`, "vehicles"),
+      get(`/api/Transport/drivers?schoolId=${selectedSchoolId}`, "drivers"),
+      get(`/api/Transport/conductors?schoolId=${selectedSchoolId}`, "conductors"),
+      get(`/api/Transport/routes?schoolId=${selectedSchoolId}`, "routes"),
+      get(`/api/Transport/assignments?schoolId=${selectedSchoolId}`, "assignments"),
+      get(`/api/Transport/allocations?schoolId=${selectedSchoolId}`, "allocations"),
+      get(`/api/Transport/fees?schoolId=${selectedSchoolId}`, "unused"),
+      get(`/api/Transport/fee-students?schoolId=${selectedSchoolId}`, "fees"),
+      get(`/api/Admin/academic-sessions?schoolId=${selectedSchoolId}`, "sessions"),
+      get(`/api/Transport/eligible-students?schoolId=${selectedSchoolId}`, "students"),
     ])
       .then(
         ([
@@ -604,9 +612,10 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({
             : "Unable to load form options.",
         ),
       );
-  }, [selectedSchoolId, tab, lookupRefresh]); // eslint-disable-line
+  }, [selectedSchoolId, tab, lookupRefresh, showForm]); // eslint-disable-line
 
-  const load = async () => {
+  const load = async (page: number = currentPage) => {
+    const request = ++loadRequest.current;
     if (!selectedSchoolId) return;
     const endpoint = tab === "dashboard" ? "dashboard" : config.endpoint;
     if (!endpoint) {
@@ -618,7 +627,7 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({
       setLoadedTab(null);
       setMessage("");
       const response = await fetch(
-        `${API_BASE_URL}/api/Transport/${endpoint}?schoolId=${selectedSchoolId}`,
+        `${API_BASE_URL}/api/Transport/${endpoint}?schoolId=${selectedSchoolId}&page=${page}&pageSize=${pageSize}`,
         {
           cache: "no-store",
           headers: headers(),
@@ -630,17 +639,19 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({
           `Transport API returned HTML instead of JSON: ${response.url}`,
         );
       const result = await response.json();
+      if (request !== loadRequest.current) return;
       if (!response.ok || result.success === false)
         throw new Error(apiError(result, "Unable to load transport data."));
       if (tab === "dashboard") setDashboard(result.data ?? {});
       else setRows(result.data ?? []);
+      setCurrentPage(page);
       setLoadedTab(tab);
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : "Unable to load data.",
       );
     } finally {
-      setLoading(false);
+      if (request === loadRequest.current) setLoading(false);
     }
   };
 
@@ -1236,6 +1247,13 @@ const TransportManagement: React.FC<{ selectedSchoolId: number | null }> = ({
             </div>
           )}
         </>
+      )}
+      {tab !== "dashboard" && tab !== "setup" && (currentPage > 1 || rows.length === pageSize) && (
+        <nav className="pagination-container" aria-label="Transport pages">
+          <button className="pagination-btn" disabled={loading || currentPage === 1} onClick={() => void load(currentPage - 1)}>Previous</button>
+          <span>Page {currentPage}</span>
+          <button className="pagination-btn" disabled={loading || rows.length < pageSize} onClick={() => void load(currentPage + 1)}>Next</button>
+        </nav>
       )}
       <Modal
         isOpen={showForm && !confirmPayment}
