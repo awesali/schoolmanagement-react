@@ -1,6 +1,7 @@
 // Librarian Dashboard: imports and dependencies
 import React, { useCallback, useEffect, useState } from "react";
 import { API_BASE_URL } from "../config";
+import { SupportForm } from "../Support/SupportPage";
 import "./PrincipalDashboard.css";
 
 // Data types and contracts
@@ -32,6 +33,7 @@ export default function LibrarianDashboard({
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("All");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
 
   // Constants and helper functions
   const token = localStorage.getItem("token");
@@ -136,10 +138,11 @@ export default function LibrarianDashboard({
           </div>
         </div>
         <nav aria-label="Library navigation">
-          <button className="active" onClick={() => setMenuOpen(false)}>
+          <button className={supportOpen ? "" : "active"} onClick={() => { setSupportOpen(false); setMenuOpen(false); }}>
             Library reservations
           </button>
           <button onClick={onProfile}>My profile</button>
+          <button type="button" className={supportOpen ? "active" : ""} onClick={() => { setSupportOpen(true); setMenuOpen(false); }}>Support</button>
         </nav>
         <div className="principal-sidebar-bottom">
           <button onClick={onLogout}>Logout</button>
@@ -163,24 +166,25 @@ export default function LibrarianDashboard({
             <div className="principal-heading">
               <div>
                 <span className="principal-eyebrow">LIBRARY</span>
-                <h1>Library reservations</h1>
-                <p>Review student requests and prepare books for collection.</p>
+                <h1>{supportOpen ? "Support" : "Library reservations"}</h1>
+                <p>{supportOpen ? "Send an issue to the Academic Rigor support team." : "Review student requests and prepare books for collection."}</p>
               </div>
-              <div className="principal-toolbar">
+              {!supportOpen && <div className="principal-toolbar">
                 <button
                   disabled={loading || saving}
                   onClick={() => void load()}
                 >
                   Refresh
                 </button>
-              </div>
+              </div>}
             </div>
-            {error && (
+            {supportOpen && <SupportForm />}
+            {!supportOpen && error && (
               <div className="principal-notice" role="alert">
                 {error}
               </div>
             )}
-            <div className="principal-kpis">
+            {!supportOpen && <div className="principal-kpis">
               {["Pending", "Ready", "Collected", "Cancelled"].map((value) => (
                 <button
                   key={value}
@@ -198,8 +202,8 @@ export default function LibrarianDashboard({
                   <small>In recent reservations</small>
                 </button>
               ))}
-            </div>
-            <section className="principal-panel" aria-label="Reservation list">
+            </div>}
+            {!supportOpen && <section className="principal-panel" aria-label="Reservation list">
               <div className="principal-filters">
                 <label>
                   Search
@@ -291,7 +295,7 @@ export default function LibrarianDashboard({
               <p className="principal-footnote">
                 Showing up to 100 recent reservations for your school.
               </p>
-            </section>
+            </section>}
           </div>
         </div>
       </main>

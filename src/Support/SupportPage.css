@@ -1,0 +1,20 @@
+.support-page { min-height: 100vh; padding: 40px 20px; background: #f2f6fa; color: #17304a; font-family: "Segoe UI", Arial, sans-serif; }
+.support-shell { width: min(100%, 700px); margin: 0 auto; }
+.support-form-wrap { width: min(100%, 700px); margin: 0 auto; color: #17304a; font-family: "Segoe UI", Arial, sans-serif; }
+.support-back { padding: 8px 0; border: 0; background: transparent; color: #1666aa; font: inherit; font-weight: 650; cursor: pointer; }
+.support-card { margin-top: 24px; padding: clamp(24px, 5vw, 48px); border: 1px solid #dbe7ef; border-radius: 20px; background: #fff; box-shadow: 0 10px 35px #17304a12; }
+.support-eyebrow { color: #087f83; font-size: 12px; font-weight: 800; letter-spacing: .12em; }
+.support-card h1 { margin: 12px 0; font-size: clamp(28px, 5vw, 40px); }
+.support-card p { margin: 0 0 30px; color: #64798a; line-height: 1.6; }
+.support-card form { display: grid; gap: 10px; }
+.support-card label { margin-top: 12px; font-weight: 700; }
+.support-card input, .support-card textarea { width: 100%; padding: 13px 15px; border: 1px solid #cbdce7; border-radius: 10px; outline: none; color: #17304a; background: #fbfdff; font: inherit; }
+.support-card input:focus, .support-card textarea:focus { border-color: #2484bc; box-shadow: 0 0 0 3px #2484bc22; }
+.support-card textarea { resize: vertical; }
+.support-card input[type="file"] { height: auto; padding: 12px; cursor: pointer; }
+.support-optional, .support-file-hint { color: #64798a; font-weight: 400; }
+.support-card form > button { justify-self: start; min-height: 45px; margin-top: 16px; padding: 0 22px; border: 0; border-radius: 9px; background: #087f83; color: #fff; font: inherit; font-weight: 750; cursor: pointer; }
+.support-card form > button:disabled { opacity: .6; cursor: wait; }
+.support-success, .support-error { padding: 12px 14px; border-radius: 9px; line-height: 1.5; }
+.support-success { background: #e7f7ee; color: #17643c; }
+.support-error { background: #fff0ed; color: #a1392d; }

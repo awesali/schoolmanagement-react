@@ -19,10 +19,13 @@ const Login: React.FC = () => {
     e.preventDefault();
     setError("");
     setLoading(true);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 20000);
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: "POST",
+        signal: controller.signal,
         headers: {
           accept: "*/*",
           "Content-Type": "application/json",
@@ -43,6 +46,7 @@ const Login: React.FC = () => {
           `${API_BASE_URL}/api/StudentParentAuth/login`,
           {
             method: "POST",
+            signal: controller.signal,
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email: email.trim(), password }),
           },
@@ -72,9 +76,12 @@ const Login: React.FC = () => {
       }
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Login failed. Please try again.",
+        err instanceof Error && err.name === "AbortError"
+          ? "Sign in timed out. Please check your connection and try again."
+          : err instanceof Error ? err.message : "Login failed. Please try again.",
       );
     } finally {
+      window.clearTimeout(timeout);
       setLoading(false);
     }
   };
@@ -82,12 +89,12 @@ const Login: React.FC = () => {
   return (
     <div className="login-page">
       <div className="login-shell">
-        <aside className="login-story" aria-label="School Management introduction">
+        <aside className="login-story" aria-label="Academic Rigor introduction">
           <img src="/landing/login-school.webp" alt="Students and teacher on a school campus" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = "/landing/school-day.webp"; }} />
           <div className="login-story-shade" />
-          <Link className="login-brand login-brand-on-image" to="/" aria-label="School Management home">
-            <span className="login-brand-mark" aria-hidden="true"><span /></span>
-            <span>School<span>Management</span></span>
+          <Link className="login-brand login-brand-on-image" to="/" aria-label="Academic Rigor home">
+            <span className="login-brand-mark" aria-hidden="true"><img src="/branding/academic-rigor-emblem.png" alt="" /></span>
+            <span>Academic <span>Rigor</span></span>
           </Link>
           <div className="login-story-content">
             <span className="login-story-kicker">ONE CONNECTED SCHOOL WORKSPACE</span>
@@ -120,11 +127,11 @@ const Login: React.FC = () => {
                 </div>
               </div>
               {error && <div className="login-error" role="alert">{error}</div>}
-              <LoadingButton type="submit" className="btn btn-primary login-submit" loading={loading} loadingText="Signing in...">Sign in <span aria-hidden="true">→</span></LoadingButton>
+              <LoadingButton type="submit" className="btn btn-primary login-submit" loading={loading} loadingText="Signing in..." loadingOverlay={false}>Sign in <span aria-hidden="true">→</span></LoadingButton>
             </form>
             <div className="login-help"><span className="login-help-symbol" aria-hidden="true">?</span><p>Need access or having trouble signing in?<br /><strong>Contact your school administrator.</strong></p></div>
           </div>
-          <div className="login-main-bottom">Part of <a href="https://cognerasystems.com/" target="_blank" rel="noopener noreferrer">Cognera Systems</a></div>
+          <div className="login-main-bottom">Powered by <a href="https://cognerasystems.com/" target="_blank" rel="noopener noreferrer">Cognera Systems</a></div>
         </main>
       </div>
     </div>

@@ -1,5 +1,6 @@
 // Ca Dashboard: imports and dependencies
 import OfficeMenuIcon from "./OfficeMenuIcon";
+import { SupportForm } from "../Support/SupportPage";
 import React, { useEffect, useRef, useState } from "react";
 import { API_BASE_URL } from "../config";
 import FinanceManagement from "./FinanceManagement";
@@ -59,7 +60,8 @@ type Page =
   | "Fee management"
   | "Payroll"
   | "Reports"
-  | "Accounting";
+  | "Accounting"
+  | "Support";
 type Props = {
   userName: string;
   profilePicture?: string | null;
@@ -297,6 +299,10 @@ export default function CaDashboard({
               <span className="principal-nav-label">{p}</span>
             </button>
           ))}
+          <p className="principal-nav-group">HELP</p>
+          <button type="button" className={page === "Support" ? "active" : ""} onClick={() => go("Support")}>
+            <OfficeMenuIcon page="Messages" /><span className="principal-nav-label">Support</span>
+          </button>
         </nav>
       </aside>
       <main className="principal-main">
@@ -385,6 +391,7 @@ export default function CaDashboard({
                 </div>
               )}
             </div>
+            {page === "Support" && <SupportForm />}
             {loading && (
               <section className="principal-panel" role="status">
                 Loading financial records...

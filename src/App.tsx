@@ -6,6 +6,7 @@ import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./Login/Login";
 import LandingPage from "./Landing/LandingPage";
+import SupportPage from "./Support/SupportPage";
 import StudentPortal from "./Student/StudentPortal";
 import Dashboard from "./Super_Admin_Dashboard/Dashboard";
 import AccountProfile from "./Super_Admin_Dashboard/AccountProfile";
@@ -26,6 +27,7 @@ function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/student" element={<RequireLogin><StudentPortal /></RequireLogin>} />
+            <Route path="/support" element={<RequireLogin><SupportPage /></RequireLogin>} />
             <Route
               path="/dashboard/schools/:schoolId/students/:studentId"
               element={

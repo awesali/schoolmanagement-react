@@ -1,6 +1,7 @@
 ﻿import { loadAdminSchools } from "./loadAdminSchools";
 // Dashboard: imports and dependencies
 import AdminActionIcon from "./AdminActionIcon";
+import { SupportForm } from "../Support/SupportPage";
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import CreateSchool from "./CreateSchool";
@@ -782,7 +783,9 @@ const Dashboard: React.FC = () => {
                 );
               return (
                 <>
-                  {activePage === "School List" ? (
+                  {activePage === "Support" ? (
+                    <SupportForm />
+                  ) : activePage === "School List" ? (
                     <SchoolList onSchoolsChanged={fetchSchools} />
                   ) : activePage === "Academic Year" ? (
                     <AcademicYear selectedSchoolId={selectedSchoolId} />

@@ -1,6 +1,7 @@
 // Principal Dashboard: imports and dependencies
 import OfficeMenuIcon from "./OfficeMenuIcon";
 import PrincipalStudentDirectory from "./PrincipalStudentDirectory";
+import { SupportForm } from "../Support/SupportPage";
 import React, { useEffect, useRef, useState } from "react";
 import { API_BASE_URL } from "../config";
 import { SchoolHolidayBanner, useSchoolHoliday } from "../components/SchoolHoliday";
@@ -101,7 +102,8 @@ type Page =
   | "Messages"
   | "Examinations"
   | "Finance"
-  | "Daily school brief";
+  | "Daily school brief"
+  | "Support";
 
 // Constants and helper functions
 const dateLabel = (value: string) =>
@@ -1133,6 +1135,10 @@ export default function PrincipalDashboard({
                 </button>
               </React.Fragment>
             ))}
+          <p className="principal-nav-group">HELP</p>
+          <button type="button" className={page === "Support" ? "active" : ""} onClick={() => navigate("Support")}>
+            <OfficeMenuIcon page="Messages" /><span className="principal-nav-label">Support</span>
+          </button>
         </nav>
       </aside>
       <main className="principal-main">
@@ -1257,6 +1263,7 @@ export default function PrincipalDashboard({
                 )}
               </div>
             </div>
+            {page === "Support" && <SupportForm />}
             {loading ? (
               <div className="principal-panel" role="status">
                 Loading your school overview…

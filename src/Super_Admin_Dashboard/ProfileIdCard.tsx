@@ -51,7 +51,7 @@ const ProfileIdCard: React.FC<ProfileIdCardProps> = ({
       <header className="profile-card-brand">
         <div>
           <span className="profile-card-eyebrow">
-            {organization || "School Management System"}
+            {organization || "Academic Rigor"}
           </span>
           <h2>{type} Identity Card</h2>
         </div>

@@ -301,6 +301,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         icon: "profile",
         permission: "dashboard.dashboard",
       },
+      { label: "Support", page: "Support", icon: "material", permission: "dashboard.dashboard" },
     ];
     return (
       <aside className={`sidebar ${isCollapsed ? "collapsed" : ""}`}>
@@ -400,6 +401,12 @@ const Sidebar: React.FC<SidebarProps> = ({
             )}
           </div>
         ))}
+        <div className="nav-group">
+          <p className="nav-group-header">Help</p>
+          <button type="button" className={`nav-item ${activePage === "Support" ? "active" : ""}`} onClick={() => onNavigate("Support")}>
+            <EmailIcon size={19} /><span>Support</span>
+          </button>
+        </div>
       </nav>
     </aside>
   );

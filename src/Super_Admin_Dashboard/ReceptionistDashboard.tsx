@@ -1,6 +1,7 @@
 // Receptionist Dashboard: imports and dependencies
 import React, { useEffect, useRef, useState } from "react";
 import { API_BASE_URL } from "../config";
+import { SupportForm } from "../Support/SupportPage";
 import { usePermissions } from "../security/Permissions";
 import { profilePictureUrl } from "./ProfilePictureInput";
 import StudentList from "./StudentList";
@@ -22,7 +23,8 @@ type Page =
   | "Students"
   | "Parents"
   | "Student services"
-  | "Reports";
+  | "Reports"
+  | "Support";
 export type ReceptionEntry = {
   id: number;
   kind: Kind;
@@ -560,6 +562,8 @@ export default function ReceptionistDashboard({
                 ))}
               </React.Fragment>
             ))}
+          <p className="principal-nav-group">HELP</p>
+          <button type="button" className={page === "Support" ? "active" : ""} onClick={() => go("Support")}>Support</button>
         </nav>
         <div className="principal-sidebar-bottom reception-sidebar-note">
           <span className="reception-live-dot" /> School front office
@@ -666,6 +670,7 @@ export default function ReceptionistDashboard({
                 </button>
               </div>
             )}
+            {page === "Support" && <SupportForm />}
             {loading && (
               <section className="principal-panel" role="status">
                 Loading front desk records…

@@ -85,7 +85,7 @@ export default function DashboardDetailLayout({
               <MenuIcon size={24} />
             </button>
             <div>
-              <small>{school?.schoolName || "School management"}</small>
+              <small>{school?.schoolName || "Academic Rigor"}</small>
               <h1>{kind === "staff" ? "Staff details" : "Student details"}</h1>
             </div>
           </div>

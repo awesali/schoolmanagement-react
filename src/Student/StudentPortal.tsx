@@ -19,6 +19,7 @@ import StudentTimetable from "./StudentTimetable";
 import StudentConversations from "./StudentConversations";
 import StudentChangePassword from "./StudentChangePassword";
 import StudentPaymentReceipt from "./StudentPaymentReceipt";
+import { SupportForm } from "../Support/SupportPage";
 import {
   downloadStudyMaterial,
   isUploadedStudyMaterial,
@@ -263,7 +264,8 @@ type Page =
   | "Fees"
   | "Transport"
   | "Documents"
-  | "My Profile";
+  | "My Profile"
+  | "Support";
 
 // Constants and helper functions
 const pageIcons: Record<
@@ -288,6 +290,7 @@ const pageIcons: Record<
   Transport: "vehicle",
   Documents: "document",
   "My Profile": "profile",
+  Support: "email",
 };
 const groups: { title: string; items: Page[] }[] = [
   {
@@ -308,6 +311,7 @@ const groups: { title: string; items: Page[] }[] = [
       "Documents",
     ],
   },
+  { title: "Help", items: ["Support"] },
 ];
 const dateOnly = (value: string) => String(value || "").slice(0, 10);
 const shortDate = (value: string) =>
@@ -2115,6 +2119,7 @@ export default function StudentPortal() {
             )}
           </>
         )}
+        {page === "Support" && <SupportForm />}
         {page === "My Profile" && (
           <>
             {sectionHeading(

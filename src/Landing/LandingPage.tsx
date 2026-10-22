@@ -68,9 +68,9 @@ export default function LandingPage() {
   return <div className="lp">
     <header className="lp-nav">
       <div className="lp-container lp-nav-inner">
-        <Link className="lp-brand" to="/" aria-label="School Management home">
-          <span className="lp-brand-symbol"><span /></span>
-          <span>School<span className="lp-brand-accent">Management</span></span>
+        <Link className="lp-brand" to="/" aria-label="Academic Rigor home">
+          <span className="lp-brand-symbol"><img src="/branding/academic-rigor-emblem.png" alt="" /></span>
+          <span>Academic <span className="lp-brand-accent">Rigor</span></span>
         </Link>
         <nav className="lp-nav-links" aria-label="Main navigation">
           <a href="#platform">Platform</a>
@@ -151,6 +151,6 @@ export default function LandingPage() {
 
       <section className="lp-final"><div className="lp-container lp-final-inner"><div><span className="lp-kicker">READY WHEN YOU ARE</span><h2>Your school day starts here.</h2><p>Sign in to open the space built for your role.</p></div><Link className="lp-button lp-button-light" to="/login">Sign in to your account <Icon name="arrow" size={19} /></Link></div></section>
     </main>
-    <footer className="lp-footer"><div className="lp-container"><span className="lp-brand lp-footer-brand"><span className="lp-brand-symbol"><span /></span><span>School<span className="lp-brand-accent">Management</span></span></span><span>Part of <a className="lp-company-link" href="https://cognerasystems.com/" target="_blank" rel="noopener noreferrer">Cognera Systems</a></span><a href="#lp-title">Back to top ↑</a></div></footer>
+    <footer className="lp-footer"><div className="lp-container"><span className="lp-brand lp-footer-brand"><span className="lp-brand-symbol"><img src="/branding/academic-rigor-emblem.png" alt="" /></span><span>Academic <span className="lp-brand-accent">Rigor</span></span></span><span>Powered by <a className="lp-company-link" href="https://cognerasystems.com/" target="_blank" rel="noopener noreferrer">Cognera Systems</a></span><a href="#lp-title">Back to top ↑</a></div></footer>
   </div>;
 }
