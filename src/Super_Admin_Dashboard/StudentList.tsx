@@ -1,3 +1,4 @@
+import { normalizeClassName, downloadStudentWorkbook, readStudentImport } from "./studentImportWorkbook";
 // Student List: imports and dependencies
 import { studentTemplateHeaders, studentTemplateExample, parseStudentDetailColumns } from "./studentImportDetails";
 import NameSearchBar from "./NameSearchBar";
@@ -12,7 +13,7 @@ import Modal from "./Modal";
 import BulkCredentialsDialog from "./BulkCredentialsDialog";
 import { OneTimeCredentials } from "./OneTimeCredentialsDialog";
 import Pagination from "./Pagination";
-import { downloadCsv, parseCsv } from "../utils/csv";
+import { downloadCsv } from "../utils/csv";
 import {
   formatImportDate,
   toApiDate,
@@ -241,15 +242,25 @@ const StudentList: React.FC<StudentListProps> = ({
     }
   };
 
-  const downloadStudentTemplate = () =>
-    downloadCsv("student-import-template-v2.csv", studentTemplateHeaders, [studentTemplateExample]);
+  const downloadStudentTemplate = async () => {
+    if (!selectedSchoolId) return;
+    setTransferring(true);
+    try {
+      const response = await fetch(API_BASE_URL + "/api/Student/enrollment-info?schoolId=" + selectedSchoolId, { headers: authHeaders() });
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error("Unable to load classes for the template.");
+      await downloadStudentWorkbook(studentTemplateHeaders, studentTemplateExample, (result.data?.classes || []).map((c: any) => String(c.name)));
+    } catch (error: any) {
+      toast.error(error.message || "Unable to download the student template.");
+    } finally { setTransferring(false); }
+  };
 
   const prepareStudentImport = async (file: File) => {
     if (!selectedSchoolId) return;
     setTransferring(true);
     try {
-      const rows = parseCsv(await file.text());
-      if (!rows.length) throw new Error("The CSV has no data rows.");
+      const rows = await readStudentImport(file);
+      if (!rows.length) throw new Error("The import file has no data rows.");
       const [infoResponse, existingResponse] = await Promise.all([
         fetch(
           `${API_BASE_URL}/api/Student/enrollment-info?schoolId=${selectedSchoolId}`,
@@ -339,16 +350,18 @@ const StudentList: React.FC<StudentListProps> = ({
         if (studentEmail && fileEmails.has(studentEmail))
           errors.push("Duplicate student email in this file.");
         if (studentEmail) fileEmails.add(studentEmail);
-        const classItem = (info.classes || []).find(
+        const matchingClasses = (info.classes || []).filter(
           (c: any) =>
-            c.name.trim().toLowerCase() === row.Class?.trim().toLowerCase(),
+            normalizeClassName(c.name) === normalizeClassName(row.Class),
         );
+        const classItem = matchingClasses.length === 1 ? matchingClasses[0] : undefined;
         const sectionItem = (info.sections || []).find(
           (s: any) =>
             s.classId === classItem?.id &&
             s.name.trim().toLowerCase() === row.Section?.trim().toLowerCase(),
         );
-        if (!classItem) errors.push("Class was not found.");
+        if (matchingClasses.length > 1) errors.push("Class name matches multiple existing classes. Resolve duplicate class names before importing.");
+        else if (!classItem) errors.push("Class was not found.");
         else if (!sectionItem)
           errors.push("Section was not found in the selected class.");
         const roll = row.RollNumber?.trim();
@@ -356,9 +369,7 @@ const StudentList: React.FC<StudentListProps> = ({
           const rollKey = String(classItem.id) + ":" + roll;
           const assigned = (existingResult.data || []).find(
             (s: any) =>
-              String(s.className || "")
-                .trim()
-                .toLowerCase() === classItem.name.trim().toLowerCase() &&
+              normalizeClassName(s.className) === normalizeClassName(classItem.name) &&
               String(s.rollNumber || "").trim() === roll,
           );
           if (assigned)
@@ -403,7 +414,7 @@ const StudentList: React.FC<StudentListProps> = ({
         };
         return {
           rowNumber: index + 2,
-          values: { ...row, ...details.values },
+          values: { ...row, ...details.values, Class: classItem?.name || row.Class },
           errors,
           warnings,
           payload: values,
@@ -529,7 +540,7 @@ const StudentList: React.FC<StudentListProps> = ({
               <input
                 ref={importInputRef}
                 type="file"
-                accept=".csv,text/csv"
+                accept=".csv,text/csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 hidden
                 disabled={transferring}
                 onChange={(e) => {
@@ -568,7 +579,7 @@ const StudentList: React.FC<StudentListProps> = ({
         setCurrentPage(1);
         void fetchStudents(1, pageSize);
       }} />
-      <CsvImportHint extra="Use the latest student template. AdmissionType defaults to New Admission. City, State, Country and a valid 6-digit PinCode are required. Blank parent address fields reuse the student address; review these defaults in the preview." />
+      <CsvImportHint extra="Download the Excel template for a Class dropdown containing your school's existing classes. Upload the completed Excel file or a CSV. Class matching ignores spaces and capitalization. AdmissionType defaults to New Admission. City, State, Country and a valid 6-digit PinCode are required. Blank parent address fields reuse the student address; review these defaults in the preview." />
       {loading ? <PageLoader label="Loading students..." /> : students.length === 0 ? (
         <div
           className="staff-list-loading"
